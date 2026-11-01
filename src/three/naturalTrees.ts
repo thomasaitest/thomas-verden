@@ -181,26 +181,26 @@ export function buildPlanter(): THREE.Group {
     roughness: 0.45,
     metalness: 0.25,
   });
-  // Slim trough — not a white box
-  const pot = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.42, 0.55), wood);
-  pot.position.y = 0.21;
+  // Slim wood trough (dark grey/wood — not a white box)
+  const pot = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.36, 0.42), wood);
+  pot.position.y = 0.18;
   pot.castShadow = true;
   pot.receiveShadow = true;
   g.add(pot);
-  const lip = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.05, 0.62), rim);
-  lip.position.y = 0.44;
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.04, 0.48), rim);
+  lip.position.y = 0.38;
   g.add(lip);
   const soil = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 0.06, 0.42),
+    new THREE.BoxGeometry(1.22, 0.05, 0.32),
     new THREE.MeshStandardMaterial({ color: '#2a2218', roughness: 1 }),
   );
-  soil.position.y = 0.4;
+  soil.position.y = 0.35;
   g.add(soil);
 
   const grassColors = ['#5fa84a', '#6bb854', '#4e9a40', '#7ac45c'];
-  for (let i = 0; i < 6; i++) {
-    const clump = grassClump(grassColors[i % grassColors.length]!, 0.55 + (i % 3) * 0.12);
-    clump.position.set(-0.55 + i * 0.22, 0.4, (i % 2 ? 0.06 : -0.05));
+  for (let i = 0; i < 5; i++) {
+    const clump = grassClump(grassColors[i % grassColors.length]!, 0.5 + (i % 3) * 0.1);
+    clump.position.set(-0.45 + i * 0.22, 0.35, (i % 2 ? 0.05 : -0.04));
     g.add(clump);
   }
 
