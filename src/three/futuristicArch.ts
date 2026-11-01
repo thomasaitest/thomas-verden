@@ -407,21 +407,30 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   const curtainMat = new THREE.MeshPhysicalMaterial({
     color: '#8ec8e0',
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.32,
     transmission: 0.55,
     roughness: 0.15,
     metalness: 0,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  for (let i = 0; i < 8; i++) {
-    const ang = (i / 8) * Math.PI * 2;
+  for (let i = 0; i < 12; i++) {
+    const ang = (i / 12) * Math.PI * 2;
     const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 2.4), curtainMat);
     curtain.position.set(Math.cos(ang) * 2.2, 2.2, Math.sin(ang) * 2.2);
     curtain.rotation.y = ang + Math.PI / 2;
     curtain.rotation.x = -0.35;
     group.add(curtain);
     jets.push(curtain);
+  }
+
+  const foamMat = new THREE.MeshBasicMaterial({ color: '#e8f7ff', transparent: true, opacity: 0.45, depthWrite: false });
+  for (let i = 0; i < 16; i++) {
+    const ang = (i / 16) * Math.PI * 2;
+    const foam = new THREE.Mesh(new THREE.CircleGeometry(0.18 + (i % 3) * 0.06, 12), foamMat);
+    foam.rotation.x = -Math.PI / 2;
+    foam.position.set(Math.cos(ang) * (1.2 + (i % 4) * 0.55), 0.52, Math.sin(ang) * (1.2 + (i % 4) * 0.55));
+    group.add(foam);
   }
 
   return { group, jets, rings };

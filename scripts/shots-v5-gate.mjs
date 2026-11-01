@@ -26,17 +26,15 @@ async function prep(page) {
       locked: false,
       createdAt: now,
       items: [
-        { uid: 'it1', itemId: 'seng', x: -6, z: -4, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
-        { uid: 'it2', itemId: 'spisebord', x: 3, z: 1, rot: 0, scale: 1, color: '#2a3344', floor: 0 },
-        { uid: 'it3', itemId: 'langsofa', x: -1.5, z: 1.5, rot: 3.6, scale: 1.25, color: '#f2f5f8', floor: 0 },
-        { uid: 'it4', itemId: 'tv', x: -2, z: -5.5, rot: 0, scale: 1.2, color: '#15202c', floor: 0 },
-        { uid: 'it5', itemId: 'kommode', x: -2, z: 0.5, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it6', itemId: 'bokhylle', x: 5.5, z: -3, rot: 1.57, scale: 1, color: '#c98a55', floor: 0 },
-        { uid: 'it7', itemId: 'benk', x: 5, z: 3, rot: 0, scale: 1.1, color: '#2a3344', floor: 0 },
-        { uid: 'it8', itemId: 'krakk', x: 5, z: 4.2, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -2, z: 1.2, rot: 0, scale: 1.4, color: '#4a5568', floor: 0 },
-        { uid: 'it10', itemId: 'potteplante', x: 4, z: -5, rot: 0, scale: 1, color: '#5cc36b', floor: 0 },
-        { uid: 'it11', itemId: 'dyreseng', x: 6, z: 5, rot: 0, scale: 1, color: '#8aa0b8', floor: 0 },
+        { uid: 'it1', itemId: 'seng', x: 7, z: -2, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
+        { uid: 'it2', itemId: 'spisebord', x: 4, z: 2, rot: 0, scale: 0.9, color: '#1a2230', floor: 0 },
+        { uid: 'it3', itemId: 'langsofa', x: -2, z: 0.5, rot: 0.2, scale: 1.3, color: '#c8d0d8', floor: 0 },
+        { uid: 'it4', itemId: 'tv', x: -2, z: -6, rot: 0, scale: 1.3, color: '#15202c', floor: 0 },
+        { uid: 'it5', itemId: 'kommode', x: -2, z: -1.2, rot: 0, scale: 0.9, color: '#1a2230', floor: 0 },
+        { uid: 'it7', itemId: 'benk', x: 5.5, z: -1, rot: 1.57, scale: 1.2, color: '#2a3344', floor: 0 },
+        { uid: 'it8', itemId: 'krakk', x: 4.3, z: -1, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -2, z: 0.8, rot: 0, scale: 1.5, color: '#3a4450', floor: 0 },
+        { uid: 'it10', itemId: 'potteplante', x: 6, z: -5, rot: 0, scale: 1, color: '#5cc36b', floor: 0 },
       ],
     };
     const save = {
@@ -184,7 +182,7 @@ await page.evaluate(() => {
   g.player.yaw = Math.PI;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   // behind avatar looking into living room toward panoramic window
-  g.freezeCam = { x: 2.2, y: 1.7, z: d - 3.5, lx: -2.5, ly: 1.55, lz: -d + 4.0 };
+  g.freezeCam = { x: 3.5, y: 1.75, z: 2.5, lx: -3.0, ly: 1.6, lz: -6.5 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2800);

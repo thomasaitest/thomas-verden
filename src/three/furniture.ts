@@ -500,8 +500,8 @@ const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
 function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
   const mat = new THREE.MeshStandardMaterial({
-    color: color || '#eef2f6',
-    roughness: 0.62,
+    color: color || '#d8dee6',
+    roughness: 0.72,
     metalness: 0.04,
     envMapIntensity: 0.55,
   });

@@ -70,8 +70,8 @@ export function buildCar(carId: string): THREE.Group {
 
   const silver = new THREE.MeshStandardMaterial({
     color,
-    metalness: 0.82,
-    roughness: 0.18,
+    metalness: 0.92,
+    roughness: 0.14,
     envMapIntensity: 1.35,
   });
   const darkMat = new THREE.MeshStandardMaterial({
