@@ -55,7 +55,7 @@ export const PLACES: Record<string, Place> = {
 
 export const PLAZA_R = 13;
 export const RING_R = 17;
-export const ROAD_W = 4.8;
+export const ROAD_W = 3.6;
 export const APPROACH_W = 4.6;
 
 /** Cardinal facing: 0=+Z (north), π/2=+X (east), π=-Z (south), -π/2=-X (west). */

@@ -21,7 +21,7 @@ async function prep(page) {
       ownerId: 'player-shot',
       editors: [],
       editRequests: [],
-      wallColor: '#f3efe8',
+      wallColor: '#8e949c',
       floorColor: '#aeb6c0',
       locked: false,
       createdAt: now,
@@ -197,8 +197,8 @@ await page.evaluate(() => {
   bag['bil-bla'] = 1;
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
-  // On clear +Z approach (parked cars live at z≥52), face plaza (−Z)
-  g.player.pos.set(0, 0, 30);
+  // Open N–S road stretch: face plaza (−Z). Traffic kept off z∈[25,45] ahead.
+  g.player.pos.set(0, 0, 36);
   g.player.yaw = 0;
   g.toggleDrive();
 });
@@ -208,15 +208,14 @@ await page.evaluate(() => {
   g.freezeCam = null;
   g.editingAvatar = false;
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 30);
+  g.player.pos.set(0, 0, 36);
   g.player.yaw = 0;
-  // Match gameplay chase defaults (toggleDrive sets these; reaffirm)
-  g.cam.yaw = 0.12; // slight rear ¾ — car centered
-  g.cam.pitch = 0.16;
-  g.cam.dist = 8.0;
-  g.camShown = 8.0;
+  g.cam.yaw = 0.12;
+  g.cam.pitch = 0.15;
+  g.cam.dist = 10.5;
+  g.camShown = 10.5;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 30);
+    g.vehicleMesh.position.set(0, 0, 36);
     g.vehicleMesh.rotation.y = 0;
   }
   g.hud?.setWhere?.('Dag · Sol');
@@ -233,6 +232,7 @@ await page.evaluate(async () => {
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
   g.enterHouse(); // gameplay default interior cam facing window
+  g.lighting?.setExposure?.(0.38);
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Stand in living looking at panoramic (−Z) — same pose enterHouse aims for
   g.player.pos.set(0.3, 0, 2.2);

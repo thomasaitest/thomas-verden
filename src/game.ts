@@ -542,8 +542,9 @@ export class Game {
     this.cam.dist = 5.6;
     this.camShown = 5.6;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
-    this.scene.background = new THREE.Color('#d8dde4');
+    this.scene.background = new THREE.Color('#9aa3ae');
     this.scene.fog = null;
+    this.lighting?.setExposure?.(0.38);
     this.actors.forEach((a) => a.pos.set(this.player.pos.x + (this.rng() - 0.5) * 3, 0, this.player.pos.z - 2.5));
     this.syncPets();
     sfx.door();
@@ -567,6 +568,7 @@ export class Game {
       this.scene.background = this.outdoorBgBackup;
       this.outdoorBgBackup = null;
     }
+    this.lighting?.setExposure?.(0.58);
     this.setSky();
     const p = this.town.entrances.home;
     this.player.pos.set(p.x, 0, p.z);
@@ -982,7 +984,7 @@ export class Game {
     this.renderer.setSize(w, h);
     this.lighting?.resize(w, h);
     this.camera.aspect = w / h;
-    this.camera.fov = w < h ? 68 : (this.driving ? 52 : 55);
+    this.camera.fov = w < h ? 68 : (this.driving ? 55 : 55);
     this.camera.updateProjectionMatrix();
   }
 
@@ -1263,21 +1265,21 @@ export class Game {
       this.camera.position.set(f.x, f.y, f.z);
       this.camera.lookAt(f.lx, f.ly, f.lz);
     } else {
-    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.65 : 1.55), p.pos.z);
+    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.55 : 1.55), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
-    // Driving chase: car centered lower-middle ~35% width, slight rear ¾ (concept 4-bil)
-    // ~7.5 m back, cam ~2.0 m up, small yaw bias, look ahead down the road
+    // Driving chase: ~35% frame width, centered lower third, road to horizon (concept 4-bil)
+    // Car is ~4.5 m — stand ~10.5 m back, cam ~2.0 m, slight ¾
     if (this.driving && !seat) {
-      const ahead = 3.2;
+      const ahead = 4.5;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         const wantYaw = p.yaw + 0.12;
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
-        // sin(0.16)*8.0 ≈ 1.27 → cam y ≈ 0.65+1.27 ≈ 1.92
-        this.cam.pitch += (0.16 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (8.0 - this.cam.dist) * Math.min(1, dt * 5);
+        // sin(0.18)*10.5 ≈ 1.88 → cam y ≈ 0.55+1.88 ≈ 2.43; pitch 0.15 → ~2.1
+        this.cam.pitch += (0.15 - this.cam.pitch) * Math.min(1, dt * 5);
+        this.cam.dist += (10.5 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1320,7 +1322,7 @@ export class Game {
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
       const coll = this.mode === 'house'
         ? desired
-        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 6.0 : 2.0 });
+        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 7.5 : 2.0 });
       this.camera.position.copy(coll);
       this.camera.lookAt(target);
       if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
@@ -1913,8 +1915,8 @@ export class Game {
     this.syncVehicleMesh();
     // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
     this.cam.yaw = this.player.yaw + 0.12;
-    this.cam.pitch = 0.16;
-    this.cam.dist = 8.0;
+    this.cam.pitch = 0.15;
+    this.cam.dist = 10.5;
     this.camShown = this.cam.dist;
     this.editingAvatar = false;
     sfx.whoosh();

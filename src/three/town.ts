@@ -31,6 +31,7 @@ import {
   preloadArchMaterials,
 } from './futuristicArch.ts';
 import { buildCar } from './vehicles.ts';
+import { loadModel } from './assets.ts';
 import { SharedMats } from './pbrTextures.ts';
 
 export type ZoneKind = 'home' | 'shop' | 'vet' | 'eggs' | 'doors' | 'play' | 'cars' | 'pets';
@@ -808,37 +809,18 @@ export function buildTown(): Town {
   }
 
 
-  // Ambient plaza people + road hover traffic (concept: busy street)
+  // Ambient plaza people (Quaternius humans + walk) + road hover traffic
+  const npcMixers: THREE.AnimationMixer[] = [];
+  let npcClock = 0;
   {
-    const skinCols = ['#f0c9a8', '#c68642', '#8d5524', '#e0ac69', '#ffdbac'];
-    const shirtCols = ['#3ecbff', '#5a8cff', '#e8eef4', '#c88bff', '#54c45e', '#ff6f6f'];
-    const mkPerson = (x: number, z: number, yaw: number, seed: number) => {
-      const g = new THREE.Group();
-      const skin = skinCols[seed % skinCols.length]!;
-      const shirt = shirtCols[(seed * 3) % shirtCols.length]!;
-      const body = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.22, 0.55, 4, 8),
-        new THREE.MeshStandardMaterial({ color: shirt, roughness: 0.65, metalness: 0.05 }),
-      );
-      body.position.y = 0.95;
-      g.add(body);
-      const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.18, 12, 10),
-        new THREE.MeshStandardMaterial({ color: skin, roughness: 0.7 }),
-      );
-      head.position.y = 1.55;
-      g.add(head);
-      const legs = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.14, 0.35, 4, 8),
-        new THREE.MeshStandardMaterial({ color: '#2a3344', roughness: 0.7 }),
-      );
-      legs.position.y = 0.4;
-      g.add(legs);
-      g.position.set(x, 0, z);
-      g.rotation.y = yaw;
-      g.userData.noFade = true;
-      return g;
-    };
+    const NPC_PATHS = [
+      'characters/m-casual-2.glb',
+      'characters/m-casual-hoodie.glb',
+      'characters/w-casual.glb',
+      'characters/w-scifi.glb',
+      'characters/w-suit.glb',
+      'characters/m-spacesuit.glb',
+    ] as const;
     const walkers: [number, number, number, number][] = [
       // plaza ring
       [6, -4, 0.4, 1], [-7, 3, -1.2, 2], [3, 8, 2.1, 3], [-4, -9, 0.8, 4],
@@ -849,17 +831,49 @@ export function buildTown(): Town {
       [8, 26, -1.4, 15], [-9, 36, 1.5, 16],
     ];
     for (const [x, z, yaw, seed] of walkers) {
-      const p = mkPerson(x, z, yaw, seed);
-      group.add(p);
-      shadowAll(p);
+      const holder = new THREE.Group();
+      holder.position.set(x, 0, z);
+      holder.rotation.y = yaw;
+      holder.userData.noFade = true;
+      group.add(holder);
+      const path = NPC_PATHS[seed % NPC_PATHS.length]!;
+      void loadModel(path).then((model) => {
+        // Quaternius humans are ~1.7–2 m; normalize to ~1.7 m
+        const box = new THREE.Box3().setFromObject(model);
+        const h = Math.max(0.5, box.max.y - box.min.y);
+        model.scale.setScalar(1.7 / h);
+        model.position.y = -box.min.y * (1.7 / h);
+        holder.add(model);
+        shadowAll(model);
+        const clips = model.animations?.length ? model.animations : (model.userData.animations as THREE.AnimationClip[] | undefined) ?? [];
+        const walk = clips.find((c) => /walk/i.test(c.name)) || clips.find((c) => /idle/i.test(c.name));
+        if (walk) {
+          const mixer = new THREE.AnimationMixer(model);
+          const act = mixer.clipAction(walk);
+          act.play();
+          if (/walk/i.test(walk.name)) act.timeScale = 0.85;
+          npcMixers.push(mixer);
+        }
+      }).catch(() => {
+        // fallback capsule if GLB missing
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.22, 0.55, 4, 8),
+          new THREE.MeshStandardMaterial({ color: '#5a8cff', roughness: 0.65 }),
+        );
+        body.position.y = 0.95;
+        holder.add(body);
+      });
     }
-    // Road traffic ONLY on asphalt lanes — never inside PLAZA_R (~13)
+    // Road traffic on asphalt — never on plaza; leave chase spawn z≈36 clear ahead (−Z)
     const traffic = [
-      { id: 'bil-rosa', x: 1.6, z: 22, yaw: 0 },
-      { id: 'bil-lilla', x: -1.6, z: 28, yaw: Math.PI },
-      { id: 'bil-gul', x: 1.55, z: -22, yaw: 0 },
-      { id: 'bil-gronn', x: -1.55, z: 34, yaw: Math.PI },
-      { id: 'bil-bla', x: 1.6, z: 40, yaw: 0 },
+      { id: 'bil-rosa', x: 1.55, z: 48, yaw: 0 },
+      { id: 'bil-lilla', x: -1.55, z: 54, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.55, z: 10, yaw: 0 },
+      { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
+      { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
+      // Gate-visible road cars (south approach + mid belt)
+      { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
+      { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
     ];
     for (const c of traffic) {
       const car = buildCar(c.id);
@@ -1256,6 +1270,9 @@ export function buildTown(): Town {
     buildingAt,
     size: SIZE,
     update(t: number, px?: number, pz?: number, camX?: number, camZ?: number) {
+      const dt = npcClock ? Math.min(0.05, Math.max(0, t - npcClock)) : 1 / 60;
+      npcClock = t;
+      for (const m of npcMixers) m.update(dt);
       for (const b of walkIns) {
         const inside = px !== undefined && pz !== undefined && insideBuilding(px, pz) === b.kind;
         b.roof.visible = !inside;
