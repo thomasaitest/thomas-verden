@@ -562,14 +562,17 @@ export function createInterior(): Interior {
                 })
               : partMat,
           );
-          // Slimmer moderne partitions so alcove walls don't read as giant pillars
-          const slim = house.style === 'moderne' && !isGlassWall ? 0.55 : 1;
-          m.scale.set(isGlassWall ? 0.1 : r.hw * 2 * slim, WALL_H - 0.2, r.hd * 2 * slim);
-          m.position.set(r.x, y0 + (WALL_H - 0.2) / 2, r.z);
+          // Slimmer moderne partitions; short cross-walls only ~door height (not full towers)
+          const slim = house.style === 'moderne' && !isGlassWall ? 0.45 : 1;
+          const isCross = house.style === 'moderne' && !isGlassWall && r.hd <= 0.25;
+          const partH = isCross ? 2.35 : WALL_H - 0.2;
+          m.scale.set(isGlassWall ? 0.1 : r.hw * 2 * slim, partH, r.hd * 2 * slim);
+          m.position.set(r.x, y0 + partH / 2, r.z);
           m.receiveShadow = !isGlassWall;
           m.castShadow = !isGlassWall;
           g.add(m);
-          if (!isGlassWall) {
+          // Moderne: no skirting/capital trim — those read as floating pillar plinths
+          if (!isGlassWall && house.style !== 'moderne') {
             box(g, trim, [r.x, y0 + 0.2, r.z], [r.hw * 2 + 0.05, 0.4, r.hd * 2 + 0.05]);
             box(g, trim, [r.x, y0 + WALL_H - 0.2, r.z], [r.hw * 2 + 0.08, 0.2, r.hd * 2 + 0.08]);
           }
