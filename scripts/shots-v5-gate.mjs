@@ -26,14 +26,16 @@ async function prep(page) {
       locked: false,
       createdAt: now,
       items: [
-        { uid: 'it1', itemId: 'seng', x: 7, z: -2, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
-        { uid: 'it2', itemId: 'spisebord', x: 4, z: 2, rot: 0, scale: 0.9, color: '#1a2230', floor: 0 },
-        { uid: 'it3', itemId: 'langsofa', x: -2, z: 0.5, rot: 0.2, scale: 1.3, color: '#c8d0d8', floor: 0 },
-        { uid: 'it4', itemId: 'tv', x: -2, z: -6, rot: 0, scale: 1.3, color: '#15202c', floor: 0 },
-        { uid: 'it7', itemId: 'benk', x: 5.5, z: -1, rot: 1.57, scale: 1.2, color: '#2a3344', floor: 0 },
-        { uid: 'it8', itemId: 'krakk', x: 4.3, z: -1, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -2, z: 0.8, rot: 0, scale: 1.5, color: '#3a4450', floor: 0 },
-        { uid: 'it10', itemId: 'potteplante', x: 6, z: -5, rot: 0, scale: 1, color: '#5cc36b', floor: 0 },
+        { uid: 'it1', itemId: 'seng', x: 7.5, z: -5, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
+        { uid: 'it2', itemId: 'spisebord', x: 5.5, z: 3.5, rot: 0, scale: 0.95, color: '#1a2230', floor: 0 },
+        { uid: 'it3', itemId: 'langsofa', x: -1.5, z: 1.2, rot: 0.15, scale: 1.35, color: '#d0d6de', floor: 0 },
+        { uid: 'it4', itemId: 'tv', x: -1.5, z: -6.2, rot: 0, scale: 1.35, color: '#15202c', floor: 0 },
+        { uid: 'it7', itemId: 'benk', x: 4.8, z: -2.2, rot: 0, scale: 1.35, color: '#1a2230', floor: 0 },
+        { uid: 'it8', itemId: 'krakk', x: 4.0, z: -1.2, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+        { uid: 'it8b', itemId: 'krakk', x: 5.6, z: -1.2, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -1.5, z: 1.4, rot: 0, scale: 1.6, color: '#3a4450', floor: 0 },
+        { uid: 'it10', itemId: 'potteplante', x: 6.5, z: -6, rot: 0, scale: 1.1, color: '#5cc36b', floor: 0 },
+        { uid: 'it11', itemId: 'salongbord', x: -1.5, z: 2.8, rot: 0, scale: 1.1, color: '#c8d0d8', floor: 0 },
       ],
     };
     const save = {
@@ -132,7 +134,7 @@ await page.evaluate(async () => {
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 1.2, y: 2.05, z: -9.0, lx: 0.2, ly: 1.8, lz: 6 };
+  g.freezeCam = { x: 1.4, y: 2.15, z: -10.2, lx: 0.3, ly: 2.0, lz: 5 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '01-gate-plaza', 2800);
@@ -164,7 +166,7 @@ await page.evaluate(() => {
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
   // chase cam behind car looking toward plaza/fountain
-  g.freezeCam = { x: 1.5, y: 2.5, z: 36, lx: 0, ly: 1.3, lz: 12 };
+  g.freezeCam = { x: 0.8, y: 2.05, z: 35.5, lx: 0, ly: 1.1, lz: 18 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '02-car-street', 2400);
@@ -175,13 +177,12 @@ await page.evaluate(() => {
   g.freezeCam = null;
   if (g.driving) g.toggleDrive();
   g.enterHouse();
-  const w = g.interior.w / 2;
   const d = g.interior.d / 2;
-  g.player.pos.set(0.2, 0, d - 4.5);
-  g.player.yaw = Math.PI;
+  // stand near sofa looking toward kitchen island + back holo wall
+  g.player.pos.set(1.2, 0, 3.2);
+  g.player.yaw = Math.PI + 0.35;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  // behind avatar looking into living room toward panoramic window
-  g.freezeCam = { x: 3.5, y: 1.75, z: 2.5, lx: -3.0, ly: 1.6, lz: -6.5 };
+  g.freezeCam = { x: 2.8, y: 1.65, z: 4.6, lx: -1.2, ly: 1.45, lz: -2.5 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2800);

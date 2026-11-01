@@ -184,9 +184,44 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   g.add(mid);
 
   // Soft interior point light
-  const pt = new THREE.PointLight('#ffd7a8', 1.4, 12, 2);
+  const pt = new THREE.PointLight('#ffd7a8', 1.6, 14, 2);
   pt.position.set(glassX, 2.4, d / 2 - wellDepth * 0.6);
   g.add(pt);
+
+  // Eye-level façade sign (concept: Solvind / Nordic Tech / Havblomst on front)
+  {
+    const sc = document.createElement('canvas');
+    sc.width = 768;
+    sc.height = 160;
+    const sctx = sc.getContext('2d')!;
+    sctx.fillStyle = '#0c1424f0';
+    sctx.roundRect(12, 12, 744, 136, 28);
+    sctx.fill();
+    sctx.strokeStyle = spec.logoColor;
+    sctx.lineWidth = 6;
+    sctx.roundRect(18, 18, 732, 124, 24);
+    sctx.stroke();
+    sctx.fillStyle = '#eef7ff';
+    sctx.font = '700 54px Inter, system-ui, sans-serif';
+    sctx.textAlign = 'center';
+    sctx.textBaseline = 'middle';
+    sctx.fillText(spec.label.toUpperCase(), 384, 88);
+    const stex = new THREE.CanvasTexture(sc);
+    stex.colorSpace = THREE.SRGBColorSpace;
+    const signW = Math.min(glassW * 0.92, 7.5);
+    const sign = new THREE.Mesh(
+      new THREE.PlaneGeometry(signW, 0.85),
+      new THREE.MeshBasicMaterial({ map: stex, transparent: true }),
+    );
+    sign.position.set(glassX, 0.3 + glassH + 0.55, d / 2 + 0.14);
+    g.add(sign);
+    const signGlow = new THREE.Mesh(
+      new THREE.BoxGeometry(signW + 0.15, 0.95, 0.06),
+      glowMat(spec.logoColor, 0.55),
+    );
+    signGlow.position.set(glassX, 0.3 + glassH + 0.55, d / 2 + 0.08);
+    g.add(signGlow);
+  }
 
   // Floor band between storeys
   for (let i = 1; i < storeys; i++) {
@@ -279,18 +314,24 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
 /** Slim multi-tier stone/metal fountain — many thin arcing jets, translucent water, ring lights. */
 export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; rings: THREE.Mesh[] } {
   const group = new THREE.Group();
-  const stone = SharedMats.concrete;
-  const dark = metalMat('#3a4450');
+  // Clean white stone (concept fountain is bright white, not grey concrete)
+  const stone = new THREE.MeshStandardMaterial({
+    color: '#d4dae2',
+    metalness: 0.06,
+    roughness: 0.38,
+    envMapIntensity: 0.9,
+  });
+  const dark = metalMat('#2a3340');
 
   // Outer basin
-  const outer = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.9, 0.55, 64, 1, true), stone);
-  outer.position.y = 0.35;
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(4.7, 4.95, 0.58, 64, 1, true), stone);
+  outer.position.y = 0.36;
   outer.castShadow = true;
   outer.receiveShadow = true;
   group.add(outer);
-  const outerLip = new THREE.Mesh(new THREE.TorusGeometry(4.75, 0.12, 10, 64), stone);
+  const outerLip = new THREE.Mesh(new THREE.TorusGeometry(4.78, 0.14, 10, 64), stone);
   outerLip.rotation.x = Math.PI / 2;
-  outerLip.position.y = 0.62;
+  outerLip.position.y = 0.64;
   group.add(outerLip);
   const floor = new THREE.Mesh(new THREE.CylinderGeometry(4.55, 4.55, 0.08, 64), dark);
   floor.position.y = 0.12;
@@ -298,57 +339,57 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   group.add(floor);
 
   const waterMat = new THREE.MeshPhysicalMaterial({
-    color: '#5aa8c0',
+    color: '#6ab8d0',
     metalness: 0.0,
-    roughness: 0.06,
-    transmission: 0.82,
-    thickness: 0.55,
+    roughness: 0.05,
+    transmission: 0.7,
+    thickness: 0.45,
     transparent: true,
-    opacity: 1,
-    envMapIntensity: 1.35,
+    opacity: 0.95,
+    envMapIntensity: 1.4,
     ior: 1.33,
   });
   const water = new THREE.Mesh(new THREE.CircleGeometry(4.5, 64), waterMat);
   water.rotation.x = -Math.PI / 2;
-  water.position.y = 0.48;
+  water.position.y = 0.5;
   group.add(water);
 
   // Mid tier
-  const midCol = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 1.15, 24), stone);
-  midCol.position.y = 1.05;
+  const midCol = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.75, 1.2, 28), stone);
+  midCol.position.y = 1.08;
   midCol.castShadow = true;
   group.add(midCol);
-  const midBowl = new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.15, 0.28, 48, 1, true), stone);
-  midBowl.position.y = 1.55;
+  const midBowl = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.2, 0.3, 48, 1, true), stone);
+  midBowl.position.y = 1.58;
   group.add(midBowl);
-  const midLip = new THREE.Mesh(new THREE.TorusGeometry(2.08, 0.08, 8, 48), stone);
+  const midLip = new THREE.Mesh(new THREE.TorusGeometry(2.12, 0.09, 8, 48), stone);
   midLip.rotation.x = Math.PI / 2;
-  midLip.position.y = 1.68;
+  midLip.position.y = 1.72;
   group.add(midLip);
-  const midWater = new THREE.Mesh(new THREE.CircleGeometry(1.95, 48), waterMat.clone());
+  const midWater = new THREE.Mesh(new THREE.CircleGeometry(2.0, 48), waterMat.clone());
   midWater.rotation.x = -Math.PI / 2;
-  midWater.position.y = 1.62;
+  midWater.position.y = 1.66;
   group.add(midWater);
 
   // Top
-  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.32, 1.15, 20), stone);
-  col.position.y = 2.3;
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 1.2, 20), stone);
+  col.position.y = 2.35;
   group.add(col);
-  const topBowl = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), stone);
-  topBowl.position.y = 3.0;
+  const topBowl = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), stone);
+  topBowl.position.y = 3.05;
   group.add(topBowl);
-  const topWater = new THREE.Mesh(new THREE.CircleGeometry(0.42, 24), waterMat.clone());
+  const topWater = new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), waterMat.clone());
   topWater.rotation.x = -Math.PI / 2;
-  topWater.position.y = 3.05;
+  topWater.position.y = 3.1;
   group.add(topWater);
 
   const rings: THREE.Mesh[] = [];
   for (const [ry, rr, thick] of [
-    [0.5, 4.5, 0.035],
-    [1.62, 1.92, 0.03],
-    [3.05, 0.45, 0.022],
+    [0.52, 4.5, 0.04],
+    [1.66, 1.95, 0.035],
+    [3.1, 0.48, 0.025],
   ] as const) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, thick, 8, 64), glowMat('#3ecbff', 1.35));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, thick, 8, 64), glowMat('#3ecbff', 1.6));
     ring.rotation.x = Math.PI / 2;
     ring.position.y = ry;
     group.add(ring);
@@ -356,80 +397,87 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   }
 
   const jets: THREE.Mesh[] = [];
-  const jetMat = new THREE.MeshPhysicalMaterial({
-    color: '#5ec8f0',
+  // Bright opaque water streams — MeshBasic so they always read (Physical+transmission vanished under ACES)
+  const jetMat = new THREE.MeshBasicMaterial({
+    color: '#c8f0ff',
     transparent: true,
-    opacity: 0.85,
-    transmission: 0.55,
-    roughness: 0.08,
-    metalness: 0,
+    opacity: 0.82,
     depthWrite: false,
   });
-  // Outer ring of arcing jets
-  for (let i = 0; i < 18; i++) {
-    const ang = (i / 18) * Math.PI * 2;
+  const mistMat = new THREE.MeshBasicMaterial({
+    color: '#e8f8ff',
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+
+  // Outer ring of thick arcing jets
+  for (let i = 0; i < 20; i++) {
+    const ang = (i / 20) * Math.PI * 2;
     const pts: THREE.Vector3[] = [];
-    for (let s = 0; s <= 20; s++) {
-      const u = s / 20;
-      const r = 0.4 + u * 3.6;
-      const y = 1.65 + Math.sin(u * Math.PI) * 2.8 - u * 0.05;
+    for (let s = 0; s <= 24; s++) {
+      const u = s / 24;
+      const r = 0.35 + u * 3.85;
+      const y = 1.7 + Math.sin(u * Math.PI) * 3.2 - u * 0.08;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.065, 6, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.095, 7, false), jetMat);
+    tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
   }
   // Inner ring
-  for (let i = 0; i < 10; i++) {
-    const ang = (i / 10) * Math.PI * 2 + 0.15;
+  for (let i = 0; i < 12; i++) {
+    const ang = (i / 12) * Math.PI * 2 + 0.12;
     const pts: THREE.Vector3[] = [];
-    for (let s = 0; s <= 14; s++) {
-      const u = s / 14;
-      const r = 0.25 + u * 1.55;
-      const y = 2.95 + Math.sin(u * Math.PI) * 1.1;
+    for (let s = 0; s <= 16; s++) {
+      const u = s / 16;
+      const r = 0.2 + u * 1.7;
+      const y = 3.0 + Math.sin(u * Math.PI) * 1.35;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 28, 0.048, 5, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.07, 6, false), jetMat);
+    tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
   }
-  // Center plume
+  // Center plume + mist cone
   const plumePts: THREE.Vector3[] = [];
-  for (let s = 0; s <= 22; s++) {
-    const u = s / 22;
-    plumePts.push(new THREE.Vector3(Math.sin(u * 12) * 0.05, 3.05 + u * 3.0, Math.cos(u * 12) * 0.05));
+  for (let s = 0; s <= 24; s++) {
+    const u = s / 24;
+    plumePts.push(new THREE.Vector3(Math.sin(u * 14) * 0.06, 3.1 + u * 3.4, Math.cos(u * 14) * 0.06));
   }
-  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 32, 0.08, 6, false), jetMat);
+  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 36, 0.11, 7, false), jetMat);
+  plume.frustumCulled = false;
   group.add(plume);
   jets.push(plume);
 
-  // Soft water curtains (read as volume, not just wires)
-  const curtainMat = new THREE.MeshPhysicalMaterial({
-    color: '#8ec8e0',
-    transparent: true,
-    opacity: 0.32,
-    transmission: 0.55,
-    roughness: 0.15,
-    metalness: 0,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-  });
-  for (let i = 0; i < 12; i++) {
-    const ang = (i / 12) * Math.PI * 2;
-    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 2.4), curtainMat);
-    curtain.position.set(Math.cos(ang) * 2.2, 2.2, Math.sin(ang) * 2.2);
+  const mist = new THREE.Mesh(new THREE.ConeGeometry(1.15, 3.6, 16, 1, true), mistMat);
+  mist.position.y = 4.6;
+  mist.frustumCulled = false;
+  group.add(mist);
+  jets.push(mist);
+
+  // Soft water curtains (volume)
+  for (let i = 0; i < 14; i++) {
+    const ang = (i / 14) * Math.PI * 2;
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.8), mistMat);
+    curtain.position.set(Math.cos(ang) * 2.35, 2.35, Math.sin(ang) * 2.35);
     curtain.rotation.y = ang + Math.PI / 2;
-    curtain.rotation.x = -0.35;
+    curtain.rotation.x = -0.4;
+    curtain.frustumCulled = false;
     group.add(curtain);
     jets.push(curtain);
   }
 
-  const foamMat = new THREE.MeshBasicMaterial({ color: '#e8f7ff', transparent: true, opacity: 0.45, depthWrite: false });
-  for (let i = 0; i < 16; i++) {
-    const ang = (i / 16) * Math.PI * 2;
-    const foam = new THREE.Mesh(new THREE.CircleGeometry(0.18 + (i % 3) * 0.06, 12), foamMat);
+  // Splash foam discs
+  const foamMat = new THREE.MeshBasicMaterial({ color: '#f0fbff', transparent: true, opacity: 0.55, depthWrite: false });
+  for (let i = 0; i < 22; i++) {
+    const ang = (i / 22) * Math.PI * 2;
+    const foam = new THREE.Mesh(new THREE.CircleGeometry(0.22 + (i % 3) * 0.08, 14), foamMat);
     foam.rotation.x = -Math.PI / 2;
-    foam.position.set(Math.cos(ang) * (1.2 + (i % 4) * 0.55), 0.52, Math.sin(ang) * (1.2 + (i % 4) * 0.55));
+    foam.position.set(Math.cos(ang) * (1.15 + (i % 5) * 0.55), 0.54, Math.sin(ang) * (1.15 + (i % 5) * 0.55));
     group.add(foam);
   }
 

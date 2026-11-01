@@ -84,10 +84,10 @@ function applyMaps(mat: THREE.MeshStandardMaterial, maps: PbrMaps, metalnessDefa
 /** Shared scene materials — maps assigned by preloadSharedPbr(). */
 export const SharedMats = {
   white: new THREE.MeshStandardMaterial({
-    color: '#a8b0ba',
-    metalness: 0.1,
-    roughness: 0.52,
-    envMapIntensity: 0.75,
+    color: '#c8ced8',
+    metalness: 0.08,
+    roughness: 0.42,
+    envMapIntensity: 0.85,
   }),
   wood: new THREE.MeshStandardMaterial({
     color: '#d4b896',
@@ -102,10 +102,10 @@ export const SharedMats = {
     envMapIntensity: 0.65,
   }),
   paving: new THREE.MeshStandardMaterial({
-    color: '#a8b0b8',
+    color: '#b8c0c8',
     metalness: 0.05,
-    roughness: 0.78,
-    envMapIntensity: 0.55,
+    roughness: 0.72,
+    envMapIntensity: 0.6,
   }),
   asphalt: new THREE.MeshStandardMaterial({
     color: '#4a4a50',
@@ -154,13 +154,19 @@ export async function preloadSharedPbr(): Promise<void> {
         loadPbr('grass', [10, 10]),
         loadPbr('wood', [4, 4]),
       ]);
-      applyMaps(SharedMats.white, concrete, 0.08);
-      SharedMats.white.color.set('#a8b0ba');
-      SharedMats.white.roughness = 0.55;
+      // White façades: only subtle normal, NO concrete albedo (keeps clean white)
+      if (concrete.normalMap) {
+        SharedMats.white.normalMap = concrete.normalMap;
+        SharedMats.white.normalScale = new THREE.Vector2(0.25, 0.25);
+      }
+      SharedMats.white.color.set('#c8ced8');
+      SharedMats.white.roughness = 0.42;
+      SharedMats.white.metalness = 0.08;
       applyMaps(SharedMats.wood, wood, 0.02);
       SharedMats.wood.color.set('#d4b896');
       applyMaps(SharedMats.concrete, concrete, 0.08);
       applyMaps(SharedMats.paving, paving, 0.05);
+      SharedMats.paving.color.set('#b8c0c8');
       applyMaps(SharedMats.asphalt, asphalt, 0.05);
       applyMaps(SharedMats.metal, metal, 0.85);
       SharedMats.metal.metalness = 0.85;

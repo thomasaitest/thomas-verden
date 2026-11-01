@@ -605,9 +605,9 @@ export function buildTown(): Town {
   {
     const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
       // angles picked to clear landmark footprints (shop/pets/cars/play/home)
-      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.95, dist: 16, w: 13 },
-      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.35, dist: 17, w: 12 },
-      { label: 'Havblomst', logoColor: '#4a9a62', ang: 1.35, dist: 16, w: 12 },
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.85, dist: 15.5, w: 14 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.25, dist: 16.2, w: 13 },
+      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.25, dist: 15.8, w: 13 },
       { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 17, w: 11 },
       { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 17, w: 11 },
     ];
@@ -627,13 +627,16 @@ export function buildTown(): Town {
       group.add(shop);
       shadowAll(shop);
     }
-    // planters around plaza
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2 + 0.3;
+    // planters + trees around plaza (concept greenery)
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + 0.25;
       const pl = buildPlanter();
-      pl.position.set(Math.sin(a) * 11.5, 0, Math.cos(a) * 11.5);
+      pl.position.set(Math.sin(a) * 11.2, 0, Math.cos(a) * 11.2);
       pl.rotation.y = a;
       stat.add(pl);
+      if (i % 2 === 0) {
+        tree(stat, Math.sin(a) * 12.6, Math.cos(a) * 12.6, 1.15, i % 3, true);
+      }
     }
   }
 
@@ -1105,7 +1108,7 @@ export function buildTown(): Town {
         else if (equipUse.id === 'seesaw') seesawGroup.rotation.z = seesawAngle(u);
         else if (equipUse.id === 'merry') merryGroup.rotation.y = -merryAngle(u);
       }
-      if (waterSurf) waterSurf.position.y = 0.48 + Math.sin(t * 2) * 0.015;
+      if (waterSurf) waterSurf.position.y = 0.5 + Math.sin(t * 2) * 0.012;
       // Jets on for ~2.2s, off for ~1.8s
       const jetOn = true; // always on for visual fidelity
       for (const ring of fountainRings) {
@@ -1124,18 +1127,16 @@ export function buildTown(): Town {
           if ((o as THREE.Mesh).isMesh && o.userData.spin) o.rotation.y = t * 18 + di;
         });
       }
-      // Sleek fountain jets are authored in-place — only pulse opacity/scale, never rewrite positions
+      // Sleek fountain jets stay in place — mild opacity pulse only (no position/scale rewrite)
       for (let i = 0; i < jets.length; i++) {
         const j = jets[i]!;
         j.visible = jetOn;
         if (!jetOn) continue;
-        const pulse = 0.92 + Math.sin(t * 6 + i * 0.7) * 0.08;
-        j.scale.setScalar(pulse);
-        const mat = (j as THREE.Mesh).material as THREE.MeshPhysicalMaterial | THREE.MeshBasicMaterial;
+        const mat = (j as THREE.Mesh).material as THREE.MeshBasicMaterial | THREE.MeshPhysicalMaterial;
         if (mat && 'opacity' in mat) {
           const baseOp = (j.userData.baseOpacity as number) ?? (mat.opacity || 0.7);
           j.userData.baseOpacity = baseOp;
-          mat.opacity = Math.min(1, baseOp * (0.85 + Math.sin(t * 8 + i) * 0.15));
+          mat.opacity = Math.min(1, baseOp * (0.88 + Math.sin(t * 7 + i * 0.55) * 0.12));
         }
       }
     },
