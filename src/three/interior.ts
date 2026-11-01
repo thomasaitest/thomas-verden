@@ -67,16 +67,20 @@ export function createInterior(): Interior {
       floorGroups.forEach((g) => g.clear());
       shell.add(...floorGroups);
       // Warm cove-style fills — keep moderate so whites don't haze under ACES
-      const fill = new THREE.PointLight('#ffd7b0', 0.85, 32, 2);
+      const fill = new THREE.PointLight('#ffd7b0', 1.15, 34, 2);
       fill.name = 'InteriorFillLight';
       fill.position.set(0, 4.2, 0);
       shell.add(fill);
       const fill2 = new THREE.PointLight('#c8e4ff', 0.4, 26, 2);
       fill2.position.set(-5, 3.2, -4);
       shell.add(fill2);
-      const fill3 = new THREE.PointLight('#ffe2c0', 0.45, 20, 2);
+      const fill3 = new THREE.PointLight('#ffe2c0', 0.7, 22, 2);
       fill3.position.set(4, 2.2, 2);
       shell.add(fill3);
+      const kit = new THREE.PointLight('#ffcc88', 0.9, 10, 2);
+      kit.name = 'KitchenGlow';
+      kit.position.set(4.5, 1.1, -2);
+      shell.add(kit);
       const { w, d } = roomSize(house.style);
       const L = houseLayout(house.style);
       api.layout = L;
@@ -228,7 +232,7 @@ export function createInterior(): Interior {
         // LED cove around ceiling perimeter (concept 2-hus-inne)
         {
           const coveY = y0 + WALL_H - 0.12;
-          const coveMat = glowMat('#ffe6c8', 1.85);
+          const coveMat = glowMat('#ffe8d0', 2.4);
           const mkCove = (sx: number, sz: number, px: number, pz: number) => {
             const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.04, sz), coveMat);
             c.position.set(px, coveY, pz);
@@ -266,6 +270,45 @@ export function createInterior(): Interior {
             );
             shelf.position.set(-w * 0.18 + sx * 2.6, y0 + 2.4, -d / 2 + 0.45);
             fg.add(shelf);
+          }
+
+          // panoramic city window on back wall (concept skyline)
+          {
+            const sky = document.createElement('canvas');
+            sky.width = 512; sky.height = 256;
+            const sctx = sky.getContext('2d')!;
+            const grd = sctx.createLinearGradient(0, 0, 0, 256);
+            grd.addColorStop(0, '#9ec4e8'); grd.addColorStop(0.55, '#d2e4f2'); grd.addColorStop(1, '#e8eef4');
+            sctx.fillStyle = grd; sctx.fillRect(0, 0, 512, 256);
+            sctx.fillStyle = '#6a7a88';
+            for (let k = 0; k < 22; k++) {
+              const bw = 10 + (k * 7) % 28;
+              const bh = 40 + (k * 19) % 140;
+              sctx.fillRect(8 + k * 23, 256 - bh, bw, bh);
+              sctx.fillStyle = '#8ecbff88';
+              for (let wy = 0; wy < 6; wy++) sctx.fillRect(12 + k * 23, 256 - bh + 8 + wy * 14, bw - 8, 6);
+              sctx.fillStyle = '#6a7a88';
+            }
+            const stex = new THREE.CanvasTexture(sky);
+            stex.colorSpace = THREE.SRGBColorSpace;
+            const livingSky = new THREE.Mesh(
+              new THREE.PlaneGeometry(5.2, 2.8),
+              new THREE.MeshBasicMaterial({ map: stex }),
+            );
+            livingSky.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.22);
+            fg.add(livingSky);
+            const frame = new THREE.Mesh(
+              new THREE.BoxGeometry(5.4, 3.0, 0.08),
+              new THREE.MeshStandardMaterial({ color: '#d0d6de', metalness: 0.4, roughness: 0.35 }),
+            );
+            frame.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.18);
+            fg.add(frame);
+            const pane = new THREE.Mesh(
+              new THREE.PlaneGeometry(5.15, 2.75),
+              physicalGlass('#b8d8ec', 0.55),
+            );
+            pane.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.26);
+            fg.add(pane);
           }
         }
         // inner walls between the rooms, with door gaps

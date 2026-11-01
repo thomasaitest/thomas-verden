@@ -115,8 +115,8 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   }
 
   // Upper front spandrel (above glass) + side of wood bay
-  const glassW = w * 0.58;
-  const woodW = w * 0.32;
+  const glassW = w * 0.52;
+  const woodW = w * 0.38;
   const glassH = h * 0.78;
   const glassX = -woodSide * (w * 0.12);
 
@@ -240,17 +240,17 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   const solarMat = metalMat('#1a3358');
   solarMat.roughness = 0.25;
   solarMat.metalness = 0.9;
-  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 2.6, 0.12, d * 0.62), solarMat);
-  solar.position.set(0, h + 0.85, d * 0.22);
-  solar.rotation.x = -0.22;
+  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 2.8, 0.14, d * 0.72), solarMat);
+  solar.position.set(0, h + 0.95, d * 0.32);
+  solar.rotation.x = -0.28;
   solar.castShadow = true;
   g.add(solar);
   // solar cell grid
   for (let ix = -5; ix <= 5; ix++) {
     for (let iz = -2; iz <= 2; iz++) {
-      const cell = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.02, 0.55), metalMat('#243a62'));
-      cell.position.set(ix * 0.95, h + 0.92, d * 0.08 + iz * 0.65);
-      cell.rotation.x = -0.22;
+      const cell = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.025, 0.55), metalMat('#1e4a7a'));
+      cell.position.set(ix * 0.95, h + 1.04, d * 0.18 + iz * 0.7);
+      cell.rotation.x = -0.28;
       g.add(cell);
     }
   }
@@ -407,7 +407,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   const mistMat = new THREE.MeshBasicMaterial({
     color: '#f0fbff',
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.22,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
@@ -419,10 +419,10 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
     for (let s = 0; s <= 24; s++) {
       const u = s / 24;
       const r = 0.35 + u * 3.85;
-      const y = 1.7 + Math.sin(u * Math.PI) * 3.2 - u * 0.08;
+      const y = 1.55 + Math.sin(u * Math.PI) * 3.6 - u * 0.05;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.048, 6, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 56, 0.028, 5, false), jetMat);
     tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
@@ -437,7 +437,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
       const y = 3.0 + Math.sin(u * Math.PI) * 1.35;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.038, 5, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.022, 5, false), jetMat);
     tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
@@ -448,12 +448,12 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
     const u = s / 24;
     plumePts.push(new THREE.Vector3(Math.sin(u * 14) * 0.06, 3.1 + u * 3.4, Math.cos(u * 14) * 0.06));
   }
-  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 36, 0.055, 6, false), jetMat);
+  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 40, 0.032, 5, false), jetMat);
   plume.frustumCulled = false;
   group.add(plume);
   jets.push(plume);
 
-  const mist = new THREE.Mesh(new THREE.ConeGeometry(1.15, 3.6, 16, 1, true), mistMat);
+  const mist = new THREE.Mesh(new THREE.ConeGeometry(0.75, 3.2, 14, 1, true), mistMat);
   mist.position.y = 4.6;
   mist.frustumCulled = false;
   group.add(mist);
@@ -462,7 +462,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   // Soft water curtains (volume)
   for (let i = 0; i < 14; i++) {
     const ang = (i / 14) * Math.PI * 2;
-    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.8), mistMat);
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 2.6), mistMat);
     curtain.position.set(Math.cos(ang) * 2.35, 2.35, Math.sin(ang) * 2.35);
     curtain.rotation.y = ang + Math.PI / 2;
     curtain.rotation.x = -0.4;

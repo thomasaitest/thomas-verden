@@ -59,14 +59,14 @@ export function buildCar(carId: string): THREE.Group {
   const def = CAR_BY_ID[carId];
   const raw = def?.color ?? '#d0d8e4';
   // Push hard toward concept silver-white (4-bil.jpg)
-  const color = hexMix(raw, '#e4eaf0', 0.78);
+  const color = hexMix(raw, '#e8eef4', 0.88);
   const dark = hexMix(color, '#121820', 0.72);
   const kind = carKind(carId);
   const g = new THREE.Group();
 
-  const bodyLen = kind === 'van' ? 5.4 : kind === 'sport' ? 5.1 : 5.0;
-  const bodyW = kind === 'sport' ? 2.15 : 2.25;
-  const bodyH = kind === 'suv' ? 0.58 : kind === 'sport' ? 0.38 : 0.44;
+  const bodyLen = kind === 'van' ? 5.6 : kind === 'sport' ? 5.4 : 5.35;
+  const bodyW = kind === 'sport' ? 2.05 : 2.15;
+  const bodyH = kind === 'suv' ? 0.52 : kind === 'sport' ? 0.34 : 0.4;
   const hoverY = 0.38;
 
   const silver = new THREE.MeshStandardMaterial({

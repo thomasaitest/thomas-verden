@@ -26,16 +26,14 @@ async function prep(page) {
       locked: false,
       createdAt: now,
       items: [
-        { uid: 'it1', itemId: 'seng', x: 7.5, z: -5, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
-        { uid: 'it2', itemId: 'spisebord', x: 5.5, z: 3.5, rot: 0, scale: 0.95, color: '#1a2230', floor: 0 },
-        { uid: 'it3', itemId: 'langsofa', x: -1.5, z: 1.2, rot: 0.15, scale: 1.35, color: '#d0d6de', floor: 0 },
-        { uid: 'it4', itemId: 'tv', x: -1.5, z: -6.2, rot: 0, scale: 1.35, color: '#15202c', floor: 0 },
-        { uid: 'it7', itemId: 'benk', x: 4.8, z: -2.2, rot: 0, scale: 1.35, color: '#1a2230', floor: 0 },
-        { uid: 'it8', itemId: 'krakk', x: 4.0, z: -1.2, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it8b', itemId: 'krakk', x: 5.6, z: -1.2, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -1.5, z: 1.4, rot: 0, scale: 1.6, color: '#3a4450', floor: 0 },
-        { uid: 'it10', itemId: 'potteplante', x: 6.5, z: -6, rot: 0, scale: 1.1, color: '#5cc36b', floor: 0 },
-        { uid: 'it11', itemId: 'salongbord', x: -1.5, z: 2.8, rot: 0, scale: 1.1, color: '#c8d0d8', floor: 0 },
+        { uid: 'it1', itemId: 'seng', x: 8.2, z: -5.5, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
+        { uid: 'it3', itemId: 'langsofa', x: -2.8, z: 0.2, rot: 0.35, scale: 1.4, color: '#d8dde4', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -2.2, z: 1.0, rot: 0, scale: 1.7, color: '#3a4450', floor: 0 },
+        { uid: 'it11', itemId: 'salongbord', x: -1.6, z: 2.2, rot: 0.2, scale: 1.15, color: '#c8d0d8', floor: 0 },
+        { uid: 'it7', itemId: 'benk', x: 3.2, z: -1.5, rot: 0, scale: 1.4, color: '#1a2230', floor: 0 },
+        { uid: 'it8', itemId: 'krakk', x: 2.4, z: -0.5, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+        { uid: 'it8b', itemId: 'krakk', x: 4.0, z: -0.5, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+        { uid: 'it10', itemId: 'potteplante', x: 5.5, z: -5.5, rot: 0, scale: 1.15, color: '#5cc36b', floor: 0 },
       ],
     };
     const save = {
@@ -60,7 +58,7 @@ async function prep(page) {
       },
       avatarDone: true,
       pets: [{ uid: 'pet1', speciesId: 'hund', name: 'Byte', flyable: false, rideable: false, obtainedAt: now - 60000, xp: 80 }],
-      equipped: ['pet1'],
+      equipped: [],
       inventory: { sofa: 1, ball: 1, tv: 1, salongbord: 1, benk: 1, bokhylle: 1, langsofa: 1 },
       bag: { eple: 2, vann: 2, 'bil-bla': 1, 'leke-ball': 1 },
       houses: [house],
@@ -156,16 +154,19 @@ await page.evaluate(async () => {
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
   if (g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, -5);
-  g.player.yaw = 0;
+  g.player.pos.set(0.5, 0, -7);
+  g.player.yaw = 0.05;
   g.rebuildAvatar?.();
+  g.commit?.({ ...g.save, equipped: [] });
+  g.syncPets?.();
   await new Promise((r) => setTimeout(r, 2500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 2.2, y: 2.25, z: -11.5, lx: 1.0, ly: 1.9, lz: 4 };
+  // pull back + look slightly up so sky / trees / parked cars read
+  g.freezeCam = { x: 1.0, y: 2.55, z: -15.5, lx: 0.8, ly: 2.35, lz: 6 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '01-gate-plaza', 2800);
@@ -188,16 +189,16 @@ await page.waitForTimeout(2500);
 await page.evaluate(() => {
   const g = window.__hv;
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 30);
+  g.player.pos.set(0, 0, 33);
   g.player.yaw = Math.PI;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 30);
+    g.vehicleMesh.position.set(0, 0, 33);
     g.vehicleMesh.rotation.y = Math.PI;
   }
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  // chase cam behind car looking toward plaza/fountain
-  g.freezeCam = { x: 0.8, y: 2.05, z: 35.5, lx: 0, ly: 1.1, lz: 18 };
+  // chase: car lower-center, road ahead, side façades + trees
+  g.freezeCam = { x: 1.2, y: 1.95, z: 39.5, lx: 0, ly: 1.25, lz: 22 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '02-car-street', 2400);
@@ -207,14 +208,16 @@ await page.evaluate(() => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.driving) g.toggleDrive();
+  g.commit?.({ ...g.save, equipped: [] });
+  g.syncPets?.();
   g.enterHouse();
-  const d = g.interior.d / 2;
-  // stand near sofa looking toward kitchen island + back holo wall
-  g.player.pos.set(0.4, 0, 3.6);
-  g.player.yaw = Math.PI + 0.4;
+  // hide any remaining pet actors
+  for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
+  g.player.pos.set(2.5, 0, 4.2);
+  g.player.yaw = Math.PI + 0.55;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  // OTS living: sofa left, kitchen island mid-right, holo back wall
-  g.freezeCam = { x: 3.2, y: 1.8, z: 5.2, lx: -0.8, ly: 1.55, lz: -4.0 };
+  // OTS: sofa left, island center, holo + skyline window on back wall
+  g.freezeCam = { x: 4.8, y: 1.72, z: 5.5, lx: -1.5, ly: 1.55, lz: -3.2 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2800);

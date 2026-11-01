@@ -603,13 +603,13 @@ export function buildTown(): Town {
 
   // VERTICAL SLICE: futuristic plaza façades (visual shops facing the fountain)
   {
+    // Open plaza: shops farther out with sky gaps (concept has breathing room)
     const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
-      // angles picked to clear landmark footprints (shop/pets/cars/play/home)
-      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.85, dist: 15.5, w: 14 },
-      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.25, dist: 16.2, w: 13 },
-      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.25, dist: 15.8, w: 13 },
-      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 17, w: 11 },
-      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 17, w: 11 },
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -1.15, dist: 23, w: 13 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.05, dist: 24.5, w: 12 },
+      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.2, dist: 23, w: 12 },
+      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.45, dist: 26, w: 11 },
+      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.4, dist: 26, w: 11 },
     ];
     for (const f of facades) {
       const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2, variant: Math.abs(Math.round(f.ang * 10)) });
@@ -627,16 +627,21 @@ export function buildTown(): Town {
       group.add(shop);
       shadowAll(shop);
     }
-    // planters + trees around plaza (concept greenery)
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2 + 0.25;
+    // planters + trees in plaza ring AND in façade gaps (sky/greenery readable)
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + 0.2;
       const pl = buildPlanter();
-      pl.position.set(Math.sin(a) * 11.2, 0, Math.cos(a) * 11.2);
+      pl.position.set(Math.sin(a) * 10.5, 0, Math.cos(a) * 10.5);
       pl.rotation.y = a;
       stat.add(pl);
-      if (i % 2 === 0) {
-        tree(stat, Math.sin(a) * 12.6, Math.cos(a) * 12.6, 1.15, i % 3, true);
-      }
+    }
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.55;
+      tree(stat, Math.sin(a) * 18.5, Math.cos(a) * 18.5, 1.25 + (i % 3) * 0.12, i % 3, true);
+    }
+    // extra trees in southern approach (camera side) so skyline isn't a wall
+    for (const [x, z] of [[-8, -16], [8, -16], [-12, -12], [12, -12], [0, -18]] as const) {
+      tree(stat, x, z, 1.2, Math.abs(x + z) % 3, true);
     }
   }
 
@@ -680,47 +685,24 @@ export function buildTown(): Town {
       // curb
       box(stat, '#8a929c', [x, 0.12, z + (sz > sx ? 0 : sz / 2 + 0.15)], [sx > 10 ? sx : 0.25, 0.18, sz > 10 ? 0.25 : sz]);
     }
-    // street trees
-    for (const [x, z] of [[-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48]] as const) {
-      tree(stat, x, z, 1.1, (x + z) % 3, true);
+    // street trees (chase-cam belt + plaza approach)
+    for (const [x, z] of [
+      [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
+      [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
+    ] as const) {
+      tree(stat, x, z, 1.15, Math.abs(x + z) % 3, true);
     }
   }
 
-
-  // concept drones hovering over plaza
-  {
-    const droneMat = new THREE.MeshStandardMaterial({ color: '#c8d0da', metalness: 0.75, roughness: 0.3 });
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2 + 0.4;
-      const dr = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.55), droneMat);
-      dr.add(body);
-      for (const [ox, oz] of [[-0.28, -0.28], [0.28, -0.28], [-0.28, 0.28], [0.28, 0.28]] as const) {
-        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.28), droneMat);
-        arm.position.set(ox * 0.5, 0.02, oz * 0.5);
-        dr.add(arm);
-        const rotor = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), glowMat('#7ef0ff', 0.6));
-        rotor.rotation.x = -Math.PI / 2;
-        rotor.position.set(ox, 0.08, oz);
-        rotor.userData.spin = true;
-        dr.add(rotor);
-      }
-      const r = 6 + (i % 3) * 2.5;
-      dr.position.set(Math.sin(a) * r, 5.5 + (i % 3) * 0.8, Math.cos(a) * r);
-      dr.userData.drone = true;
-      dr.userData.baseY = dr.position.y;
-      dr.userData.ang = a;
-      group.add(dr);
-    }
-  }
 
   // parked plaza cars (sleek hover props)
   {
     const parked = [
-      { id: 'bil-bla', x: 10, z: 8, yaw: -0.4 },
-      { id: 'bil-lilla', x: -8, z: 12, yaw: 1.2 },
-      { id: 'bil-rosa', x: 14, z: -6, yaw: 2.5 },
-      { id: 'bil-gronn', x: -14, z: -4, yaw: 0.3 },
+      { id: 'bil-bla', x: 7.5, z: 3.5, yaw: -0.55 },
+      { id: 'bil-lilla', x: -6.5, z: 5.5, yaw: 0.9 },
+      { id: 'bil-rosa', x: 9.5, z: -5.5, yaw: 2.2 },
+      { id: 'bil-gronn', x: -9.0, z: -3.5, yaw: 0.15 },
+      { id: 'bil-gul', x: 5.5, z: 9.5, yaw: -1.1 },
     ];
     for (const c of parked) {
       const car = buildCar(c.id);
@@ -952,9 +934,9 @@ export function buildTown(): Town {
   const mergedClouds = mergeStatic(clouds);
   group.add(mergedClouds);
 
-  // delivery drones in the sky
+  // drones — near plaza (gate-visible) + far sky
   const drones: THREE.Group[] = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 12; i++) {
     const dr = new THREE.Group();
     rbox(dr, '#d8e2f0', [0, 0, 0], [0.9, 0.28, 0.7]);
     rbox(dr, '#3ecbff', [0, -0.12, 0], [0.5, 0.1, 0.4], undefined, 0.5);
@@ -966,12 +948,14 @@ export function buildTown(): Town {
       blade.userData.spin = true;
       dr.add(blade);
     }
-    const a = (i / 8) * Math.PI * 2;
-    const rr = 28 + (i % 3) * 10;
-    dr.position.set(Math.cos(a) * rr, 16 + (i % 4) * 2.5, Math.sin(a) * rr);
+    const near = i < 6;
+    const a = (i / (near ? 6 : 6)) * Math.PI * 2 + (near ? 0.3 : 0.1);
+    const rr = near ? 7 + (i % 3) * 2.2 : 30 + (i % 3) * 8;
+    const yy = near ? 5.2 + (i % 3) * 0.7 : 16 + (i % 4) * 2.5;
+    dr.position.set(Math.cos(a) * rr, yy, Math.sin(a) * rr);
     dr.userData.baseA = a;
     dr.userData.baseR = rr;
-    dr.userData.baseY = dr.position.y;
+    dr.userData.baseY = yy;
     group.add(dr);
     drones.push(dr);
   }
