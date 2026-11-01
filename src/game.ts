@@ -1263,21 +1263,21 @@ export class Game {
       this.camera.position.set(f.x, f.y, f.z);
       this.camera.lookAt(f.lx, f.ly, f.lz);
     } else {
-    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.95 : 1.55), p.pos.z);
+    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.55 : 1.55), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
     // Driving chase: full car in lower-middle (concept 4-bil) — ~7 m back, ~2.2 m up
     if (this.driving && !seat) {
       // Look slightly ahead of car; keep ~10 m back so whole body stays in lower-middle
-      const ahead = 0.6;
+      const ahead = 0.35;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         // Slight yaw bias for rear 3/4 (concept 4-bil)
-        const wantYaw = p.yaw + 0.32;
+        const wantYaw = p.yaw + 0.28;
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 4);
-        this.cam.pitch += (0.16 - this.cam.pitch) * Math.min(1, dt * 4);
-        this.cam.dist += (12 - this.cam.dist) * Math.min(1, dt * 4);
+        this.cam.pitch += (0.14 - this.cam.pitch) * Math.min(1, dt * 4);
+        this.cam.dist += (13 - this.cam.dist) * Math.min(1, dt * 4);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1913,9 +1913,9 @@ export class Game {
     this.driving = id;
     this.syncVehicleMesh();
     // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
-    this.cam.yaw = this.player.yaw + 0.32;
-    this.cam.pitch = 0.16;
-    this.cam.dist = 12;
+    this.cam.yaw = this.player.yaw + 0.28;
+    this.cam.pitch = 0.14;
+    this.cam.dist = 13;
     this.camShown = this.cam.dist;
     this.editingAvatar = false;
     sfx.whoosh();
