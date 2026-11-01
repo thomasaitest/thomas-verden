@@ -23,7 +23,7 @@ const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
 
-function prepareTree(root: THREE.Object3D) {
+function prepareTree(root: THREE.Object3D, kind = 0) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
@@ -32,13 +32,39 @@ function prepareTree(root: THREE.Object3D) {
     const mats = Array.isArray(m.material) ? m.material : [m.material];
     for (const mat of mats) {
       const std = mat as THREE.MeshStandardMaterial;
-      if (std.map) {
-        std.transparent = true;
-        std.alphaTest = Math.max(std.alphaTest || 0, 0.4);
-        std.depthWrite = true;
-        std.side = THREE.DoubleSide;
+      if (!std?.color) continue;
+      const name = (std.name || m.name || '').toLowerCase();
+      const c = std.color;
+      const bright = (c.r + c.g + c.b) / 3;
+      const isLeaf =
+        name.includes('leaf') ||
+        name.includes('foliage') ||
+        name.includes('needle') ||
+        (!!std.map && bright > 0.55) ||
+        (c.g > c.r * 1.05 && c.g > 0.25);
+      const isTrunk = name.includes('bark') || name.includes('trunk') || name.includes('wood') || (c.r > c.g && c.b < 0.35 && bright < 0.45);
+      if (isLeaf || (!isTrunk && bright > 0.65)) {
+        // Never allow white/cloud canopies — force healthy green
+        const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+        std.color.set(hex);
+        std.roughness = Math.max(std.roughness ?? 0.8, 0.75);
+        std.metalness = 0.02;
+        std.envMapIntensity = 0.55;
+        if (std.map) {
+          std.transparent = true;
+          std.alphaTest = Math.max(std.alphaTest || 0, 0.35);
+          std.depthWrite = true;
+          std.side = THREE.DoubleSide;
+        } else {
+          // missing leaf texture → solid green, not a white blob
+          std.map = null;
+          std.transparent = false;
+        }
+      } else if (isTrunk || bright < 0.35) {
+        std.color.set('#6a4a32');
+        std.roughness = 0.92;
+        std.metalness = 0.02;
       }
-      std.envMapIntensity = std.envMapIntensity ?? 0.7;
       std.needsUpdate = true;
     }
   });
@@ -51,7 +77,7 @@ export async function preloadNaturalTrees(): Promise<void> {
       TREE_PATHS.map(async (p) => {
         try {
           const g = await loadModel(p);
-          prepareTree(g);
+          prepareTree(g, TREE_PATHS.indexOf(p as typeof TREE_PATHS[number]));
           treeCache.set(p, g);
         } catch {
           /* procedural fallback */
@@ -123,7 +149,7 @@ export function buildNaturalTree(kind = 0): THREE.Group {
     const model = cached.clone(true);
     model.name = `ez-${path.split('/').pop()}`;
     model.userData.ezTree = true;
-    prepareTree(model);
+    prepareTree(model, kind);
     const s = 0.95 + (kind % 3) * 0.08;
     model.scale.setScalar(s);
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);

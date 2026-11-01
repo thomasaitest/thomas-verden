@@ -37,6 +37,7 @@ import { blobShadow } from './three/kit.ts';
 import { animatePet, type PetPose, type PetRig } from './three/petModel.ts';
 import { buildPetPreferGltf, preloadPetModels } from './three/petGltf.ts';
 import { buildTown, type Town, type Zone } from './three/town.ts';
+import { preloadNaturalTrees } from './three/naturalTrees.ts';
 import { Thumbs } from './thumbs.ts';
 import { toast } from './ui/dom.ts';
 import { Hud } from './ui/hud.ts';
@@ -242,6 +243,7 @@ export class Game {
   private async bootstrapVisualAssets(): Promise<void> {
     await Promise.all([
       preloadArchMaterials(),
+      preloadNaturalTrees(),
       this.lighting!.envReady,
       preloadFurnitureModels(),
       preloadPetModels(),
@@ -533,14 +535,14 @@ export class Game {
     this.interior.build(house);
     this.town.group.visible = false;
     this.interior.group.visible = true;
-    // Spawn deeper in the living area facing the panoramic window (−Z)
-    this.player.pos.set(this.interior.door.x + 0.3, 0, Math.max(-1.5, this.interior.door.z - 6.2));
+    // Spawn near door looking into living (−Z): sofa L, window C, kitchen R, pod doorway far R
+    this.player.pos.set(0.2, 0, Math.max(1.8, this.interior.door.z - 5.0));
     this.player.vy = 0;
-    this.player.yaw = 0;
-    this.cam.yaw = 0.08;
-    this.cam.pitch = 0.05;
-    this.cam.dist = 5.6;
-    this.camShown = 5.6;
+    this.player.yaw = 0.12;
+    this.cam.yaw = 0.12;
+    this.cam.pitch = 0.12;
+    this.cam.dist = 6.2;
+    this.camShown = 6.2;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#7a828c');
     this.scene.fog = null;

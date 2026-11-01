@@ -295,13 +295,15 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
   return g;
 }
 
-function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, collide = false) {
+function tree(visualParent: THREE.Group, x: number, z: number, s: number, kind: number, collide = false, colliderParent?: THREE.Group) {
   const t0 = buildNaturalTree(kind % 6);
   t0.position.set(x, 0, z);
   t0.scale.setScalar(s);
-  g.add(t0);
+  visualParent.add(t0);
   if (collide) {
-    const hit = cyl(g, '#5a3d28', [x, 1.2 * s, z], [0.2 * s, 2.4 * s, 0.2 * s]);
+    // Colliders live on `stat` (merged footprint pass); meshes stay unmerged on `group`
+    const hitParent = colliderParent ?? visualParent;
+    const hit = cyl(hitParent, '#5a3d28', [x, 1.2 * s, z], [0.2 * s, 2.4 * s, 0.2 * s]);
     hit.visible = false;
     solid(hit, 'circle', 0.5 * s, 6 * s);
   }
@@ -659,11 +661,11 @@ export function buildTown(): Town {
     }
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.55;
-      tree(stat, Math.sin(a) * 18.5, Math.cos(a) * 18.5, 1.15 + (i % 3) * 0.1, i % 3, true);
+      tree(group, Math.sin(a) * 18.5, Math.cos(a) * 18.5, 1.15 + (i % 3) * 0.1, i % 3, true, stat);
     }
     // extra trees in southern approach (camera side) so skyline isn't a wall
     for (const [x, z] of [[-8, -16], [8, -16], [-12, -12], [12, -12], [0, -18]] as const) {
-      tree(stat, x, z, 1.1, Math.abs(x + z) % 3, true);
+      tree(group, x, z, 1.1, Math.abs(x + z) % 3, true, stat);
     }
   }
 
@@ -770,7 +772,7 @@ export function buildTown(): Town {
       [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
       [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
     ] as const) {
-      tree(stat, x, z, 1.05, Math.abs(x + z) % 3, true);
+      tree(group, x, z, 1.05, Math.abs(x + z) % 3, true, stat);
     }
   }
 
@@ -876,12 +878,12 @@ export function buildTown(): Town {
       { id: 'bil-gul', x: 1.55, z: 10, yaw: 0 },
       { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
-      // Gate-visible: one clear hover car on N–S road past fountain (in south cam frustum)
-      { id: 'bil-gul', x: 1.6, z: -3.2, yaw: Math.PI },
+      // Road-only traffic (never plaza). Gate cam may not show a car — do not fake plaza cars.
       { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
       { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
       { id: 'bil-gronn', x: 14.2, z: -2.0, yaw: Math.PI / 2 },
       { id: 'bil-bla', x: -14.2, z: 3.0, yaw: -Math.PI / 2 },
+      { id: 'bil-gul', x: 1.55, z: 48, yaw: 0 },
     ];
     for (const c of traffic) {
       const car = buildCar(c.id);
@@ -1031,14 +1033,14 @@ export function buildTown(): Town {
     const z = (rnd() - 0.5) * SIZE * 0.95;
     const s = 0.8 + rnd() * 0.6;
     if (blocked(x, z) || tooClose(x, z, 0.9 * s)) continue;
-    tree(stat, x, z, s, Math.floor(rnd() * 4), true);
+    tree(group, x, z, s, Math.floor(rnd() * 4), true, stat);
     solids.push({ x, z, r: 0.9 * s });
   }
   // a ring of trees on the edge
   for (let i = 0; i < 70; i++) {
     const a = (i / 70) * Math.PI * 2;
     const r = SIZE / 2 + 4 + (i % 3) * 3;
-    tree(stat, Math.cos(a) * r, Math.sin(a) * r, 1.3, i % 4);
+    tree(group, Math.cos(a) * r, Math.sin(a) * r, 1.3, i % 4);
   }
   const flowerCols = ['#6a9a58', '#5a8a4a', '#7aaa68', '#4a7a40', '#8aba78'];
   for (let i = 0; i < 160; i++) {

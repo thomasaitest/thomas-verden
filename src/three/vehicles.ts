@@ -5,7 +5,7 @@ import { glowMat, rbox } from './kit.ts';
 import { physicalGlass } from './pbrTextures.ts';
 
 /** Seat height so GLTF driver (after body drop) sits inside cabin under canopy. */
-export const CAR_SEAT_Y = 0.42;
+export const CAR_SEAT_Y = 0.32;
 export const CAR_AVATAR_SCALE = 0.52;
 export const PRAM_PULL_BACK = 1.45;
 
@@ -61,7 +61,7 @@ export function buildCar(carId: string): THREE.Group {
 
   const bodyLen = kind === 'van' ? 4.5 : kind === 'sport' ? 4.15 : 4.3;
   const bodyW = kind === 'sport' ? 1.78 : 1.85;
-  const hoverY = 0.28;
+  const hoverY = 0.18;
 
   const chrome = new THREE.MeshStandardMaterial({
     color,
@@ -87,8 +87,8 @@ export function buildCar(carId: string): THREE.Group {
     chrome,
   );
   hull.rotation.z = Math.PI / 2;
-  hull.scale.set(1, 0.55, 0.85);
-  hull.position.set(0, hoverY + 0.32, 0);
+  hull.scale.set(1, 0.42, 0.82);
+  hull.position.set(0, hoverY + 0.22, 0);
   hull.castShadow = true;
   hull.receiveShadow = true;
   g.add(hull);
@@ -98,7 +98,7 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.BoxGeometry(bodyW * 0.72, 0.14, bodyLen * 0.78),
     darkMat,
   );
-  belly.position.set(0, hoverY + 0.12, 0.02);
+  belly.position.set(0, hoverY + 0.08, 0.02);
   belly.castShadow = true;
   g.add(belly);
 
@@ -107,8 +107,8 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.SphereGeometry(0.55, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55),
     chrome,
   );
-  nose.scale.set(bodyW * 0.55, 0.35, 0.7);
-  nose.position.set(0, hoverY + 0.28, -bodyLen * 0.38);
+  nose.scale.set(bodyW * 0.52, 0.28, 0.65);
+  nose.position.set(0, hoverY + 0.2, -bodyLen * 0.38);
   nose.rotation.x = Math.PI;
   g.add(nose);
 
@@ -117,29 +117,29 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.SphereGeometry(0.5, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
     chrome,
   );
-  rear.scale.set(bodyW * 0.58, 0.4, 0.55);
-  rear.position.set(0, hoverY + 0.3, bodyLen * 0.34);
+  rear.scale.set(bodyW * 0.52, 0.28, 0.48);
+  rear.position.set(0, hoverY + 0.22, bodyLen * 0.34);
   g.add(rear);
 
-  // Curved fenders over each hover pod
+  // Slim fender arches over each hover pod (low — not rear thruster pipes)
   for (const [sx, sz] of [
     [-1, -1],
     [1, -1],
     [-1, 1],
     [1, 1],
   ] as const) {
-    const fx = sx * bodyW * 0.42;
+    const fx = sx * bodyW * 0.4;
     const fz = sz * bodyLen * 0.28;
     const fender = new THREE.Mesh(
-      new THREE.TorusGeometry(0.32, 0.1, 10, 20, Math.PI),
+      new THREE.TorusGeometry(0.24, 0.045, 8, 16, Math.PI * 0.9),
       chrome,
     );
-    fender.rotation.z = sx > 0 ? -Math.PI / 2 : Math.PI / 2;
-    fender.rotation.y = sz > 0 ? Math.PI : 0;
-    fender.position.set(fx, hoverY + 0.22, fz);
-    fender.scale.set(1, 0.85, 1.1);
+    fender.rotation.x = Math.PI / 2;
+    fender.rotation.z = sx > 0 ? -0.15 : 0.15;
+    fender.position.set(fx, hoverY + 0.12, fz);
+    fender.scale.set(0.85, 1, 0.55);
     g.add(fender);
-    hoverPod(g, fx, hoverY - 0.02, fz);
+    hoverPod(g, fx, hoverY - 0.04, fz);
   }
 
   // Panel / crease lines
@@ -182,8 +182,8 @@ export function buildCar(carId: string): THREE.Group {
   cm.roughness = 0.04;
   cm.metalness = 0.08;
   cm.envMapIntensity = 1.6;
-  canopy.position.set(0, hoverY + 0.55, -0.05);
-  canopy.scale.set(bodyW * 0.48, 0.72, 0.85);
+  canopy.position.set(0, hoverY + 0.42, -0.05);
+  canopy.scale.set(bodyW * 0.46, 0.62, 0.8);
   canopy.castShadow = true;
   g.add(canopy);
 
@@ -193,7 +193,7 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.MeshStandardMaterial({ color: '#c8d0d8', metalness: 0.95, roughness: 0.15 }),
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, hoverY + 0.52, -0.05);
+  rim.position.set(0, hoverY + 0.4, -0.05);
   rim.scale.set(bodyW * 0.48, 0.9, 1);
   g.add(rim);
 

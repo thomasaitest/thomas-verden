@@ -234,13 +234,13 @@ await page.evaluate(async () => {
   g.lighting?.setIndoor?.(true);
   if (g.sun) g.sun.intensity = 0.12;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  // Living looking −Z; slight left so bedroom doorway + pod read
-  g.player.pos.set(0.4, 0, 2.2);
-  g.player.yaw = 0.22;
-  g.cam.yaw = 0.18;
-  g.cam.pitch = 0.05;
-  g.cam.dist = 5.6;
-  g.camShown = 5.6;
+  // Default enterHouse framing: sofa L-C, window C, kitchen R, pod doorway far R
+  g.player.pos.set(0.2, 0, 3.2);
+  g.player.yaw = 0.12;
+  g.cam.yaw = 0.12;
+  g.cam.pitch = 0.12;
+  g.cam.dist = 6.2;
+  g.camShown = 6.2;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 600));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
