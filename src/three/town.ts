@@ -31,6 +31,7 @@ import {
   preloadArchMaterials,
 } from './futuristicArch.ts';
 import { buildCar } from './vehicles.ts';
+import { SharedMats } from './pbrTextures.ts';
 
 export type ZoneKind = 'home' | 'shop' | 'vet' | 'eggs' | 'doors' | 'play' | 'cars' | 'pets';
 export interface Zone {
@@ -686,11 +687,16 @@ export function buildTown(): Town {
       group.add(shop);
       shadowAll(shop);
     }
-    // sidewalk strips along street
+    // sidewalk strips + planting beds along street belt and N–S approach
     for (const [x, z, sx, sz] of [
       [0, 48, 48, 3.2],
       [-22, 48, 3.2, 28],
       [22, 48, 3.2, 28],
+      // N–S road sidewalks (plaza approach, camera side)
+      [-5.6, 8, 2.4, 52],
+      [5.6, 8, 2.4, 52],
+      [-5.6, -12, 2.4, 28],
+      [5.6, -12, 2.4, 28],
     ] as const) {
       const walk = new THREE.Mesh(
         new THREE.BoxGeometry(sx, 0.08, sz),
@@ -700,8 +706,56 @@ export function buildTown(): Town {
       walk.receiveShadow = true;
       walk.userData.noCast = true;
       stat.add(walk);
-      // curb
-      box(stat, '#8a929c', [x, 0.12, z + (sz > sx ? 0 : sz / 2 + 0.15)], [sx > 10 ? sx : 0.25, 0.18, sz > 10 ? 0.25 : sz]);
+    }
+    // planting beds between sidewalk and façades
+    for (const [x, z, sx, sz] of [
+      [-12, 32, 3.2, 8], [12, 32, 3.2, 8],
+      [-12, 46, 3.2, 8], [12, 46, 3.2, 8],
+      [-8.5, 10, 2.2, 6], [8.5, 10, 2.2, 6],
+      [-8.5, -8, 2.2, 5], [8.5, -8, 2.2, 5],
+    ] as const) {
+      const bed = new THREE.Mesh(
+        new THREE.BoxGeometry(sx, 0.18, sz),
+        SharedMats.concrete.clone(),
+      );
+      (bed.material as THREE.MeshStandardMaterial).color.set('#9aa3ae');
+      bed.position.set(x, 0.1, z);
+      bed.receiveShadow = true;
+      bed.userData.noCast = true;
+      stat.add(bed);
+      const soil = new THREE.Mesh(
+        new THREE.BoxGeometry(sx - 0.25, 0.08, sz - 0.25),
+        grassGroundMaterial().clone(),
+      );
+      (soil.material as THREE.MeshStandardMaterial).color.set('#6f8f5e');
+      soil.position.set(x, 0.2, z);
+      soil.receiveShadow = true;
+      soil.userData.noCast = true;
+      stat.add(soil);
+    }
+    // cyan curb / edge lights along road edges
+    for (const side of [-4.05, 4.05] as const) {
+      for (let z = -24; z <= 56; z += 3.2) {
+        const strip = new THREE.Mesh(
+          new THREE.BoxGeometry(0.12, 0.05, 2.4),
+          glowMat('#3ecbff', 1.6),
+        );
+        strip.position.set(side, 0.06, z);
+        strip.userData.noCast = true;
+        stat.add(strip);
+      }
+    }
+    for (const z of [45.5, 50.5] as const) {
+      for (let x = -20; x <= 20; x += 3.2) {
+        if (Math.abs(x) < 5) continue;
+        const strip = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, 0.05, 0.12),
+          glowMat('#3ecbff', 1.4),
+        );
+        strip.position.set(x, 0.06, z);
+        strip.userData.noCast = true;
+        stat.add(strip);
+      }
     }
     // street trees (chase-cam belt + plaza approach)
     for (const [x, z] of [
@@ -747,6 +801,71 @@ export function buildTown(): Town {
         hit.visible = false;
         solid(hit, 'circle', 0.15, 1.2);
       }
+      group.add(car);
+      shadowAll(car);
+    }
+  }
+
+
+  // Ambient plaza people + road hover traffic (concept: busy street)
+  {
+    const skinCols = ['#f0c9a8', '#c68642', '#8d5524', '#e0ac69', '#ffdbac'];
+    const shirtCols = ['#3ecbff', '#5a8cff', '#e8eef4', '#c88bff', '#54c45e', '#ff6f6f'];
+    const mkPerson = (x: number, z: number, yaw: number, seed: number) => {
+      const g = new THREE.Group();
+      const skin = skinCols[seed % skinCols.length]!;
+      const shirt = shirtCols[(seed * 3) % shirtCols.length]!;
+      const body = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.22, 0.55, 4, 8),
+        new THREE.MeshStandardMaterial({ color: shirt, roughness: 0.65, metalness: 0.05 }),
+      );
+      body.position.y = 0.95;
+      g.add(body);
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 12, 10),
+        new THREE.MeshStandardMaterial({ color: skin, roughness: 0.7 }),
+      );
+      head.position.y = 1.55;
+      g.add(head);
+      const legs = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.14, 0.35, 4, 8),
+        new THREE.MeshStandardMaterial({ color: '#2a3344', roughness: 0.7 }),
+      );
+      legs.position.y = 0.4;
+      g.add(legs);
+      g.position.set(x, 0, z);
+      g.rotation.y = yaw;
+      g.userData.noFade = true;
+      return g;
+    };
+    const walkers: [number, number, number, number][] = [
+      // plaza ring
+      [6, -4, 0.4, 1], [-7, 3, -1.2, 2], [3, 8, 2.1, 3], [-4, -9, 0.8, 4],
+      [10, 2, -0.5, 5], [-11, -2, 1.7, 6], [2, 14, 3.0, 7], [-2, 18, 0.2, 8],
+      // sidewalks toward home / chase view
+      [-5.2, 22, 0.05, 9], [5.4, 28, Math.PI, 10], [-5.3, 34, 0.1, 11],
+      [5.5, 40, Math.PI + 0.1, 12], [-5.1, 12, 0, 13], [5.2, 8, Math.PI, 14],
+      [8, 26, -1.4, 15], [-9, 36, 1.5, 16],
+    ];
+    for (const [x, z, yaw, seed] of walkers) {
+      const p = mkPerson(x, z, yaw, seed);
+      group.add(p);
+      shadowAll(p);
+    }
+    // Moving/road hover cars in view (ahead + sides of chase spawn)
+    const traffic = [
+      { id: 'bil-rosa', x: 1.6, z: 12, yaw: 0 },
+      { id: 'bil-lilla', x: -1.6, z: 6, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.55, z: -6, yaw: 0 },
+      { id: 'bil-gronn', x: -1.55, z: 24, yaw: Math.PI },
+      { id: 'bil-bla', x: 1.6, z: 36, yaw: 0 },
+    ];
+    for (const c of traffic) {
+      const car = buildCar(c.id);
+      car.position.set(c.x, 0, c.z);
+      car.rotation.y = c.yaw;
+      car.name = `traffic-${c.id}-${c.z}`;
+      car.userData.noFade = true;
       group.add(car);
       shadowAll(car);
     }

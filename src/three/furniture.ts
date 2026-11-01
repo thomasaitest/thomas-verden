@@ -431,28 +431,28 @@ export const MODELS: Record<string, B> = {
   },
   neonheart: (g, c) => part(g, G.heart(), c, [0, 2.6, 0.1], [1.2, 1.2, 0.3], [0, 0, 0], 1),
   plant: (g, c) => {
-    cyl(g, '#d97b5b', [0, 0.35, 0], [0.7, 0.7, 0.7]);
+    cyl(g, '#8a9098', [0, 0.35, 0], [0.7, 0.7, 0.7]);
     for (let i = 0; i < 5; i++) sph(g, c, [Math.cos(i * 1.3) * 0.25, 1.0 + (i % 2) * 0.25, Math.sin(i * 1.3) * 0.25], [0.5, 0.6, 0.5]);
   },
   cactus: (g, c) => {
-    cyl(g, '#d97b5b', [0, 0.3, 0], [0.6, 0.6, 0.6]);
+    cyl(g, '#8a9098', [0, 0.3, 0], [0.6, 0.6, 0.6]);
     sph(g, c, [0, 1.05, 0], [0.45, 1.2, 0.45]);
     sph(g, c, [0.32, 1.1, 0], [0.22, 0.5, 0.22]);
     sph(g, '#ff8fb1', [0, 1.68, 0], [0.18, 0.12, 0.18]);
   },
   palm: (g, c) => {
-    cyl(g, '#d97b5b', [0, 0.4, 0], [1.0, 0.8, 1.0]);
+    cyl(g, '#8a9098', [0, 0.4, 0], [1.0, 0.8, 1.0]);
     cyl(g, '#a0703f', [0, 1.8, 0], [0.22, 2.2, 0.22]);
     for (let i = 0; i < 6; i++) sph(g, c, [Math.cos(i * 1.05) * 0.7, 2.95, Math.sin(i * 1.05) * 0.7], [1.3, 0.12, 0.45], [0, -i * 1.05, -0.3]);
   },
   sunflower: (g, c) => {
-    cyl(g, '#d97b5b', [0, 0.3, 0], [0.6, 0.6, 0.6]);
+    cyl(g, '#8a9098', [0, 0.3, 0], [0.6, 0.6, 0.6]);
     cyl(g, '#3fbf5a', [0, 1.3, 0], [0.08, 1.8, 0.08]);
     cyl(g, c, [0, 2.3, 0.05], [0.9, 0.06, 0.9], [Math.PI / 2, 0, 0]);
     cyl(g, '#8a5a3c', [0, 2.3, 0.1], [0.45, 0.08, 0.45], [Math.PI / 2, 0, 0]);
   },
   tree: (g, c) => {
-    cyl(g, '#d97b5b', [0, 0.4, 0], [0.9, 0.8, 0.9]);
+    cyl(g, '#8a9098', [0, 0.4, 0], [0.9, 0.8, 0.9]);
     cyl(g, '#a0703f', [0, 1.3, 0], [0.25, 1.4, 0.25]);
     sph(g, c, [0, 2.4, 0], [1.6, 1.4, 1.6]);
   },
@@ -497,9 +497,10 @@ export const MODELS: Record<string, B> = {
     box(g, '#ff8fb1', [1.05, 2.5, 0.12], [0.3, 1.9, 0.06]);
   },
   ruground: (g, c) => {
-    cyl(g, c, [0, 0.025, 0], [3.4, 0.05, 3.4]);
-    cyl(g, WHITE, [0, 0.03, 0], [2.4, 0.05, 2.4]);
-    cyl(g, c, [0, 0.035, 0], [1.8, 0.05, 1.8]);
+    cyl(g, c, [0, 0.02, 0], [3.6, 0.04, 3.6]);
+    cyl(g, '#f2ebe3', [0, 0.028, 0], [2.7, 0.04, 2.7]);
+    cyl(g, c, [0, 0.036, 0], [1.9, 0.04, 1.9]);
+    cyl(g, '#f7f2ec', [0, 0.042, 0], [0.9, 0.04, 0.9]);
   },
   rugrect: (g, c) => {
     box(g, c, [0, 0.025, 0], [3.6, 0.05, 2.6]);
@@ -520,13 +521,25 @@ const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
 function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
   const mat = new THREE.MeshStandardMaterial({
-    color: color || '#d8dee6',
-    roughness: 0.72,
-    metalness: 0.04,
-    envMapIntensity: 0.55,
+    color: color || '#dfe6ee',
+    roughness: 0.62,
+    metalness: 0.03,
+    envMapIntensity: 0.6,
   });
-  const dark = new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.4, metalness: 0.3 });
-  // Arc of seat modules (curved sectional)
+  const cushMat = new THREE.MeshStandardMaterial({
+    color: '#f4f7fb',
+    roughness: 0.78,
+    metalness: 0.02,
+  });
+  const accentMat = new THREE.MeshStandardMaterial({
+    color: '#3ecbff',
+    roughness: 0.55,
+    metalness: 0.08,
+    emissive: '#1a6080',
+    emissiveIntensity: 0.15,
+  });
+  const dark = new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.4, metalness: 0.35 });
+  // Soft arc sectional with rounded cushions
   const n = 7;
   for (let i = 0; i < n; i++) {
     const t = i / (n - 1);
@@ -538,17 +551,26 @@ function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
     seat.position.set(x, 0.42, z);
     seat.rotation.y = ang;
     g.add(seat);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.7, 0.22), mat);
-    back.position.set(x - Math.sin(ang) * 0.35, 0.85, z - Math.cos(ang) * 0.35);
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.62), cushMat);
+    pillow.position.set(x, 0.62, z + 0.05);
+    pillow.rotation.y = ang;
+    g.add(pillow);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.22), mat);
+    back.position.set(x - Math.sin(ang) * 0.35, 0.86, z - Math.cos(ang) * 0.35);
     back.rotation.y = ang;
     g.add(back);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 8), dark);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.28, 8), dark);
     leg.position.set(x, 0.14, z);
     g.add(leg);
   }
-  // Corner cushion accent
-  const accent = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.18, 0.4), mat);
-  accent.position.set(0, 0.62, 0.15);
+  for (const sx of [-0.55, 0.55] as const) {
+    const throwC = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.32, 0.12), accentMat);
+    throwC.position.set(sx, 0.95, -0.05);
+    throwC.rotation.z = sx * 0.15;
+    g.add(throwC);
+  }
+  const accent = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 0.42), cushMat);
+  accent.position.set(0, 0.66, 0.2);
   g.add(accent);
 }
 

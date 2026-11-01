@@ -5,7 +5,7 @@ import { glowMat, rbox, cyl } from './kit.ts';
 import { physicalGlass } from './pbrTextures.ts';
 
 /** Seat height so GLTF driver (after body drop) sits inside cabin under canopy. */
-export const CAR_SEAT_Y = 0.22;
+export const CAR_SEAT_Y = 0.28;
 export const CAR_AVATAR_SCALE = 0.48;
 export const PRAM_PULL_BACK = 1.45;
 
@@ -41,7 +41,7 @@ function thrusterRing(
   rim.position.set(x, y, z);
   if (toward === 'down') rim.rotation.x = Math.PI / 2;
   g.add(rim);
-  const core = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 28), glowMat('#3ecbff', 2.6));
+  const core = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 28), glowMat('#3ecbff', 3.4));
   if (toward === 'front') {
     core.position.set(x, y, z - 0.02);
   } else if (toward === 'rear') {
@@ -154,9 +154,25 @@ export function buildCar(carId: string): THREE.Group {
     g.add(belt);
   }
 
-  // Big round blue thruster rings at REAR (concept chase)
-  thrusterRing(g, -0.42, hoverY + 0.3, bodyLen * 0.48, 0.28, 'rear');
-  thrusterRing(g, 0.42, hoverY + 0.3, bodyLen * 0.48, 0.28, 'rear');
+  // Big round cyan thruster rings at REAR (concept chase)
+  thrusterRing(g, -0.45, hoverY + 0.32, bodyLen * 0.48, 0.34, 'rear');
+  thrusterRing(g, 0.45, hoverY + 0.32, bodyLen * 0.48, 0.34, 'rear');
+  for (const sx of [-0.45, 0.45] as const) {
+    const jet = new THREE.Mesh(
+      new THREE.ConeGeometry(0.22, 0.7, 16, 1, true),
+      new THREE.MeshBasicMaterial({ color: '#5ce8ff', transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    jet.position.set(sx, hoverY + 0.32, bodyLen * 0.48 + 0.35);
+    jet.rotation.x = Math.PI / 2;
+    g.add(jet);
+    const core = new THREE.Mesh(
+      new THREE.ConeGeometry(0.1, 0.55, 12, 1, true),
+      glowMat('#b8f7ff', 3.8),
+    );
+    core.position.set(sx, hoverY + 0.32, bodyLen * 0.48 + 0.28);
+    core.rotation.x = Math.PI / 2;
+    g.add(core);
+  }
   // Front thrusters in fenders
   thrusterRing(g, -bodyW * 0.42, hoverY + 0.28, -bodyLen * 0.38, 0.16, 'front');
   thrusterRing(g, bodyW * 0.42, hoverY + 0.28, -bodyLen * 0.38, 0.16, 'front');
@@ -176,10 +192,12 @@ export function buildCar(carId: string): THREE.Group {
     physicalGlass('#1a2838', 0.55),
   );
   // darken glass further
-  (canopy.material as THREE.MeshPhysicalMaterial).color.set('#152030');
-  (canopy.material as THREE.MeshPhysicalMaterial).opacity = 0.72;
-  (canopy.material as THREE.MeshPhysicalMaterial).transmission = 0.35;
-  (canopy.material as THREE.MeshPhysicalMaterial).roughness = 0.12;
+  (canopy.material as THREE.MeshPhysicalMaterial).color.set('#1a2838');
+  (canopy.material as THREE.MeshPhysicalMaterial).opacity = 0.42;
+  (canopy.material as THREE.MeshPhysicalMaterial).transmission = 0.55;
+  (canopy.material as THREE.MeshPhysicalMaterial).transparent = true;
+  (canopy.material as THREE.MeshPhysicalMaterial).depthWrite = false;
+  (canopy.material as THREE.MeshPhysicalMaterial).roughness = 0.08;
   canopy.position.set(0, hoverY + 0.42, -0.15);
   canopy.scale.set(bodyW * 0.36, 0.52, 1.15);
   g.add(canopy);

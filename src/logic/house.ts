@@ -73,7 +73,6 @@ export function starterFurniture(style: HouseStyle): PlacedItem[] {
   const petP = placeInLayout(L, 0, L.door.x - 3, L.door.z - 3, itemRadius(1.2, 1));
   const bathRoom = roomCenter(L, 0, /Bad|Ensuite|Vaskerom|Tronsal/i) ?? { x: L.w * 0.3, z: -L.d * 0.25 };
   const bathP = placeInLayout(L, 0, bathRoom.x, bathRoom.z, itemRadius(2.0, 1));
-  const plantP = placeInLayout(L, 0, L.door.x + 3, L.door.z - 2, itemRadius(0.8, 1));
   const sofaP = placeInLayout(L, 0, spots.table.x - 2.2, spots.table.z + 1.5, itemRadius(2.4, 1));
   const tvP = placeInLayout(L, 0, spots.table.x + 2.4, spots.table.z + 0.2, itemRadius(1.6, 1));
   const coffeeP = placeInLayout(L, 0, spots.table.x - 0.2, spots.table.z + 2.4, itemRadius(1.5, 1));
@@ -91,8 +90,7 @@ export function starterFurniture(style: HouseStyle): PlacedItem[] {
     { uid: uid('it'), itemId: 'krakk', x: stoolP.x, z: stoolP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
     { uid: uid('it'), itemId: 'dyreseng', x: petP.x, z: petP.z, rot: 0, scale: 1, color: '#8aa0b8', floor: 0 },
     { uid: uid('it'), itemId: 'badekar', x: bathP.x, z: bathP.z, rot: 0, scale: 1, color: '#ffffff', floor: 0 },
-    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1, color: '#4a5568', floor: 0 },
-    { uid: uid('it'), itemId: 'potteplante', x: plantP.x, z: plantP.z, rot: 0, scale: 1, color: '#5cc36b', floor: 0 },
+    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1.15, color: '#c45a4a', floor: 0 },
   ];
 }
 

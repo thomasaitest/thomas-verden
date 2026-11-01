@@ -120,10 +120,10 @@ export const SharedMats = {
     envMapIntensity: 1.0,
   }),
   grass: new THREE.MeshStandardMaterial({
-    color: '#b8e090',
-    metalness: 0.02,
-    roughness: 0.88,
-    envMapIntensity: 0.65,
+    color: '#8aad78',
+    metalness: 0.0,
+    roughness: 0.94,
+    envMapIntensity: 0.28,
   }),
   interiorFloor: new THREE.MeshStandardMaterial({
     color: '#8a929c',
@@ -171,18 +171,47 @@ export async function preloadSharedPbr(): Promise<void> {
       applyMaps(SharedMats.metal, metal, 0.85);
       SharedMats.metal.metalness = 0.85;
       SharedMats.metal.roughness = 0.35;
-      applyMaps(SharedMats.grass, grass, 0.02);
-      // CC0 grass albedo is dark (~68,91,40); multiply up to lush concept green
-      SharedMats.grass.color.set('#c8f0a0');
-      SharedMats.grass.roughness = 0.86;
-      SharedMats.grass.envMapIntensity = 0.7;
-      applyMaps(SharedMats.interiorFloor, concrete, 0.12);
-      SharedMats.interiorFloor.color.set('#8a929c');
-      SharedMats.interiorFloor.roughness = 0.42;
+      // Calm painted grass — drop noisy photo albedo, soft procedural canvas
+      {
+        const c = document.createElement('canvas');
+        c.width = 256; c.height = 256;
+        const ctx = c.getContext('2d')!;
+        ctx.fillStyle = '#7fa86c';
+        ctx.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 900; i++) {
+          const x = (i * 47) % 256;
+          const y = (i * 91) % 256;
+          const s = 4 + (i % 5);
+          ctx.fillStyle = i % 3 === 0 ? '#8bb578' : i % 3 === 1 ? '#6f9a5e' : '#86ae72';
+          ctx.globalAlpha = 0.35;
+          ctx.beginPath();
+          ctx.ellipse(x, y, s, s * 0.6, (i % 7) * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        const tex = new THREE.CanvasTexture(c);
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(28, 28);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        SharedMats.grass.map = tex;
+        SharedMats.grass.normalMap = grass.normalMap ?? null;
+        SharedMats.grass.roughnessMap = null;
+        SharedMats.grass.aoMap = null;
+        if (SharedMats.grass.normalMap) SharedMats.grass.normalScale = new THREE.Vector2(0.08, 0.08);
+      }
+      SharedMats.grass.color.set('#8aad78');
+      SharedMats.grass.roughness = 0.94;
+      SharedMats.grass.metalness = 0.0;
+      SharedMats.grass.envMapIntensity = 0.28;
+      // Warm wood floor indoors (concept)
+      applyMaps(SharedMats.interiorFloor, woodFloor, 0.08);
+      SharedMats.interiorFloor.color.set('#b8956e');
+      SharedMats.interiorFloor.roughness = 0.48;
+      SharedMats.interiorFloor.metalness = 0.04;
+      SharedMats.interiorFloor.envMapIntensity = 0.75;
       applyMaps(SharedMats.interiorWall, concrete, 0.05);
       SharedMats.interiorWall.color.set('#c5ccd4');
-      // wood floor variant kept available via woodFloor maps on SharedMats.wood for benches
-      void woodFloor;
+      void grass;
     } catch {
       /* tests / offline */
     }

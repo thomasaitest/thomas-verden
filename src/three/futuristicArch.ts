@@ -4,7 +4,7 @@
  * Shared CC0 PBR materials; white albedo ≤ ~0.8; no emissive walls.
  */
 import * as THREE from 'three';
-import { glowMat, G } from './kit.ts';
+import { glowMat } from './kit.ts';
 import {
   loadPbr,
   physicalGlass,
@@ -310,32 +310,54 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   edge.position.set(0, h + 0.78, d * 0.4);
   g.add(edge);
 
-  // Roof hologram logo board
-  const board = new THREE.Mesh(G.rbox(0.08), glowMat(spec.logoColor, 0.85));
-  board.scale.set(Math.min(7.2, w * 0.58), 0.9, 0.14);
-  board.position.set(0, h + 2.15, d * 0.28);
-  g.add(board);
+  // Roof hologram logo — tall floating glowing sign (concept)
   {
+    const signW = Math.min(8.4, w * 0.72);
+    const signH = 1.55;
+    const hy = h + 2.55;
+    const hz = d * 0.42;
+    const board = new THREE.Mesh(
+      new THREE.BoxGeometry(signW, signH, 0.12),
+      glowMat(spec.logoColor, 1.35),
+    );
+    board.position.set(0, hy, hz);
+    g.add(board);
+    const halo = new THREE.Mesh(
+      new THREE.BoxGeometry(signW + 0.35, signH + 0.35, 0.06),
+      new THREE.MeshBasicMaterial({ color: spec.logoColor, transparent: true, opacity: 0.28, depthWrite: false }),
+    );
+    halo.position.set(0, hy, hz + 0.02);
+    g.add(halo);
     const label = document.createElement('canvas');
-    label.width = 512;
-    label.height = 128;
+    label.width = 768;
+    label.height = 192;
     const lctx = label.getContext('2d')!;
-    lctx.fillStyle = '#0a1220ee';
-    lctx.roundRect(8, 8, 496, 112, 22);
+    lctx.clearRect(0, 0, 768, 192);
+    lctx.fillStyle = '#061018cc';
+    lctx.roundRect(16, 16, 736, 160, 28);
     lctx.fill();
-    lctx.fillStyle = '#e8f7ff';
-    lctx.font = '700 36px Inter, system-ui, sans-serif';
+    lctx.strokeStyle = spec.logoColor;
+    lctx.lineWidth = 8;
+    lctx.roundRect(24, 24, 720, 144, 22);
+    lctx.stroke();
+    lctx.fillStyle = '#f0fbff';
+    lctx.font = '800 58px Inter, system-ui, sans-serif';
     lctx.textAlign = 'center';
     lctx.textBaseline = 'middle';
-    lctx.fillText(spec.label, 256, 68);
+    lctx.shadowColor = spec.logoColor;
+    lctx.shadowBlur = 18;
+    lctx.fillText(spec.label.toUpperCase(), 384, 100);
     const ltex = new THREE.CanvasTexture(label);
     ltex.colorSpace = THREE.SRGBColorSpace;
     const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(Math.min(5.8, w * 0.5), 0.65),
+      new THREE.PlaneGeometry(signW * 0.92, signH * 0.82),
       new THREE.MeshBasicMaterial({ map: ltex, transparent: true }),
     );
-    plate.position.set(0, h + 2.15, d * 0.28 + 0.12);
+    plate.position.set(0, hy, hz + 0.1);
     g.add(plate);
+    const pl = new THREE.PointLight(spec.logoColor, 1.1, 14, 2);
+    pl.position.set(0, hy, hz + 1.2);
+    g.add(pl);
   }
 
   // Rear windows
@@ -553,17 +575,30 @@ export function buildPlanter(): THREE.Group {
 
 export function buildModernBench(): THREE.Group {
   const g = new THREE.Group();
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 0.55), SharedMats.wood);
-  seat.position.set(0, 0.48, 0);
-  seat.castShadow = true;
-  g.add(seat);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.08), SharedMats.wood);
-  back.position.set(0, 0.75, -0.24);
-  g.add(back);
-  for (const s of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.48, 0.5), metalMat('#2a3344'));
-    leg.position.set(s * 0.75, 0.24, 0);
+  // Slim park bench: thin wood slats + thin metal frame (not a black box)
+  const wood = SharedMats.wood.clone();
+  wood.color.set('#c4a078');
+  wood.roughness = 0.7;
+  const metal = metalMat('#6a7484');
+  for (let i = 0; i < 5; i++) {
+    const slat = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.035, 0.09), wood);
+    slat.position.set(0, 0.46, -0.18 + i * 0.1);
+    slat.castShadow = true;
+    g.add(slat);
+  }
+  for (let i = 0; i < 3; i++) {
+    const back = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.035, 0.08), wood);
+    back.position.set(0, 0.62 + i * 0.1, -0.28);
+    back.rotation.x = -0.12;
+    g.add(back);
+  }
+  for (const s of [-1, 1] as const) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.46, 0.42), metal);
+    leg.position.set(s * 0.72, 0.23, 0.02);
     g.add(leg);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 0.42), metal);
+    arm.position.set(s * 0.72, 0.58, 0.02);
+    g.add(arm);
   }
   return g;
 }
