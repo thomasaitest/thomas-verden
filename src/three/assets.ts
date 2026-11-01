@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
 type Entry = { scene: THREE.Group; animations: THREE.AnimationClip[] };
 
@@ -30,7 +31,8 @@ export function loadModel(path: string): Promise<THREE.Group & { animations: THR
     cache.set(key, p);
   }
   return p.then(({ scene, animations }) => {
-    const g = scene.clone(true) as THREE.Group & { animations: THREE.AnimationClip[] };
+    // SkeletonUtils.clone keeps SkinnedMesh ↔ skeleton bone binding (scene.clone breaks it)
+    const g = skeletonClone(scene) as THREE.Group & { animations: THREE.AnimationClip[] };
     g.animations = animations;
     g.userData.animations = animations;
     return g;
