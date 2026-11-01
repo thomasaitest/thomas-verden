@@ -82,18 +82,25 @@ export function buildCar(carId: string): THREE.Group {
     envMapIntensity: 1.1,
   });
 
-  // Sculpted elongated hull: main + tapered nose/tail + side shoulders
-  const hull = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.88, bodyH, bodyLen * 0.62), silver);
-  hull.position.set(0, hoverY + bodyH * 0.55, 0);
+  // Sculpted elongated hull: low waist + overlapping tapered volumes
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.86, bodyH * 0.85, bodyLen * 0.58), silver);
+  hull.position.set(0, hoverY + bodyH * 0.48, 0.05);
   hull.castShadow = true;
   hull.receiveShadow = true;
   g.add(hull);
+  // side shoulders (break up the slab)
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Mesh(new THREE.BoxGeometry(0.22, bodyH * 0.55, bodyLen * 0.5), silver);
+    sh.position.set(s * bodyW * 0.42, hoverY + bodyH * 0.5, 0.05);
+    sh.castShadow = true;
+    g.add(sh);
+  }
 
   // Rounded upper deck along car length (capsule default = Y; rotate to Z)
-  const deck = new THREE.Mesh(new THREE.CapsuleGeometry(bodyH * 0.48, bodyLen * 0.48, 6, 16), silver);
+  const deck = new THREE.Mesh(new THREE.CapsuleGeometry(bodyH * 0.42, bodyLen * 0.42, 8, 20), silver);
   deck.rotation.x = Math.PI / 2;
-  deck.scale.set(bodyW * 0.52, 1, 1.05);
-  deck.position.set(0, hoverY + bodyH * 0.82, 0.08);
+  deck.scale.set(bodyW * 0.48, 1, 1.0);
+  deck.position.set(0, hoverY + bodyH * 0.78, 0.1);
   deck.castShadow = true;
   g.add(deck);
 

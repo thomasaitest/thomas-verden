@@ -94,10 +94,41 @@ async function prep(page) {
     const g = window.__hv;
     g.editingAvatar = false;
     document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
+    // pets off for clean plaza framing
+    g.commit?.({ ...g.save, equipped: [] });
+    g.syncPets?.();
   });
 }
 
+
+const cleanHud = (g) => {
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal,.prompt').forEach((el) => el.remove());
+  g.hud?.prompt && (g.hud.prompt.style.display = 'none');
+  // hide 3D need bubbles on pets/actors
+  try {
+    for (const a of g.actors?.values?.() ?? []) {
+      if (a.bubble) a.bubble.visible = false;
+      if (a.rig?.root) { /* keep */ }
+    }
+    g.town?.group?.traverse?.((o) => {
+      if (o.isSprite) o.visible = false;
+    });
+    g.scene?.traverse?.((o) => {
+      if (o.isSprite && o !== g.sleepZzz) o.visible = false;
+    });
+  } catch {}
+};
+
 const shot = async (page, name, wait = 1000) => {
+  await page.evaluate(() => {
+    const g = window.__hv;
+    document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal,.prompt').forEach((el) => el.remove());
+    if (g.hud?.prompt) g.hud.prompt.style.display = 'none';
+    try {
+      for (const a of g.actors?.values?.() ?? []) if (a.bubble) a.bubble.visible = false;
+      g.scene?.traverse?.((o) => { if (o.isSprite) o.visible = false; });
+    } catch {}
+  });
   await page.waitForTimeout(wait);
   await page.screenshot({ path: `${out}/${name}.png`, timeout: 90000, animations: 'disabled' });
   console.log('saved', name);
@@ -134,7 +165,7 @@ await page.evaluate(async () => {
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 1.4, y: 2.15, z: -10.2, lx: 0.3, ly: 2.0, lz: 5 };
+  g.freezeCam = { x: 2.2, y: 2.25, z: -11.5, lx: 1.0, ly: 1.9, lz: 4 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '01-gate-plaza', 2800);
@@ -179,11 +210,11 @@ await page.evaluate(() => {
   g.enterHouse();
   const d = g.interior.d / 2;
   // stand near sofa looking toward kitchen island + back holo wall
-  g.player.pos.set(-0.2, 0, 4.0);
-  g.player.yaw = Math.PI + 0.15;
+  g.player.pos.set(0.4, 0, 3.6);
+  g.player.yaw = Math.PI + 0.4;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  // OTS toward sofa (-1.5,1.2), kitchen island (4.8,-2.2), holo on back wall
-  g.freezeCam = { x: 1.6, y: 1.7, z: 5.8, lx: 0.5, ly: 1.5, lz: -3.5 };
+  // OTS living: sofa left, kitchen island mid-right, holo back wall
+  g.freezeCam = { x: 3.2, y: 1.8, z: 5.2, lx: -0.8, ly: 1.55, lz: -4.0 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2800);

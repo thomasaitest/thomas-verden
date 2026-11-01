@@ -148,7 +148,7 @@ export async function preloadSharedPbr(): Promise<void> {
       const [wood, concrete, paving, asphalt, metal, grass, woodFloor] = await Promise.all([
         loadPbr('wood-siding', [2, 3]),
         loadPbr('concrete', [3, 3]),
-        loadPbr('paving', [6, 6]),
+        loadPbr('paving', [3, 3]),
         loadPbr('asphalt', [8, 8]),
         loadPbr('metal', [2, 2]),
         loadPbr('grass', [10, 10]),

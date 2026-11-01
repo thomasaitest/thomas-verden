@@ -67,14 +67,14 @@ export function createInterior(): Interior {
       floorGroups.forEach((g) => g.clear());
       shell.add(...floorGroups);
       // Warm cove-style fills — keep moderate so whites don't haze under ACES
-      const fill = new THREE.PointLight('#ffd7b0', 0.55, 30, 2);
+      const fill = new THREE.PointLight('#ffd7b0', 0.85, 32, 2);
       fill.name = 'InteriorFillLight';
       fill.position.set(0, 4.2, 0);
       shell.add(fill);
-      const fill2 = new THREE.PointLight('#c8e4ff', 0.28, 24, 2);
+      const fill2 = new THREE.PointLight('#c8e4ff', 0.4, 26, 2);
       fill2.position.set(-5, 3.2, -4);
       shell.add(fill2);
-      const fill3 = new THREE.PointLight('#ffe2c0', 0.22, 18, 2);
+      const fill3 = new THREE.PointLight('#ffe2c0', 0.45, 20, 2);
       fill3.position.set(4, 2.2, 2);
       shell.add(fill3);
       const { w, d } = roomSize(house.style);
@@ -228,7 +228,7 @@ export function createInterior(): Interior {
         // LED cove around ceiling perimeter (concept 2-hus-inne)
         {
           const coveY = y0 + WALL_H - 0.12;
-          const coveMat = glowMat('#ffe6c8', 1.35);
+          const coveMat = glowMat('#ffe6c8', 1.85);
           const mkCove = (sx: number, sz: number, px: number, pz: number) => {
             const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.04, sz), coveMat);
             c.position.set(px, coveY, pz);

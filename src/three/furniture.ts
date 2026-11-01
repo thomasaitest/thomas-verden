@@ -65,17 +65,37 @@ const chairShape = (g: THREE.Group, c: string, seatH = 0.9, back = true) => {
 };
 
 const sofaShape = (g: THREE.Group, c: string, w: number) => {
-  // C-shaped curved sofa
-  rbox(g, c, [0, 0.4, 0], [w, 0.55, 1.35]);
-  rbox(g, c, [0, 1.0, -0.5], [w - 0.1, 0.95, 0.32]);
-  for (const s of [-1, 1]) {
-    rbox(g, c, [s * (w / 2 - 0.2), 0.7, 0.15], [0.35, 0.7, 1.2]);
-    sph(g, c, [s * (w / 2 - 0.15), 0.55, 0.55], [0.7, 0.7, 0.7]);
+  // Soft sectional within ~w × 1.35 footprint (collider tests depend on AABB)
+  const seat = new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0.05, envMapIntensity: 0.7 });
+  const cush = new THREE.MeshStandardMaterial({ color: '#eef2f8', roughness: 0.65, metalness: 0.02 });
+  const mods = Math.max(4, Math.round(w / 0.9));
+  const half = (w - 0.5) / 2;
+  for (let i = 0; i < mods; i++) {
+    const u = mods === 1 ? 0.5 : i / (mods - 1);
+    const x = -half + u * half * 2;
+    // shallow curve toward camera (+z) — keep |z| ≤ ~0.55 so depth ≈ 1.35
+    const z = (1 - Math.cos((u - 0.5) * Math.PI)) * 0.22;
+    const yaw = (u - 0.5) * 0.45;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(w / mods + 0.12, 0.42, 1.05), seat);
+    base.position.set(x, 0.38, z);
+    base.rotation.y = -yaw;
+    base.castShadow = true;
+    g.add(base);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(w / mods + 0.05, 0.88, 0.28), seat);
+    back.position.set(x, 0.95, z - 0.42);
+    back.rotation.y = -yaw;
+    g.add(back);
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.45, w / mods - 0.15), 0.14, 0.7), cush);
+    pillow.position.set(x, 0.62, z + 0.05);
+    pillow.rotation.y = -yaw;
+    g.add(pillow);
   }
-  const n = Math.round(w / 1.2);
-  for (let i = 0; i < n; i++) rbox(g, '#eef2f8', [(i - (n - 1) / 2) * ((w - 0.6) / n), 0.72, 0.1], [(w - 0.7) / n, 0.14, 0.95]);
-  // under-glow strip
-  part(g, G.box(), '#3ecbff', [0, 0.12, 0], [w * 0.85, 0.04, 1.0], [0, 0, 0], 0.6);
+  for (const s of [-1, 1] as const) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.7, 1.1), seat);
+    arm.position.set(s * (w / 2 - 0.18), 0.7, 0.05);
+    g.add(arm);
+  }
+  part(g, G.box(), '#3ecbff', [0, 0.1, 0.05], [w * 0.78, 0.04, 0.85], [0, 0, 0], 0.55);
 };
 
 export const MODELS: Record<string, B> = {
