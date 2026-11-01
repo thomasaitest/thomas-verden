@@ -90,7 +90,7 @@ export function starterFurniture(style: HouseStyle): PlacedItem[] {
     { uid: uid('it'), itemId: 'krakk', x: stoolP.x, z: stoolP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
     { uid: uid('it'), itemId: 'dyreseng', x: petP.x, z: petP.z, rot: 0, scale: 1, color: '#8aa0b8', floor: 0 },
     { uid: uid('it'), itemId: 'badekar', x: bathP.x, z: bathP.z, rot: 0, scale: 1, color: '#ffffff', floor: 0 },
-    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1.15, color: '#c45a4a', floor: 0 },
+    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1.15, color: '#8a96a4', floor: 0 },
   ];
 }
 

@@ -257,15 +257,15 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     sctx.fillText(spec.label.toUpperCase(), 384, 88);
     const stex = new THREE.CanvasTexture(sc);
     stex.colorSpace = THREE.SRGBColorSpace;
-    const signW = Math.min(glassW * 0.95, 7.8);
+    const signW = Math.min(glassW * 0.98, 8.4);
     const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(signW, 0.9),
+      new THREE.PlaneGeometry(signW, 1.15),
       new THREE.MeshBasicMaterial({ map: stex, transparent: true }),
     );
-    sign.position.set(glassX, 0.28 + glassH + 0.5, d / 2 + 0.22);
+    sign.position.set(glassX, 0.28 + glassH + 0.65, d / 2 + 0.28);
     g.add(sign);
-    const signGlow = new THREE.Mesh(new THREE.BoxGeometry(signW + 0.2, 1.0, 0.08), glowMat(spec.logoColor, 0.7));
-    signGlow.position.set(glassX, 0.28 + glassH + 0.5, d / 2 + 0.14);
+    const signGlow = new THREE.Mesh(new THREE.BoxGeometry(signW + 0.3, 1.25, 0.1), glowMat(spec.logoColor, 1.2));
+    signGlow.position.set(glassX, 0.28 + glassH + 0.65, d / 2 + 0.18);
     g.add(signGlow);
   }
 
@@ -288,9 +288,9 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     roughness: 0.2,
     envMapIntensity: 1.35,
   });
-  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 3.6, 0.14, d * 0.82), solarMat);
-  solar.position.set(0, h + 1.25, d * 0.22);
-  solar.rotation.x = -0.38;
+  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 3.6, 0.14, d * 0.62), solarMat);
+  solar.position.set(0, h + 1.55, d * 0.05);
+  solar.rotation.x = -0.32;
   solar.castShadow = true;
   g.add(solar);
   for (let ix = -5; ix <= 5; ix++) {
@@ -310,53 +310,59 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   edge.position.set(0, h + 0.78, d * 0.4);
   g.add(edge);
 
-  // Roof hologram logo — tall floating glowing sign (concept)
+  // Facade-front hologram — IN FRONT of solar canopy so walk cam sees it
   {
-    const signW = Math.min(8.4, w * 0.72);
-    const signH = 1.55;
-    const hy = h + 2.55;
-    const hz = d * 0.42;
+    const signW = Math.min(9.2, w * 0.82);
+    const signH = 1.85;
+    // Floating above façade parapet, protruding toward plaza (readable from walk cam)
+    const hy = h + 1.35;
+    const hz = d / 2 + 0.65;
     const board = new THREE.Mesh(
-      new THREE.BoxGeometry(signW, signH, 0.12),
-      glowMat(spec.logoColor, 1.35),
+      new THREE.BoxGeometry(signW, signH, 0.14),
+      glowMat(spec.logoColor, 1.8),
     );
-    board.position.set(0, hy, hz);
+    board.position.set(glassX, hy, hz);
     g.add(board);
     const halo = new THREE.Mesh(
-      new THREE.BoxGeometry(signW + 0.35, signH + 0.35, 0.06),
-      new THREE.MeshBasicMaterial({ color: spec.logoColor, transparent: true, opacity: 0.28, depthWrite: false }),
+      new THREE.BoxGeometry(signW + 0.45, signH + 0.45, 0.08),
+      new THREE.MeshBasicMaterial({ color: spec.logoColor, transparent: true, opacity: 0.38, depthWrite: false }),
     );
-    halo.position.set(0, hy, hz + 0.02);
+    halo.position.set(glassX, hy, hz + 0.04);
     g.add(halo);
     const label = document.createElement('canvas');
-    label.width = 768;
-    label.height = 192;
+    label.width = 1024;
+    label.height = 256;
     const lctx = label.getContext('2d')!;
-    lctx.clearRect(0, 0, 768, 192);
-    lctx.fillStyle = '#061018cc';
-    lctx.roundRect(16, 16, 736, 160, 28);
+    lctx.clearRect(0, 0, 1024, 256);
+    lctx.fillStyle = '#061018dd';
+    lctx.roundRect(20, 20, 984, 216, 36);
     lctx.fill();
     lctx.strokeStyle = spec.logoColor;
-    lctx.lineWidth = 8;
-    lctx.roundRect(24, 24, 720, 144, 22);
+    lctx.lineWidth = 10;
+    lctx.roundRect(32, 32, 960, 192, 28);
     lctx.stroke();
     lctx.fillStyle = '#f0fbff';
-    lctx.font = '800 58px Inter, system-ui, sans-serif';
+    lctx.font = '800 72px Inter, system-ui, sans-serif';
     lctx.textAlign = 'center';
     lctx.textBaseline = 'middle';
     lctx.shadowColor = spec.logoColor;
-    lctx.shadowBlur = 18;
-    lctx.fillText(spec.label.toUpperCase(), 384, 100);
+    lctx.shadowBlur = 24;
+    lctx.fillText(spec.label.toUpperCase(), 512, 132);
     const ltex = new THREE.CanvasTexture(label);
     ltex.colorSpace = THREE.SRGBColorSpace;
     const plate = new THREE.Mesh(
-      new THREE.PlaneGeometry(signW * 0.92, signH * 0.82),
+      new THREE.PlaneGeometry(signW * 0.94, signH * 0.86),
       new THREE.MeshBasicMaterial({ map: ltex, transparent: true }),
     );
-    plate.position.set(0, hy, hz + 0.1);
+    plate.position.set(glassX, hy, hz + 0.12);
     g.add(plate);
-    const pl = new THREE.PointLight(spec.logoColor, 1.1, 14, 2);
-    pl.position.set(0, hy, hz + 1.2);
+    // Double-sided so readable from plaza
+    const plateB = plate.clone();
+    plateB.rotation.y = Math.PI;
+    plateB.position.z = hz - 0.12;
+    g.add(plateB);
+    const pl = new THREE.PointLight(spec.logoColor, 1.6, 18, 2);
+    pl.position.set(glassX, hy, hz + 2.0);
     g.add(pl);
   }
 

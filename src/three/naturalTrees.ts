@@ -171,15 +171,15 @@ function flower(color: string): THREE.Mesh {
 export function buildPlanter(): THREE.Group {
   const g = new THREE.Group();
   const wood = new THREE.MeshStandardMaterial({
-    color: '#3a342c',
-    roughness: 0.72,
-    metalness: 0.06,
-    envMapIntensity: 0.5,
+    color: '#c4b09a',
+    roughness: 0.68,
+    metalness: 0.05,
+    envMapIntensity: 0.55,
   });
   const rim = new THREE.MeshStandardMaterial({
-    color: '#2a2e34',
-    roughness: 0.45,
-    metalness: 0.25,
+    color: '#9aa3ae',
+    roughness: 0.4,
+    metalness: 0.3,
   });
   // Slim wood trough (dark grey/wood — not a white box)
   const pot = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.36, 0.42), wood);
@@ -192,7 +192,7 @@ export function buildPlanter(): THREE.Group {
   g.add(lip);
   const soil = new THREE.Mesh(
     new THREE.BoxGeometry(1.22, 0.05, 0.32),
-    new THREE.MeshStandardMaterial({ color: '#2a2218', roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: '#5a5048', roughness: 1 }),
   );
   soil.position.y = 0.35;
   g.add(soil);

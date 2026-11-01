@@ -652,7 +652,9 @@ export function buildTown(): Town {
       const pl = buildPlanter();
       pl.position.set(Math.sin(a) * 10.5, 0, Math.cos(a) * 10.5);
       pl.rotation.y = a;
-      stat.add(pl);
+      // unmerged — mergeStatic turns planters into black boxes
+      group.add(pl);
+      shadowAll(pl);
     }
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.55;
@@ -770,15 +772,14 @@ export function buildTown(): Town {
   // parked cars on asphalt parking bays (NOT plaza, NOT grass)
   {
     const parked = [
-      // south approach — on asphalt, clear of chase cam at z≈28
-      { id: 'bil-bla', x: 1.7, z: -18.5, yaw: Math.PI },
-      { id: 'bil-lilla', x: -1.7, z: -22.0, yaw: 0 },
-      // north road — before chase spawn (z=28)
-      { id: 'bil-rosa', x: 1.7, z: 16.5, yaw: 0 },
-      { id: 'bil-gronn', x: -1.7, z: 19.5, yaw: Math.PI },
-      // Keep +Z approach clear for chase cam (player ~z=28–32, cam ~10 m behind)
-      { id: 'bil-gul', x: 1.7, z: 52.0, yaw: 0 },
-      { id: 'bil-bla', x: -1.7, z: 55.0, yaw: Math.PI },
+      // Far south road only (PLAZA_R=13 — never on plaza / gate spawn)
+      { id: 'bil-bla', x: 1.7, z: -28.0, yaw: Math.PI },
+      { id: 'bil-lilla', x: -1.7, z: -32.0, yaw: 0 },
+      // Far north road (past chase belt)
+      { id: 'bil-rosa', x: 1.7, z: 48.0, yaw: 0 },
+      { id: 'bil-gronn', x: -1.7, z: 52.0, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.7, z: 58.0, yaw: 0 },
+      { id: 'bil-bla', x: -1.7, z: 62.0, yaw: Math.PI },
     ];
     for (const c of parked) {
       // asphalt bay pad under each car
@@ -852,13 +853,13 @@ export function buildTown(): Town {
       group.add(p);
       shadowAll(p);
     }
-    // Moving/road hover cars in view (ahead + sides of chase spawn)
+    // Road traffic ONLY on asphalt lanes — never inside PLAZA_R (~13)
     const traffic = [
-      { id: 'bil-rosa', x: 1.6, z: 12, yaw: 0 },
-      { id: 'bil-lilla', x: -1.6, z: 6, yaw: Math.PI },
-      { id: 'bil-gul', x: 1.55, z: -6, yaw: 0 },
-      { id: 'bil-gronn', x: -1.55, z: 24, yaw: Math.PI },
-      { id: 'bil-bla', x: 1.6, z: 36, yaw: 0 },
+      { id: 'bil-rosa', x: 1.6, z: 22, yaw: 0 },
+      { id: 'bil-lilla', x: -1.6, z: 28, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.55, z: -22, yaw: 0 },
+      { id: 'bil-gronn', x: -1.55, z: 34, yaw: Math.PI },
+      { id: 'bil-bla', x: 1.6, z: 40, yaw: 0 },
     ];
     for (const c of traffic) {
       const car = buildCar(c.id);

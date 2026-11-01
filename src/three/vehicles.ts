@@ -80,15 +80,21 @@ export function buildCar(carId: string): THREE.Group {
 
   const silver = new THREE.MeshStandardMaterial({
     color,
-    metalness: 0.9,
-    roughness: 0.25,
-    envMapIntensity: 1.55,
+    metalness: 0.95,
+    roughness: 0.18,
+    envMapIntensity: 1.85,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: dark,
-    metalness: 0.85,
-    roughness: 0.28,
-    envMapIntensity: 1.1,
+    metalness: 0.9,
+    roughness: 0.22,
+    envMapIntensity: 1.35,
+  });
+  const panelLine = new THREE.MeshStandardMaterial({
+    color: '#0e141c',
+    metalness: 0.7,
+    roughness: 0.35,
+    envMapIntensity: 0.8,
   });
 
   // Low wide teardrop profile
@@ -192,12 +198,14 @@ export function buildCar(carId: string): THREE.Group {
     physicalGlass('#1a2838', 0.55),
   );
   // darken glass further
-  (canopy.material as THREE.MeshPhysicalMaterial).color.set('#1a2838');
-  (canopy.material as THREE.MeshPhysicalMaterial).opacity = 0.42;
-  (canopy.material as THREE.MeshPhysicalMaterial).transmission = 0.55;
+  (canopy.material as THREE.MeshPhysicalMaterial).color.set('#0a121c');
+  (canopy.material as THREE.MeshPhysicalMaterial).opacity = 0.62;
+  (canopy.material as THREE.MeshPhysicalMaterial).transmission = 0.28;
   (canopy.material as THREE.MeshPhysicalMaterial).transparent = true;
-  (canopy.material as THREE.MeshPhysicalMaterial).depthWrite = false;
-  (canopy.material as THREE.MeshPhysicalMaterial).roughness = 0.08;
+  (canopy.material as THREE.MeshPhysicalMaterial).depthWrite = true;
+  (canopy.material as THREE.MeshPhysicalMaterial).roughness = 0.06;
+  (canopy.material as THREE.MeshPhysicalMaterial).metalness = 0.15;
+  (canopy.material as THREE.MeshPhysicalMaterial).envMapIntensity = 1.4;
   canopy.position.set(0, hoverY + 0.42, -0.15);
   canopy.scale.set(bodyW * 0.36, 0.52, 1.15);
   g.add(canopy);
@@ -221,12 +229,25 @@ export function buildCar(carId: string): THREE.Group {
     rbox(g, '#ff4b6a', [s * bodyW * 0.28, hoverY + 0.26, bodyLen * 0.42], [0.3, 0.05, 0.04], undefined, 0.9);
   }
 
-  // Panel creases
+  // Panel creases / character lines (break up flat grey blob)
   for (const s of [-1, 1] as const) {
-    const crease = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.025, bodyLen * 0.5), darkMat);
-    crease.position.set(s * (bodyW * 0.38), hoverY + 0.45, -0.05);
+    const crease = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.022, bodyLen * 0.55), panelLine);
+    crease.position.set(s * (bodyW * 0.36), hoverY + 0.48, -0.02);
     g.add(crease);
+    const crease2 = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.02, bodyLen * 0.35), panelLine);
+    crease2.position.set(s * (bodyW * 0.28), hoverY + 0.38, 0.35);
+    g.add(crease2);
   }
+  // Hood / roof seam rings
+  for (const z of [-bodyLen * 0.18, bodyLen * 0.08] as const) {
+    const seam = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.7, 0.015, 0.018), panelLine);
+    seam.position.set(0, hoverY + 0.58, z);
+    g.add(seam);
+  }
+  // Dark under-lip
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.85, 0.04, bodyLen * 0.72), panelLine);
+  lip.position.set(0, hoverY + 0.12, 0.02);
+  g.add(lip);
 
   const under = new THREE.Mesh(
     new THREE.PlaneGeometry(bodyW * 0.88, bodyLen * 0.7),

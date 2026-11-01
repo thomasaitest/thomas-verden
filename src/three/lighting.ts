@@ -135,9 +135,9 @@ export function createLighting(
       renderer.toneMappingExposure = high ? 0.62 : 0.72;
       if (bloom) {
         // Mild bloom ONLY for bright lights/holograms
-        bloom.strength = high ? 0.18 : 0.0;
-        bloom.threshold = high ? 0.92 : 1.0;
-        bloom.radius = 0.35;
+        bloom.strength = high ? 0.32 : 0.0;
+        bloom.threshold = high ? 0.72 : 1.0;
+        bloom.radius = 0.45;
       }
       if (n8) (n8 as any).enabled = high;
       if (fxaa) fxaa.enabled = high;

@@ -22,16 +22,16 @@ async function prep(page) {
       editors: [],
       editRequests: [],
       wallColor: '#f3efe8',
-      floorColor: '#b8956e',
+      floorColor: '#c8ced6',
       locked: false,
       createdAt: now,
       items: [
-        { uid: 'it1', itemId: 'seng', x: -2.5, z: -7.5, rot: 0, scale: 1.1, color: '#e8eef6', floor: 0 },
+        // Bedroom alcove (+X) — one pod bed only (not in living)
+        { uid: 'it1', itemId: 'seng', x: 5.2, z: -3.5, rot: Math.PI / 2, scale: 1.05, color: '#e8eef6', floor: 0 },
         // Living composition facing panoramic window (−Z)
-        { uid: 'it3', itemId: 'langsofa', x: -1.6, z: 1.4, rot: 0, scale: 1.35, color: '#e8eef4', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -1.6, z: 0.2, rot: 0, scale: 1.6, color: '#c45a4a', floor: 0 },
-        { uid: 'it11', itemId: 'salongbord', x: -1.6, z: -0.2, rot: 0.05, scale: 1.15, color: '#1a2230', floor: 0 },
-        { uid: 'it12', itemId: 'seng', x: 4.8, z: -2.2, rot: Math.PI / 2, scale: 1.05, color: '#e8eef6', floor: 0 },
+        { uid: 'it3', itemId: 'langsofa', x: -1.4, z: 1.5, rot: 0, scale: 1.2, color: '#d5dde6', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -1.4, z: 0.1, rot: 0, scale: 1.5, color: '#8a96a4', floor: 0 },
+        { uid: 'it11', itemId: 'salongbord', x: -1.4, z: -0.15, rot: 0.05, scale: 1.1, color: '#1a2230', floor: 0 },
       ],
     };
     const save = {
@@ -165,6 +165,7 @@ await page.evaluate(async () => {
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
   if (g.driving) g.toggleDrive();
+  g.clearVehicle?.();
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
   // Stand on south approach facing fountain — DEFAULT third-person cam
@@ -210,10 +211,10 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   // Match gameplay chase defaults (toggleDrive sets these; reaffirm)
-  g.cam.yaw = 0.42; // rear 3/4
-  g.cam.pitch = 0.14;
-  g.cam.dist = 6.2;
-  g.camShown = 6.2;
+  g.cam.yaw = 0.12; // slight rear ¾ — car centered
+  g.cam.pitch = 0.17;
+  g.cam.dist = 7.5;
+  g.camShown = 7.5;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;

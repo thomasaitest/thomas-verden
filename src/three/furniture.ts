@@ -624,7 +624,7 @@ export function buildFurniture(model: string, color: string): THREE.Group {
   }
   if (model === 'sofalong') {
     const g = new THREE.Group();
-    buildCurvedWhiteSofa(g, color || '#c8d0d8');
+    buildCurvedWhiteSofa(g, color || '#d5dde6');
     g.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {
