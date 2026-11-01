@@ -121,19 +121,21 @@ page.on('pageerror', (e) => console.log('PAGEERROR', e.message));
 await prep(page);
 
 // Gate plaza — concept-like: behind avatar looking into plaza (fountain + façades)
-await page.evaluate(() => {
+await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
   if (g.driving) g.toggleDrive();
-  g.player.pos.set(-3, 0, -8);
-  g.player.yaw = 0.25;
+  g.player.pos.set(0, 0, -5);
+  g.player.yaw = 0;
+  g.rebuildAvatar?.();
+  await new Promise((r) => setTimeout(r, 2500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 0, y: 2.4, z: -7, lx: 0, ly: 2.8, lz: 16 };
+  g.freezeCam = { x: 1.2, y: 2.05, z: -9.0, lx: 0.2, ly: 1.8, lz: 6 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '01-gate-plaza', 2800);
@@ -192,16 +194,15 @@ await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
-  g.player.pos.set(0, 0, -6);
+  g.player.pos.set(0, 0, -4);
   g.player.yaw = 0;
   g.rebuildAvatar?.();
-  // wait for Quaternius attach + tint (async)
-  await new Promise((r) => setTimeout(r, 3500));
+  await new Promise((r) => setTimeout(r, 4000));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 0.9, y: 1.85, z: -9.2, lx: 0, ly: 1.35, lz: -5.2 };
+  g.freezeCam = { x: 1.0, y: 1.9, z: -7.8, lx: 0, ly: 1.4, lz: -2.2 };
 });
 await shot(page, '04-avatar', 2200);
 
