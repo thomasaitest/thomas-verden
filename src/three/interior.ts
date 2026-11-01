@@ -75,7 +75,7 @@ export function createInterior(): Interior {
       floorGroups.forEach((g) => g.clear());
       shell.add(...floorGroups);
       // Warm cove-style fills — keep moderate so whites don't haze under ACES
-      const fill = new THREE.PointLight('#ffd7b0', house.style === 'moderne' ? 0.55 : 1.15, 34, 2);
+      const fill = new THREE.PointLight('#ffd7b0', house.style === 'moderne' ? 0.28 : 1.15, 34, 2);
       fill.name = 'InteriorFillLight';
       fill.position.set(0, 4.2, 0);
       shell.add(fill);
@@ -181,8 +181,8 @@ export function createInterior(): Interior {
           const darkMat = new THREE.MeshStandardMaterial({ color: '#2a3340', metalness: 0.45, roughness: 0.35 });
           // side returns
           for (const sx of [-1, 1]) {
-            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.55, WALL_H, 0.4), wallMat);
-            ret.position.set(sx * (panW / 2 + 0.4), y0 + WALL_H / 2, zBack - 0.05);
+            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.28, panH + 0.4, 0.28), frameMat);
+            ret.position.set(sx * (panW / 2 + 0.15), y0 + 3.15, zBack);
             ret.receiveShadow = true;
             back.add(ret);
           }
@@ -224,15 +224,7 @@ export function createInterior(): Interior {
             // Just outside the glass so it reads through translucent pane
             card.position.set(0, y0 + 3.15, zBack - 0.55);
             back.add(card);
-            // distant tower meshes for parallax depth
-            for (const [tx, th] of [[-5.5, 6.5], [-2.2, 8.2], [1.8, 7.0], [4.8, 9.0], [7.2, 5.5]] as const) {
-              const tw = new THREE.Mesh(
-                new THREE.BoxGeometry(1.1 + (th % 2) * 0.3, th, 1.1),
-                new THREE.MeshStandardMaterial({ color: '#6a7a88', roughness: 0.55, metalness: 0.2 }),
-              );
-              tw.position.set(tx, y0 + th / 2 + 0.8, zBack - 1.1);
-              back.add(tw);
-            }
+            // (no outdoor tower boxes — they read as indoor pillars through glass)
           }
           // SwiftShader-safe glass (transmission often draws as opaque white)
           const glass = new THREE.Mesh(
@@ -394,17 +386,12 @@ export function createInterior(): Interior {
               new THREE.Vector3(1.05, 0.88, -0.42),
               new THREE.Vector3(1.95, 0.82, 0.05),
             ]);
-            const seat = new THREE.Mesh(new THREE.TubeGeometry(seatCurve, 48, 0.34, 12, false), fabric);
+            const seat = new THREE.Mesh(new THREE.TubeGeometry(seatCurve, 64, 0.36, 16, false), fabric);
             seat.castShadow = true;
             sofa.add(seat);
-            const back = new THREE.Mesh(new THREE.TubeGeometry(backCurve, 48, 0.22, 12, false), fabric);
-            back.castShadow = true;
-            sofa.add(back);
-            // Flat seat deck so it doesn't look like a hose
-            const deck = new THREE.Mesh(new THREE.TubeGeometry(seatCurve, 48, 0.42, 8, false), fabric);
-            deck.scale.set(1, 0.35, 1);
-            deck.position.y = -0.05;
-            sofa.add(deck);
+            const backRest = new THREE.Mesh(new THREE.TubeGeometry(backCurve, 64, 0.2, 16, false), fabric);
+            backRest.castShadow = true;
+            sofa.add(backRest);
             for (const [u, col] of [[0.22, cush], [0.5, accent], [0.78, cush]] as const) {
               const p = seatCurve.getPoint(u);
               const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), col);

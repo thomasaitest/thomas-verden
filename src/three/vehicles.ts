@@ -56,10 +56,10 @@ export function buildCar(carId: string): THREE.Group {
   const g = new THREE.Group();
 
   // Target real-world-ish scale (lane ~3.5–3.6 m)
-  const bodyLen = kind === 'van' ? 4.8 : kind === 'sport' ? 4.4 : 4.5;
-  const bodyW = kind === 'sport' ? 1.78 : 1.85;
-  const hoverY = 0.22;
-  const bodyH = 0.72; // hull height; + canopy ≈ 1.25–1.35 m total
+  const bodyLen = kind === 'van' ? 4.6 : kind === 'sport' ? 4.2 : 4.3;
+  const bodyW = kind === 'sport' ? 1.72 : 1.78;
+  const hoverY = 0.18;
+  const bodyH = 0.68; // hull; + canopy ≈ 1.2–1.3 m
 
   const silver = new THREE.MeshStandardMaterial({
     color,

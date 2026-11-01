@@ -212,8 +212,8 @@ await page.evaluate(() => {
   g.player.yaw = 0;
   g.cam.yaw = 0.12;
   g.cam.pitch = 0.15;
-  g.cam.dist = 10.5;
-  g.camShown = 10.5;
+  g.cam.dist = 13.2;
+  g.camShown = 13.2;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 36);
     g.vehicleMesh.rotation.y = 0;
