@@ -403,6 +403,27 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   group.add(plume);
   jets.push(plume);
 
+  // Soft water curtains (read as volume, not just wires)
+  const curtainMat = new THREE.MeshPhysicalMaterial({
+    color: '#8ec8e0',
+    transparent: true,
+    opacity: 0.22,
+    transmission: 0.55,
+    roughness: 0.15,
+    metalness: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2;
+    const curtain = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 2.4), curtainMat);
+    curtain.position.set(Math.cos(ang) * 2.2, 2.2, Math.sin(ang) * 2.2);
+    curtain.rotation.y = ang + Math.PI / 2;
+    curtain.rotation.x = -0.35;
+    group.add(curtain);
+    jets.push(curtain);
+  }
+
   return { group, jets, rings };
 }
 

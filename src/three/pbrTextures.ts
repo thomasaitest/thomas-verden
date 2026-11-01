@@ -84,7 +84,7 @@ function applyMaps(mat: THREE.MeshStandardMaterial, maps: PbrMaps, metalnessDefa
 /** Shared scene materials — maps assigned by preloadSharedPbr(). */
 export const SharedMats = {
   white: new THREE.MeshStandardMaterial({
-    color: '#b4bcc6',
+    color: '#a8b0ba',
     metalness: 0.1,
     roughness: 0.52,
     envMapIntensity: 0.75,
@@ -155,7 +155,7 @@ export async function preloadSharedPbr(): Promise<void> {
         loadPbr('wood', [4, 4]),
       ]);
       applyMaps(SharedMats.white, concrete, 0.08);
-      SharedMats.white.color.set('#b4bcc6');
+      SharedMats.white.color.set('#a8b0ba');
       SharedMats.white.roughness = 0.55;
       applyMaps(SharedMats.wood, wood, 0.02);
       SharedMats.wood.color.set('#d4b896');

@@ -25,41 +25,41 @@ function pickPath(a: Avatar): string {
 }
 
 function tintMeshes(root: THREE.Object3D, a: Avatar) {
-  // Quaternius modular packs often name meshes CubeNNN — tint by world-height bands + name hints.
+  // Quaternius modular packs often name meshes CubeNNN — tint by relative height + name hints.
   root.updateWorldMatrix(true, true);
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (m.isMesh) meshes.push(m);
   });
+  // overall height for relative bands
+  const rootBox = new THREE.Box3().setFromObject(root);
+  const y0 = rootBox.min.y;
+  const y1 = rootBox.max.y;
+  const span = Math.max(0.01, y1 - y0);
   for (const m of meshes) {
-    const mats = Array.isArray(m.material) ? m.material : [m.material];
-    m.geometry.computeBoundingBox();
-    const bb = m.geometry.boundingBox;
-    const midY = bb ? (bb.min.y + bb.max.y) * 0.5 * (m.scale?.y || 1) + m.position.y : 0.8;
+    const box = new THREE.Box3().setFromObject(m);
+    const midY = (box.min.y + box.max.y) * 0.5;
+    const t = (midY - y0) / span; // 0 feet .. 1 head
     const name = `${(m.material as THREE.Material)?.name || ''} ${m.name || ''}`.toLowerCase();
     let hex = a.shirt;
-    if (/hair/.test(name) || midY > 1.45) hex = a.hairColor;
-    else if (/skin|face|arm|hand|head|neck/.test(name) || (midY > 1.15 && midY <= 1.45)) hex = a.skin;
-    else if (/shoe|boot|sneaker/.test(name) || midY < 0.22) hex = a.shoes;
-    else if (/pant|leg|bottom|jean|trouser/.test(name) || (midY >= 0.22 && midY < 0.75)) hex = a.pants;
-    else if (/shirt|torso|top|hoodie|jacket|suit|body/.test(name) || (midY >= 0.75 && midY <= 1.15)) hex = a.shirt;
-    else if (midY >= 0.75) hex = a.shirt;
-    else hex = a.pants;
-    for (const mat of mats) {
+    if (/hair/.test(name) || t > 0.88) hex = a.hairColor;
+    else if (/skin|face|arm|hand|head|neck/.test(name) || (t > 0.72 && t <= 0.88)) hex = a.skin;
+    else if (/shoe|boot|sneaker/.test(name) || t < 0.12) hex = a.shoes;
+    else if (/pant|leg|bottom|jean|trouser/.test(name) || (t >= 0.12 && t < 0.42)) hex = a.pants;
+    else hex = a.shirt;
+    const apply = (mat: THREE.Material) => {
       const std = (mat as THREE.MeshStandardMaterial).clone();
-      if (!std?.color) continue;
+      if (!std?.color) return mat;
       std.color = new THREE.Color(hex);
       std.roughness = Math.min(0.85, (std.roughness ?? 0.7) + 0.05);
-      std.metalness = Math.min(0.15, std.metalness ?? 0);
-      std.envMapIntensity = 0.7;
-      // replace so we don't share white materials across meshes
-      if (Array.isArray(m.material)) {
-        m.material = m.material.map((mm) => (mm === mat ? std : mm));
-      } else {
-        m.material = std;
-      }
-    }
+      std.metalness = Math.min(0.12, std.metalness ?? 0);
+      std.envMapIntensity = 0.75;
+      std.needsUpdate = true;
+      return std;
+    };
+    if (Array.isArray(m.material)) m.material = m.material.map(apply);
+    else m.material = apply(m.material);
   }
 }
 
