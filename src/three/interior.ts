@@ -375,8 +375,9 @@ export function createInterior(): Interior {
               seat.position.set(x, 0.4, z);
               seat.rotation.y = ang;
               sofa.add(seat);
-              const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.16, 0.7), cush);
-              pillow.position.set(x, 0.6, z + 0.04);
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), cush);
+              pillow.scale.set(1.15, 0.42, 1.05);
+              pillow.position.set(x, 0.62, z + 0.04);
               pillow.rotation.y = ang;
               sofa.add(pillow);
               const back = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.78, 0.24), fabric);
@@ -473,13 +474,13 @@ export function createInterior(): Interior {
               // cove LED under each shelf
               const led = new THREE.Mesh(
                 new THREE.BoxGeometry(0.62, 0.035, 0.08),
-                glowMat('#ffe0b0', 4.2),
+                glowMat('#ffe8c8', 6.5),
               );
               led.position.set(-4.2 + sx * 1.85, y0 + 0.95, -d / 2 + 0.82);
               living.add(led);
               const led2 = new THREE.Mesh(
                 new THREE.BoxGeometry(0.62, 0.035, 0.08),
-                glowMat('#ffe0b0', 3.5),
+                glowMat('#ffe8c8', 5.5),
               );
               led2.position.set(-4.2 + sx * 1.85, y0 + 1.55, -d / 2 + 0.82);
               living.add(led2);

@@ -176,22 +176,23 @@ export async function preloadSharedPbr(): Promise<void> {
         const c = document.createElement('canvas');
         c.width = 256; c.height = 256;
         const ctx = c.getContext('2d')!;
-        ctx.fillStyle = '#7fa86c';
+        // muted olive base — painted, not photo-green
+        ctx.fillStyle = '#6f8560';
         ctx.fillRect(0, 0, 256, 256);
-        for (let i = 0; i < 900; i++) {
+        for (let i = 0; i < 500; i++) {
           const x = (i * 47) % 256;
           const y = (i * 91) % 256;
-          const s = 4 + (i % 5);
-          ctx.fillStyle = i % 3 === 0 ? '#8bb578' : i % 3 === 1 ? '#6f9a5e' : '#86ae72';
-          ctx.globalAlpha = 0.35;
+          const s = 6 + (i % 7);
+          ctx.fillStyle = i % 3 === 0 ? '#7a9068' : i % 3 === 1 ? '#647856' : '#738662';
+          ctx.globalAlpha = 0.28;
           ctx.beginPath();
-          ctx.ellipse(x, y, s, s * 0.6, (i % 7) * 0.4, 0, Math.PI * 2);
+          ctx.ellipse(x, y, s * 1.4, s * 0.7, (i % 7) * 0.4, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.globalAlpha = 1;
         const tex = new THREE.CanvasTexture(c);
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(28, 28);
+        tex.repeat.set(22, 22);
         tex.colorSpace = THREE.SRGBColorSpace;
         SharedMats.grass.map = tex;
         SharedMats.grass.normalMap = grass.normalMap ?? null;
@@ -199,7 +200,7 @@ export async function preloadSharedPbr(): Promise<void> {
         SharedMats.grass.aoMap = null;
         if (SharedMats.grass.normalMap) SharedMats.grass.normalScale = new THREE.Vector2(0.08, 0.08);
       }
-      SharedMats.grass.color.set('#9bb888');
+      SharedMats.grass.color.set('#8a9a78');
       SharedMats.grass.roughness = 0.94;
       SharedMats.grass.metalness = 0.0;
       SharedMats.grass.envMapIntensity = 0.28;

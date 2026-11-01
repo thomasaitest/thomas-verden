@@ -8,8 +8,9 @@ const FURN_GLB: Record<string, string> = {
   sofa: 'furniture2/sofa.glb',
   sofalong: 'furniture2/sofa3.glb',
   armchair: 'furniture2/sofa2.glb',
-  bed: 'furniture/bed-single.glb',
-  bedwide: 'furniture/bed-king.glb',
+  // procedural pod beds read better than Quaternius boxes for concept
+  // bed: 'furniture/bed-single.glb',
+  // bedwide: 'furniture/bed-king.glb',
   coffeetable: 'furniture/table-roundsmall.glb',
   table: 'furniture2/table.glb',
   chair: 'furniture2/chair.glb',
@@ -47,15 +48,27 @@ const WHITE = '#ffffff';
 const PILLOW = '#fff8f0';
 
 const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
-  // futuristic pod bed
-  rbox(g, '#e8eef6', [0, 0.35, 0], [w + 0.15, 0.45, d + 0.1]);
-  rbox(g, '#1a2230', [0, 0.62, 0.1], [w - 0.15, 0.22, d - 0.35]);
-  rbox(g, c, [0, 0.78, 0.35], [w - 0.2, 0.14, d - 1.0]);
-  sph(g, '#f2f6fb', [0, 1.35, -d / 2 + 0.35], [w * 0.95, 1.5, d * 0.55]);
-  rbox(g, '#15202c', [0, 0.95, -d / 2 + 0.55], [w - 0.35, 0.08, 0.7]);
-  part(g, G.torus(), '#3ecbff', [0, 0.55, 0.1], [w * 0.55, w * 0.55, 0.35], [Math.PI / 2, 0, 0], 0.9);
-  const n = w > 2.6 ? 2 : 1;
-  for (let i = 0; i < n; i++) rbox(g, '#2a3344', [n === 1 ? 0 : (i - 0.5) * (w / 2), 0.86, -d / 2 + 0.7], [n === 1 ? w * 0.45 : w * 0.35, 0.18, 0.45]);
+  // futuristic sleeping pod — canopy shell + cyan ring + soft mattress
+  const shell = new THREE.Mesh(
+    new THREE.SphereGeometry(Math.max(w, d) * 0.42, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.7),
+    new THREE.MeshStandardMaterial({ color: '#eef3f8', roughness: 0.32, metalness: 0.18, envMapIntensity: 1.05 }),
+  );
+  shell.position.set(0, 0.95, -0.15);
+  shell.scale.set(w * 0.55, 0.85, d * 0.42);
+  shell.castShadow = true;
+  g.add(shell);
+  rbox(g, '#1a2230', [0, 0.42, 0.05], [w * 0.85, 0.28, d * 0.75]);
+  rbox(g, c, [0, 0.6, 0.15], [w * 0.78, 0.12, d * 0.55]);
+  rbox(g, '#f4f7fb', [0, 0.72, -d * 0.22], [w * 0.5, 0.16, 0.4]);
+  part(g, G.torus(), '#3ecbff', [0, 0.48, 0.05], [w * 0.42, w * 0.42, 0.28], [Math.PI / 2, 0, 0], 1.2);
+  // open lip glow
+  const lip = new THREE.Mesh(
+    new THREE.TorusGeometry(w * 0.38, 0.03, 8, 32, Math.PI * 1.2),
+    new THREE.MeshBasicMaterial({ color: '#7ef0ff' }),
+  );
+  lip.rotation.x = Math.PI / 2;
+  lip.position.set(0, 0.7, d * 0.05);
+  g.add(lip);
 };
 
 const chairShape = (g: THREE.Group, c: string, seatH = 0.9, back = true) => {
@@ -551,8 +564,9 @@ function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
     seat.position.set(x, 0.42, z);
     seat.rotation.y = ang;
     g.add(seat);
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.16, 0.62), cushMat);
-    pillow.position.set(x, 0.62, z + 0.05);
+    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), cushMat);
+    pillow.scale.set(1.1, 0.45, 1.0);
+    pillow.position.set(x, 0.64, z + 0.05);
     pillow.rotation.y = ang;
     g.add(pillow);
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.22), mat);

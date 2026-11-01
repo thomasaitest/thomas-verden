@@ -210,10 +210,10 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   // Match gameplay chase defaults (toggleDrive sets these; reaffirm)
-  g.cam.yaw = 0.38; // rear 3/4
-  g.cam.pitch = 0.2;
-  g.cam.dist = 6.8;
-  g.camShown = 6.8;
+  g.cam.yaw = 0.42; // rear 3/4
+  g.cam.pitch = 0.14;
+  g.cam.dist = 6.2;
+  g.camShown = 6.2;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;

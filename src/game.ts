@@ -982,7 +982,7 @@ export class Game {
     this.renderer.setSize(w, h);
     this.lighting?.resize(w, h);
     this.camera.aspect = w / h;
-    this.camera.fov = w < h ? 68 : 55;
+    this.camera.fov = w < h ? 68 : (this.driving ? 48 : 55);
     this.camera.updateProjectionMatrix();
   }
 
@@ -1269,15 +1269,15 @@ export class Game {
     // Driving chase: car fills lower-middle ~35–40% width (concept 4-bil)
     // ~6.8 m back, cam ~1.9 m up, slight side angle
     if (this.driving && !seat) {
-      const ahead = 0.9;
+      const ahead = 1.35;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
-        const wantYaw = p.yaw + 0.38;
+        const wantYaw = p.yaw + 0.42;
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
-        // sin(0.22)*6.8 ≈ 1.48 → cam y ≈ 0.72+1.48 ≈ 2.2; keep low
-        this.cam.pitch += (0.2 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (6.8 - this.cam.dist) * Math.min(1, dt * 5);
+        // cam ~1.7–1.9 m: sin(0.14)*6.2 ≈ 0.86 → y ≈ 0.72+0.86 ≈ 1.58
+        this.cam.pitch += (0.14 - this.cam.pitch) * Math.min(1, dt * 5);
+        this.cam.dist += (6.2 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1912,9 +1912,9 @@ export class Game {
     this.driving = id;
     this.syncVehicleMesh();
     // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
-    this.cam.yaw = this.player.yaw + 0.38;
-    this.cam.pitch = 0.2;
-    this.cam.dist = 6.8;
+    this.cam.yaw = this.player.yaw + 0.42;
+    this.cam.pitch = 0.14;
+    this.cam.dist = 6.2;
     this.camShown = this.cam.dist;
     this.editingAvatar = false;
     sfx.whoosh();
