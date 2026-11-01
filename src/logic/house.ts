@@ -57,10 +57,13 @@ export function starterSpots(style: HouseStyle): { bed: { x: number; z: number; 
   const L = houseLayout(style);
   const sleep = roomCenter(L, 0, /Soverom|Master|Lugar|Kongesuite|Prinsesse/i) ?? { x: -L.w * 0.25, z: -L.d * 0.15 };
   const live = roomCenter(L, 0, /Stue|Salon|Festsal|Åpen stue|Salong|Dekk/i) ?? { x: L.w * 0.15, z: L.d * 0.15 };
+  const kitchen = roomCenter(L, 0, /Kjøkken|Kjokken/i) ?? { x: L.w * 0.35, z: 0 };
   // Nudge bed/table off the exact centre so they do not stack on the player spawn path.
+  // Moderne: dining table lives in kitchen so living vignette (sofa/TV) stays clear
+  const tableAt = style === 'moderne' ? kitchen : live;
   return {
     bed: { x: sleep.x, z: sleep.z, rot: Math.PI / 2 },
-    table: { x: live.x, z: live.z, rot: 0 },
+    table: { x: tableAt.x, z: tableAt.z, rot: 0 },
   };
 }
 

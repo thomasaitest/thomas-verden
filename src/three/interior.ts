@@ -179,10 +179,10 @@ export function createInterior(): Interior {
           const zBack = -d / 2;
           const frameMat = new THREE.MeshStandardMaterial({ color: '#6a727c', metalness: 0.4, roughness: 0.35 });
           const darkMat = new THREE.MeshStandardMaterial({ color: '#2a3340', metalness: 0.45, roughness: 0.35 });
-          // side returns
+          // slim side returns (thick posts read as indoor pillars)
           for (const sx of [-1, 1]) {
-            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.28, panH + 0.4, 0.28), frameMat);
-            ret.position.set(sx * (panW / 2 + 0.15), y0 + 3.15, zBack);
+            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.1, panH + 0.4, 0.12), frameMat);
+            ret.position.set(sx * (panW / 2 + 0.08), y0 + 3.15, zBack);
             ret.receiveShadow = true;
             back.add(ret);
           }
