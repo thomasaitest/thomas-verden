@@ -186,29 +186,32 @@ await page.evaluate(async () => {
 });
 await shot(page, '01-gate-plaza', 2200);
 
-// Car chase framing — on approach road looking toward plaza, car in lower center
+// Car chase — DEFAULT gameplay chase cam (no freezeCam, real scene)
 await page.evaluate(() => {
   const g = window.__hv;
   g.freezeCam = null;
+  g.editingAvatar = false;
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   const bag = { ...g.save.bag };
   for (const k of Object.keys(bag)) if (k.startsWith('bil-')) delete bag[k];
   bag['bil-bla'] = 1;
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
-  // yaw 0 faces -Z (plaza); yaw PI faces +Z (was hitting Dørspillet)
+  // On clear +Z approach (parked cars live at z≥52), face plaza (−Z)
   g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   g.toggleDrive();
 });
-await page.waitForTimeout(2200);
+await page.waitForTimeout(2000);
 await page.evaluate(() => {
   const g = window.__hv;
+  g.freezeCam = null;
   g.editingAvatar = false;
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   if (!g.driving) g.toggleDrive();
   g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
-  g.cam.yaw = 0;
+  // Match gameplay chase defaults (toggleDrive sets these; reaffirm)
+  g.cam.yaw = 0.32; // slight rear 3/4
   g.cam.pitch = 0.16;
   g.cam.dist = 12;
   g.camShown = 12;
@@ -216,70 +219,30 @@ await page.evaluate(() => {
     g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;
   }
-  // Rear 3/4 — look a bit high so full car sits above HUD dock
-  const fc = { x: 3.4, y: 3.0, z: 30 + 12, lx: 0.2, ly: 1.15, lz: 30 };
-  g.freezeCam = fc;
-  g.camera.position.set(fc.x, fc.y, fc.z);
-  g.camera.lookAt(fc.lx, fc.ly, fc.lz);
   g.hud?.setWhere?.('Dag · Sol');
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
-// Hide parked decoy cars + reassert freezeCam
-await page.evaluate(() => {
-  const g = window.__hv;
-  g.town?.group?.traverse((o) => {
-    if (o.userData?.parkedCar) o.visible = false;
-  });
-  // also hide any car mesh that isn't the player vehicle
-  g.town?.group?.traverse((o) => {
-    if (o === g.vehicleMesh) return;
-    if (/bil-|Car|car/i.test(o.name) || o.userData?.isCar) o.visible = false;
-  });
-});
-for (let i = 0; i < 10; i++) {
-  const info = await page.evaluate(() => {
-    const g = window.__hv;
-    const fc = g.freezeCam;
-    if (fc) {
-      g.camera.position.set(fc.x, fc.y, fc.z);
-      g.camera.lookAt(fc.lx, fc.ly, fc.lz);
-    }
-    g.editingAvatar = false;
-    return {
-      freeze: !!g.freezeCam,
-      pos: g.camera.position.toArray().map((n) => +n.toFixed(2)),
-      driving: !!g.driving,
-      veh: g.vehicleMesh?.position.toArray?.()?.map((n) => +n.toFixed(2)),
-    };
-  });
-  if (i === 9) console.log('CARCAM', JSON.stringify(info));
-  await page.waitForTimeout(100);
-}
-await shot(page, '02-car-street', 1500);
+await shot(page, '02-car-street', 2200);
 
-// Interior — eye-level dollhouse-ish but concept-like living view
+// Interior — DEFAULT enterHouse cam + walk into living (no freezeCam)
 await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
+  g.editingAvatar = false;
   if (g.driving) g.toggleDrive();
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
-  g.enterHouse(); // sets default interior cam
+  g.enterHouse(); // gameplay default interior cam facing window
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  // Living: face panoramic window (−Z). Slight OTS so sofa/island/skyline read
-  g.editingAvatar = false;
-  g.player.pos.set(-0.4, 0, 2.8);
-  g.player.yaw = 0.0;
-  g.cam.yaw = 0.05;
-  g.cam.pitch = 0.04;
-  g.cam.dist = 5.2;
-  g.camShown = 5.2;
+  // Stand in living looking at panoramic (−Z) — same pose enterHouse aims for
+  g.player.pos.set(0.3, 0, 2.2);
+  g.player.yaw = 0;
+  g.cam.yaw = 0.08;
+  g.cam.pitch = 0.05;
+  g.cam.dist = 5.6;
+  g.camShown = 5.6;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  // Eye-level look into the window wall (skyline + holo + island)
-  const fc = { x: 0.8, y: 1.7, z: 5.5, lx: 0.5, ly: 2.8, lz: -9.5 };
-  g.freezeCam = fc;
-  g.camera.position.set(fc.x, fc.y, fc.z);
-  g.camera.lookAt(fc.lx, fc.ly, fc.lz);
-  await new Promise((r) => setTimeout(r, 500));
+  await new Promise((r) => setTimeout(r, 600));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2200);

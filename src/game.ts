@@ -533,13 +533,14 @@ export class Game {
     this.interior.build(house);
     this.town.group.visible = false;
     this.interior.group.visible = true;
-    this.player.pos.set(this.interior.door.x, 0, this.interior.door.z - 1.5);
+    // Spawn deeper in the living area facing the panoramic window (−Z)
+    this.player.pos.set(this.interior.door.x + 0.3, 0, Math.max(-1.5, this.interior.door.z - 6.2));
     this.player.vy = 0;
-    // Face into the house (−Z from the door). yaw 0 = −Z in three.js.
     this.player.yaw = 0;
-    this.cam.yaw = 0;
-    this.cam.pitch = 0.08;
-    this.cam.dist = 5.2;
+    this.cam.yaw = 0.08;
+    this.cam.pitch = 0.05;
+    this.cam.dist = 5.6;
+    this.camShown = 5.6;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#d8dde4');
     this.scene.fog = null;
@@ -1272,8 +1273,9 @@ export class Game {
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
-        this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
-        // sin(0.18)*10 ≈ 1.8 → cam y ≈ 0.95+1.8 ≈ 2.75 (rear 3/4)
+        // Slight yaw bias for rear 3/4 (concept 4-bil)
+        const wantYaw = p.yaw + 0.32;
+        this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 4);
         this.cam.pitch += (0.16 - this.cam.pitch) * Math.min(1, dt * 4);
         this.cam.dist += (12 - this.cam.dist) * Math.min(1, dt * 4);
       }
@@ -1910,8 +1912,8 @@ export class Game {
     this.sleeping = null;
     this.driving = id;
     this.syncVehicleMesh();
-    // Default chase cam: ~10.5 m back so full car fits (FOV 55)
-    this.cam.yaw = this.player.yaw;
+    // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
+    this.cam.yaw = this.player.yaw + 0.32;
     this.cam.pitch = 0.16;
     this.cam.dist = 12;
     this.camShown = this.cam.dist;
