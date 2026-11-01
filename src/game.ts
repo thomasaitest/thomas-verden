@@ -535,9 +535,9 @@ export class Game {
     this.interior.group.visible = true;
     this.player.pos.set(this.interior.door.x, 0, this.interior.door.z - 1.5);
     this.player.vy = 0;
-    this.player.yaw = Math.PI;
-    // Default interior cam: OTS living — sky/sofa/island readable while walking
-    this.cam.yaw = this.player.yaw; // behind player looking into the house
+    // Face into the house (−Z from the door). yaw 0 = −Z in three.js.
+    this.player.yaw = 0;
+    this.cam.yaw = 0;
     this.cam.pitch = 0.4;
     this.cam.dist = 9.5;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;

@@ -48,7 +48,7 @@ export const PLACES: Record<string, Place> = {
   // Playground west of plaza
   play: { id: 'play', x: -44, z: 16, hw: 11, hd: 11, rot: Math.PI / 2 },
   // North of EW 22
-  doors: { id: 'doors', x: 0, z: 46, hw: 5, hd: 3, rot: Math.PI },
+  doors: { id: 'doors', x: 28, z: 48, hw: 5, hd: 3, rot: -Math.PI / 2 },
   // North of EW 22, door faces south onto that street
   vet: { id: 'vet', x: 38, z: 30, hw: 7, hd: 5.5, rot: Math.PI },
 };

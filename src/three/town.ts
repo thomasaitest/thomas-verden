@@ -605,12 +605,12 @@ export function buildTown(): Town {
   {
     // Open plaza: shops farther out with sky gaps (concept has breathing room)
     const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
-      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -1.35, dist: 26, w: 12 },
-      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.0, dist: 28, w: 12 },
-      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.35, dist: 26, w: 12 },
-      // leave southern arc (-Z) open for sky / approach road
-      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 29, w: 11 },
-      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 29, w: 11 },
+      // Keep |ang| away from 0 and π so nothing sits on N/S road
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -1.05, dist: 25, w: 12 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.95, dist: 26, w: 12 },
+      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 2.15, dist: 27, w: 12 },
+      { label: 'Solcelle', logoColor: '#e8a040', ang: -2.15, dist: 27, w: 11 },
+      { label: 'Byte Lab', logoColor: '#c88bff', ang: 3.05, dist: 28, w: 11 },
     ];
     for (const f of facades) {
       const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2, variant: Math.abs(Math.round(f.ang * 10)) });

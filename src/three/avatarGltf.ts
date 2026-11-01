@@ -25,50 +25,98 @@ function pickPath(a: Avatar): string {
 }
 
 function tintMeshes(root: THREE.Object3D, a: Avatar) {
-  // Quaternius modular packs often name meshes CubeNNN — tint by relative height + name hints.
+  // Quaternius modular packs often name meshes CubeNNN — tint by name, original
+  // albedo heuristic, then height bands. Skin must never get tech metalness/emissive.
   root.updateWorldMatrix(true, true);
   const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (m.isMesh) meshes.push(m);
   });
-  // overall height for relative bands
   const rootBox = new THREE.Box3().setFromObject(root);
   const y0 = rootBox.min.y;
   const y1 = rootBox.max.y;
   const span = Math.max(0.01, y1 - y0);
+  // Lift peach slightly so HDRI + N8AO don't crush faces to mud
+  const skinHex = a.skin || '#f0c7a0';
+  const skinCol = new THREE.Color(skinHex);
+  skinCol.r = Math.min(1, skinCol.r * 1.08 + 0.04);
+  skinCol.g = Math.min(1, skinCol.g * 1.05 + 0.03);
+  skinCol.b = Math.min(1, skinCol.b * 1.02 + 0.02);
+
+  const looksLikeSkin = (mat: THREE.MeshStandardMaterial) => {
+    const c = mat.color;
+    if (!c) return false;
+    // Quaternius skin albedos are warm peach/tan, low saturation blue channel
+    return c.r > 0.45 && c.g > 0.28 && c.b > 0.18 && c.r >= c.b + 0.05 && c.r >= c.g - 0.05 && (c.r + c.g + c.b) / 3 > 0.35;
+  };
+
   for (const m of meshes) {
     const box = new THREE.Box3().setFromObject(m);
     const midY = (box.min.y + box.max.y) * 0.5;
-    const t = (midY - y0) / span; // 0 feet .. 1 head
+    const band = (midY - y0) / span; // 0 feet .. 1 head
     const name = `${(m.material as THREE.Material)?.name || ''} ${m.name || ''}`.toLowerCase();
-    let hex = a.shirt;
-    if (/hair/.test(name) || t > 0.88) hex = a.hairColor;
-    else if (/skin|face|arm|hand|head|neck/.test(name) || (t > 0.72 && t <= 0.88)) hex = a.skin;
-    else if (/shoe|boot|sneaker/.test(name) || t < 0.12) hex = a.shoes;
-    else if (/pant|leg|bottom|jean|trouser/.test(name) || (t >= 0.12 && t < 0.42)) hex = a.pants;
-    else hex = a.shirt;
-    const tech = /skjort|kjole|tutu|plissert|ballkjole|miniskjort|langtskort/.test(a.bottom || '') || a.accessory.includes('vinger') || a.accessory.startsWith('sekk');
+    const srcMat = (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.MeshStandardMaterial;
+    let kind: 'hair' | 'skin' | 'shoes' | 'pants' | 'shirt' = 'shirt';
+    if (/hair|ponytail|bun/.test(name)) kind = 'hair';
+    else if (/skin|face|arm|hand|head|neck|leg_skin|body_skin/.test(name)) kind = 'skin';
+    else if (srcMat?.isMeshStandardMaterial && looksLikeSkin(srcMat) && !/cloth|shirt|pant|shoe|boot|hat/.test(name)) kind = 'skin';
+    else if (/shoe|boot|sneaker|foot/.test(name)) kind = 'shoes';
+    else if (/pant|leg|bottom|jean|trouser|skirt/.test(name)) kind = 'pants';
+    else if (/shirt|top|hoodie|jacket|cloth|suit/.test(name)) kind = 'shirt';
+    else if (band > 0.9) kind = 'hair';
+    else if (band > 0.78) kind = 'skin'; // head/neck band only — narrow
+    else if (band < 0.1) kind = 'shoes';
+    else if (band < 0.38) kind = 'pants';
+    else kind = 'shirt';
+
+    const hex =
+      kind === 'hair' ? a.hairColor : kind === 'skin' ? skinHex : kind === 'shoes' ? a.shoes : kind === 'pants' ? a.pants : a.shirt;
+    const techClothes = kind === 'shirt' || kind === 'pants';
+    const techLook =
+      techClothes &&
+      (/skjort|kjole|tutu|plissert|ballkjole|miniskjort|langtskort/.test(a.bottom || '') ||
+        a.accessory.includes('vinger') ||
+        a.accessory.startsWith('sekk') ||
+        a.print === 'lyn');
+
     const apply = (mat: THREE.Material) => {
       const std = (mat as THREE.MeshStandardMaterial).clone();
       if (!std?.color) return mat;
-      std.color = new THREE.Color(hex);
-      if (hex === a.shirt && tech) {
-        std.roughness = 0.35;
-        std.metalness = 0.28;
-        std.envMapIntensity = 1.15;
-        if (a.shirt.toLowerCase().includes('c8') || a.shirt.toLowerCase().includes('a6') || a.shirt.toLowerCase().includes('ff')) {
-          std.emissive = new THREE.Color(hex);
-          std.emissiveIntensity = 0.12;
-        }
-      } else if (hex === a.pants && tech) {
-        std.roughness = 0.28;
-        std.metalness = 0.35;
-        std.envMapIntensity = 1.05;
+      if (kind === 'skin') {
+        // Drop baked maps that crush/tint skin; use lifted peach albedo
+        std.map = null;
+        std.normalMap = null;
+        std.roughnessMap = null;
+        std.metalnessMap = null;
+        std.aoMap = null;
+        std.color = skinCol.clone();
+        std.emissive = new THREE.Color('#3a2214');
+        std.emissiveIntensity = 0.08; // soft fill vs N8AO crush
+        std.roughness = 0.58;
+        std.metalness = 0.0;
+        std.envMapIntensity = 0.7;
       } else {
-        std.roughness = Math.min(0.82, (std.roughness ?? 0.7) + 0.02);
-        std.metalness = Math.min(0.15, std.metalness ?? 0);
-        std.envMapIntensity = 0.85;
+        std.color = new THREE.Color(hex);
+        std.emissive = new THREE.Color('#000000');
+        std.emissiveIntensity = 0;
+        if (kind === 'hair') {
+          std.roughness = 0.7;
+          std.metalness = 0.02;
+          std.envMapIntensity = 0.5;
+        } else if (techLook && kind === 'shirt') {
+          std.roughness = 0.4;
+          std.metalness = 0.22;
+          std.envMapIntensity = 1.05;
+        } else if (techLook && kind === 'pants') {
+          std.roughness = 0.38;
+          std.metalness = 0.2;
+          std.envMapIntensity = 0.95;
+        } else {
+          std.roughness = Math.min(0.82, (std.roughness ?? 0.7) + 0.02);
+          std.metalness = Math.min(0.12, std.metalness ?? 0);
+          std.envMapIntensity = 0.8;
+        }
       }
       std.needsUpdate = true;
       return std;
@@ -77,7 +125,6 @@ function tintMeshes(root: THREE.Object3D, a: Avatar) {
     else m.material = apply(m.material);
   }
 }
-
 
 /** Concept-style overlays on Quaternius humans: glow skirt, tech pack, light wings, jewellery. */
 function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
@@ -131,19 +178,22 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 
   const acc = a.accessory || 'ingen';
   if (acc.startsWith('sekk') || acc === 'sekk') {
-    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.28), metal('#2a3344'));
-    pack.position.set(0, 1.35, -0.42);
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.26), metal('#2a3344'));
+    pack.position.set(0, 1.38, -0.4);
     gear.add(pack);
-    for (const y of [1.55, 1.35, 1.15]) {
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.04), glow('#3ecbff', 1.6));
-      strip.position.set(0, y, -0.57);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 0.28), metal('#1a2230'));
+    lid.position.set(0, 1.72, -0.4);
+    gear.add(lid);
+    for (const y of [1.58, 1.4, 1.22]) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.035, 0.035), glow('#3ecbff', 1.6));
+      strip.position.set(0, y, -0.54);
       gear.add(strip);
     }
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 8), metal('#8aa0b8'));
-    antenna.position.set(0.18, 1.85, -0.42);
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.32, 8), metal('#8aa0b8'));
+    antenna.position.set(0.16, 1.95, -0.4);
     gear.add(antenna);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), glow('#7ef0ff', 2));
-    tip.position.set(0.18, 2.05, -0.42);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), glow('#7ef0ff', 2));
+    tip.position.set(0.16, 2.12, -0.4);
     gear.add(tip);
   }
 
@@ -163,8 +213,8 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     }
   }
 
-  // jewellery accents (necklace / earrings / bracelet) — always a subtle futuristic read on tech looks
-  if (acc === 'halskjede' || acc === 'perlekjede' || skirtLike || acc.startsWith('sekk')) {
+  // jewellery only when selected (avoid glowing bead wash on every tech look)
+  if (acc === 'halskjede' || acc === 'perlekjede') {
     for (let i = 0; i < 10; i++) {
       const t = (i / 9) * Math.PI;
       const bead = new THREE.Mesh(
@@ -175,7 +225,7 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
       gear.add(bead);
     }
   }
-  if (acc === 'oreringer' || acc === 'glorie' || skirtLike) {
+  if (acc === 'oreringer' || acc === 'glorie') {
     for (const s of [-1, 1]) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.012, 6, 14), metal('#e8d090'));
       ring.position.set(s * 0.28, 1.72, 0.05);
@@ -207,8 +257,10 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     gear.add(chest);
   }
 
+  gear.scale.setScalar(0.95);
   root.add(gear);
 }
+
 
 export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void> {
   try {

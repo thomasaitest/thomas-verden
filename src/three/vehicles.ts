@@ -1,10 +1,10 @@
-/** Sleek futuristic hover-cars matching konsept/v2/4-bil.jpg — low, wide, glass canopy, driver visible. */
+/** Sleek futuristic hover-cars matching konsept/v2/4-bil.jpg — sculpted teardrop, glass canopy, driver visible. */
 import * as THREE from 'three';
 import { CAR_BY_ID } from '../logic/catalog.ts';
 import { glowMat, rbox, cyl } from './kit.ts';
 import { physicalGlass } from './pbrTextures.ts';
 
-export const CAR_SEAT_Y = 0.48;
+export const CAR_SEAT_Y = 0.52;
 export const CAR_AVATAR_SCALE = 0.55;
 export const PRAM_PULL_BACK = 1.45;
 
@@ -35,7 +35,8 @@ function thrusterDisc(g: THREE.Group, x: number, y: number, z: number, r = 0.18,
   g.add(disc);
   const core = new THREE.Mesh(new THREE.CircleGeometry(r * 0.72, 24), glowMat('#3ecbff', 2.2));
   if (facing === 'front') {
-    core.position.set(x, y, z + 0.035);
+    // Car forward is −Z; place emissive face on the nose side
+    core.position.set(x, y, z - 0.035);
   } else {
     core.rotation.x = -Math.PI / 2;
     core.position.set(x, y - 0.035, z);
@@ -46,7 +47,7 @@ function thrusterDisc(g: THREE.Group, x: number, y: number, z: number, r = 0.18,
     new THREE.MeshBasicMaterial({ color: '#5ccfff', transparent: true, opacity: 0.3, depthWrite: false }),
   );
   if (facing === 'front') {
-    glow.position.set(x, y, z + 0.02);
+    glow.position.set(x, y, z - 0.02);
   } else {
     glow.rotation.x = -Math.PI / 2;
     glow.position.set(x, 0.02, z);
@@ -54,153 +55,160 @@ function thrusterDisc(g: THREE.Group, x: number, y: number, z: number, r = 0.18,
   g.add(glow);
 }
 
-/** Elongated sculpted silver hover-car — NOT a saucer. */
+/** Elongated sculpted silver hover-car — NOT a slab. Concept teardrop from chase cam. */
 export function buildCar(carId: string): THREE.Group {
   const def = CAR_BY_ID[carId];
   const raw = def?.color ?? '#d0d8e4';
-  // Push hard toward concept silver-white (4-bil.jpg)
   const color = hexMix(raw, '#e8eef4', 0.88);
   const dark = hexMix(color, '#121820', 0.72);
   const kind = carKind(carId);
   const g = new THREE.Group();
 
-  const bodyLen = kind === 'van' ? 5.6 : kind === 'sport' ? 5.4 : 5.35;
+  const bodyLen = kind === 'van' ? 5.6 : kind === 'sport' ? 5.3 : 5.2;
   const bodyW = kind === 'sport' ? 2.05 : 2.15;
-  const bodyH = kind === 'suv' ? 0.52 : kind === 'sport' ? 0.34 : 0.4;
-  const hoverY = 0.38;
+  const hoverY = 0.42;
 
   const silver = new THREE.MeshStandardMaterial({
     color,
-    metalness: 0.95,
-    roughness: 0.12,
-    envMapIntensity: 1.55,
+    metalness: 0.96,
+    roughness: 0.1,
+    envMapIntensity: 1.65,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: dark,
-    metalness: 0.75,
-    roughness: 0.28,
-    envMapIntensity: 1.1,
+    metalness: 0.82,
+    roughness: 0.24,
+    envMapIntensity: 1.15,
   });
 
-  // Sculpted elongated hull: low waist + overlapping tapered volumes
-  const hull = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.86, bodyH * 0.85, bodyLen * 0.58), silver);
-  hull.position.set(0, hoverY + bodyH * 0.48, 0.05);
+  // Side-profile extrude — tall enough to read as a sculpted sedan, not a pancake
+  const profile = new THREE.Shape();
+  const L = bodyLen;
+  // Nose (front = +Z after rotate) sits at +L/2 in shape X before rotate
+  profile.moveTo(-L * 0.48, 0.04);
+  profile.quadraticCurveTo(-L * 0.5, 0.22, -L * 0.46, 0.38); // rear bumper rise
+  profile.quadraticCurveTo(-L * 0.38, 0.72, -L * 0.22, 0.82); // rear deck
+  profile.quadraticCurveTo(-L * 0.05, 0.95, L * 0.08, 0.98); // cabin roof line
+  profile.quadraticCurveTo(L * 0.28, 0.88, L * 0.38, 0.62); // windshield rake
+  profile.quadraticCurveTo(L * 0.48, 0.4, L * 0.5, 0.22); // nose drop
+  profile.lineTo(L * 0.48, 0.04);
+  profile.closePath();
+  const hullGeo = new THREE.ExtrudeGeometry(profile, {
+    depth: bodyW * 0.78,
+    bevelEnabled: true,
+    bevelThickness: 0.14,
+    bevelSize: 0.12,
+    bevelSegments: 3,
+    steps: 1,
+  });
+  hullGeo.center();
+  const hull = new THREE.Mesh(hullGeo, silver);
+  hull.rotation.y = Math.PI / 2; // profile X → world −Z length
+  hull.position.set(0, hoverY + 0.08, 0);
   hull.castShadow = true;
   hull.receiveShadow = true;
   g.add(hull);
-  // side shoulders (break up the slab)
-  for (const s of [-1, 1]) {
-    const sh = new THREE.Mesh(new THREE.BoxGeometry(0.22, bodyH * 0.55, bodyLen * 0.5), silver);
-    sh.position.set(s * bodyW * 0.42, hoverY + bodyH * 0.5, 0.05);
-    sh.castShadow = true;
-    g.add(sh);
+
+  // Soft side bolsters (width curve without reading as extra domes)
+  for (const s of [-1, 1] as const) {
+    const bolster = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 12), silver);
+    bolster.scale.set(0.42, 0.42, bodyLen * 0.32);
+    bolster.position.set(s * (bodyW * 0.4), hoverY + 0.32, 0.0);
+    bolster.castShadow = true;
+    g.add(bolster);
   }
 
-  // Rounded upper deck along car length (capsule default = Y; rotate to Z)
-  const deck = new THREE.Mesh(new THREE.CapsuleGeometry(bodyH * 0.42, bodyLen * 0.42, 8, 20), silver);
-  deck.rotation.x = Math.PI / 2;
-  deck.scale.set(bodyW * 0.48, 1, 1.0);
-  deck.position.set(0, hoverY + bodyH * 0.78, 0.1);
-  deck.castShadow = true;
-  g.add(deck);
+  // Front fender bulbs (concept circular thruster housings)
+  for (const s of [-1, 1] as const) {
+    const fender = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 14), silver);
+    fender.scale.set(0.85, 0.7, 1.15);
+    fender.position.set(s * (bodyW * 0.42), hoverY + 0.32, -bodyLen * 0.32);
+    fender.castShadow = true;
+    g.add(fender);
+  }
 
-  // Nose wedge (aerodynamic)
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.72, bodyH * 0.62, bodyLen * 0.28), silver);
-  nose.position.set(0, hoverY + bodyH * 0.42, bodyLen * 0.38);
-  nose.rotation.x = 0.12;
-  nose.castShadow = true;
-  g.add(nose);
-  const noseCap = new THREE.Mesh(new THREE.SphereGeometry(bodyH * 0.62, 18, 14), silver);
-  noseCap.scale.set(bodyW * 0.62, 0.85, 1.35);
-  noseCap.position.set(0, hoverY + bodyH * 0.42, bodyLen * 0.52);
-  g.add(noseCap);
+  // Tapered rear fairing — single continuous sculpt, not a second dome
+  const rearFair = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), silver);
+  rearFair.scale.set(bodyW * 0.38, 0.38, bodyLen * 0.22);
+  rearFair.position.set(0, hoverY + 0.34, bodyLen * 0.38);
+  rearFair.rotation.x = -0.22;
+  rearFair.castShadow = true;
+  g.add(rearFair);
 
-  // Rear taper
-  const rear = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.78, bodyH * 0.55, bodyLen * 0.22), silver);
-  rear.position.set(0, hoverY + bodyH * 0.48, -bodyLen * 0.4);
-  rear.rotation.x = -0.08;
-  rear.castShadow = true;
-  g.add(rear);
-
-  // Lower chassis / rocker
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.98, 0.11, bodyLen * 0.92), darkMat);
-  chassis.position.set(0, hoverY + 0.08, 0);
+  // Lower chassis skirt
+  const chassis = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.9, 0.08, bodyLen * 0.82), darkMat);
+  chassis.position.set(0, hoverY + 0.05, 0.02);
   g.add(chassis);
 
-  // Continuous cyan belt line (concept glow strip)
-  for (const s of [-1, 1]) {
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.09, bodyLen * 0.82), glowMat('#3ecbff', 1.55));
-    belt.position.set(s * (bodyW * 0.49), hoverY + bodyH * 0.55, 0);
+  // Cyan side belt (concept accent)
+  for (const s of [-1, 1] as const) {
+    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, bodyLen * 0.72), glowMat('#3ecbff', 1.7));
+    belt.position.set(s * (bodyW * 0.5), hoverY + 0.4, 0.02);
     g.add(belt);
   }
-  // Front bumper glow bar
-  const bumper = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.7, 0.06, 0.05), glowMat('#5ce0ff', 1.8));
-  bumper.position.set(0, hoverY + bodyH * 0.25, bodyLen * 0.52);
+  const bumper = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.55, 0.045, 0.045), glowMat('#5ce0ff', 1.9));
+  bumper.position.set(0, hoverY + 0.22, -bodyLen * 0.48);
   g.add(bumper);
 
-  // Front thruster discs (concept 4-bil)
-  const frontY = hoverY + bodyH * 0.32;
-  const frontZ = bodyLen * 0.54;
+  // Front thrusters in fender bulbs
+  const frontY = hoverY + 0.32;
+  const frontZ = -bodyLen * 0.42;
   for (const [tx, ty] of [
-    [-0.5, 0.1],
-    [0.5, 0.1],
-    [-0.25, -0.05],
-    [0.25, -0.05],
+    [-bodyW * 0.42, 0.02],
+    [bodyW * 0.42, 0.02],
+    [-0.22, -0.06],
+    [0.22, -0.06],
   ] as const) {
-    thrusterDisc(g, tx, frontY + ty, frontZ, 0.17, 'front');
+    thrusterDisc(g, tx, frontY + ty, frontZ, 0.15, 'front');
   }
-
-  // Underside hover thrusters
-  const tz = bodyLen * 0.3;
-  const tw = bodyW * 0.34;
+  // Under-hover pads
+  const tz = bodyLen * 0.26;
+  const tw = bodyW * 0.3;
   for (const [tx, tzv] of [
     [-tw, tz],
     [tw, tz],
     [-tw, -tz],
     [tw, -tz],
   ] as const) {
-    thrusterDisc(g, tx, hoverY - 0.02, tzv, kind === 'suv' ? 0.28 : 0.24, 'down');
+    thrusterDisc(g, tx, hoverY - 0.02, tzv, kind === 'suv' ? 0.24 : 0.2, 'down');
   }
 
-  // Glass canopy — elongated oval, not full bubble saucer
+  // ONE elongated glass canopy nestled into hull (concept bubble)
   const canopy = new THREE.Mesh(
     new THREE.SphereGeometry(0.78, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    physicalGlass('#c4e4f4', 0.92),
+    physicalGlass('#c4e4f4', 0.9),
   );
-  canopy.position.set(0, hoverY + bodyH + 0.12, 0.1);
-  canopy.scale.set(bodyW * 0.58, 0.78, kind === 'sport' ? 1.35 : 1.55);
+  canopy.position.set(0, hoverY + 0.58, -0.35);
+  canopy.scale.set(bodyW * 0.38, 0.55, kind === 'sport' ? 1.2 : 1.42);
   g.add(canopy);
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.62, 0.022, 8, 36),
-    new THREE.MeshStandardMaterial({ color: dark, metalness: 0.85, roughness: 0.22 }),
+    new THREE.TorusGeometry(0.55, 0.018, 8, 36),
+    new THREE.MeshStandardMaterial({ color: dark, metalness: 0.85, roughness: 0.2 }),
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, hoverY + bodyH + 0.1, 0.1);
-  rim.scale.set(bodyW * 0.55, kind === 'sport' ? 1.2 : 1.4, 1);
+  rim.position.set(0, hoverY + 0.55, -0.35);
+  rim.scale.set(bodyW * 0.42, kind === 'sport' ? 1.05 : 1.25, 1);
   g.add(rim);
 
-  // Cabin / seat
-  rbox(g, '#1a2230', [0, hoverY + 0.32, 0.05], [bodyW * 0.38, 0.1, 0.5]);
-  rbox(g, '#121820', [0, hoverY + 0.5, -0.2], [bodyW * 0.36, 0.28, 0.1]);
-  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.03), glowMat('#4de0ff', 1.5));
-  dash.position.set(0, hoverY + 0.5, 0.35);
+  // Cabin / seat / dash
+  rbox(g, '#1a2230', [0, hoverY + 0.32, -0.15], [bodyW * 0.34, 0.1, 0.46]);
+  rbox(g, '#121820', [0, hoverY + 0.5, 0.05], [bodyW * 0.32, 0.24, 0.1]);
+  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.035, 0.03), glowMat('#4de0ff', 1.5));
+  dash.position.set(0, hoverY + 0.5, -0.42);
   g.add(dash);
 
-  // Side mirrors
-  for (const s of [-1, 1]) {
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.28), darkMat);
-    fin.position.set(s * (bodyW * 0.52), hoverY + bodyH * 0.95, 0.15);
-    g.add(fin);
+  for (const s of [-1, 1] as const) {
+    const mir = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, 0.18), darkMat);
+    mir.position.set(s * (bodyW * 0.48), hoverY + 0.7, -0.45);
+    g.add(mir);
   }
-
-  // Tail lights — thin horizontal bars
-  for (const s of [-1, 1]) {
-    rbox(g, '#ff4b6a', [s * bodyW * 0.3, hoverY + 0.3, -bodyLen * 0.5], [0.38, 0.08, 0.04], undefined, 0.85);
+  for (const s of [-1, 1] as const) {
+    rbox(g, '#ff4b6a', [s * bodyW * 0.26, hoverY + 0.3, bodyLen * 0.44], [0.34, 0.06, 0.04], undefined, 0.9);
   }
 
   const under = new THREE.Mesh(
-    new THREE.PlaneGeometry(bodyW * 0.9, bodyLen * 0.8),
-    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.2, depthWrite: false }),
+    new THREE.PlaneGeometry(bodyW * 0.85, bodyLen * 0.72),
+    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.22, depthWrite: false }),
   );
   under.rotation.x = -Math.PI / 2;
   under.position.y = 0.03;

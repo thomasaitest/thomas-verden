@@ -159,7 +159,7 @@ export async function preloadSharedPbr(): Promise<void> {
         SharedMats.white.normalMap = concrete.normalMap;
         SharedMats.white.normalScale = new THREE.Vector2(0.25, 0.25);
       }
-      SharedMats.white.color.set('#c8ced8');
+      SharedMats.white.color.set('#d0d6de');
       SharedMats.white.roughness = 0.42;
       SharedMats.white.metalness = 0.08;
       applyMaps(SharedMats.wood, wood, 0.02);

@@ -70,125 +70,183 @@ export interface ShopSpec {
   variant?: number;
 }
 
-/** Hollow open-front shop: white shell + wood bay + glass storefront + solar roof. */
+/** Hollow open-front shop: curved white shell + wood bay + lit glass + slanted blue solar. */
 export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   const g = new THREE.Group();
   const w = spec.w ?? 12;
   const d = spec.d ?? 9;
   const storeys = Math.max(2, spec.storeys ?? 2);
-  const h = storeys * 3.35 + 0.35;
+  const h = storeys * 3.15 + 0.35;
   const v = spec.variant ?? 0;
-  const woodSide = v % 2 === 0 ? -1 : 1; // asymmetric wood bay
+  const woodSide = v % 2 === 0 ? -1 : 1;
+  const white = whiteMat();
+  const wm = woodMat();
+  const wallT = 0.28;
+  const cornerR = 1.45;
 
-  // Plinth
-  const plinth = new THREE.Mesh(new THREE.BoxGeometry(w + 0.6, 0.28, d + 0.6), SharedMats.concrete);
-  plinth.position.y = 0.14;
+  // Soft concrete plinth with rounded ends
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(w + 1.0, 0.22, d + 0.9), SharedMats.concrete);
+  plinth.position.y = 0.11;
   plinth.receiveShadow = true;
   g.add(plinth);
+  for (const s of [-1, 1] as const) {
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.55, d + 0.9, 18, 1, false, 0, Math.PI),
+      SharedMats.concrete,
+    );
+    cap.rotation.z = Math.PI / 2;
+    cap.position.set(s * (w / 2 + 0.05), 0.11, 0);
+    g.add(cap);
+  }
 
-  // Floor slab (interior visible through glass)
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.12, d - 0.3), SharedMats.concrete);
-  floor.position.y = 0.32;
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, 0.1, d - 0.15), SharedMats.concrete);
+  floor.position.y = 0.28;
   floor.receiveShadow = true;
   g.add(floor);
 
-  const wallT = 0.28;
-  // Back wall
-  const back = new THREE.Mesh(new THREE.BoxGeometry(w, h, wallT), whiteMat());
-  back.position.set(0, h / 2 + 0.3, -d / 2 + wallT / 2);
+  // Curved white shell — back wall
+  const back = new THREE.Mesh(new THREE.BoxGeometry(w - cornerR * 0.4, h, wallT), white);
+  back.position.set(0, h / 2 + 0.28, -d / 2 + wallT / 2);
   back.castShadow = true;
   back.receiveShadow = true;
   g.add(back);
 
-  // Side walls (slightly rounded feel via vertical fillets)
-  for (const s of [-1, 1]) {
-    const side = new THREE.Mesh(new THREE.BoxGeometry(wallT, h, d - wallT), whiteMat());
-    side.position.set(s * (w / 2 - wallT / 2), h / 2 + 0.3, 0);
+  // Side walls + large quarter-pipe front corners (concept curved shell)
+  for (const s of [-1, 1] as const) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(wallT, h, d - cornerR * 0.85), white);
+    side.position.set(s * (w / 2 - wallT / 2), h / 2 + 0.28, -0.15);
     side.castShadow = true;
-    side.receiveShadow = true;
     g.add(side);
-    // corner fillet cylinder
-    const fillet = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, h, 12, 1, true, 0, Math.PI / 2), whiteMat());
-    fillet.position.set(s * (w / 2 - 0.15), h / 2 + 0.3, d / 2 - 0.15);
-    fillet.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI;
+
+    const fillet = new THREE.Mesh(
+      new THREE.CylinderGeometry(cornerR, cornerR, h, 24, 1, true, s > 0 ? -Math.PI / 2 : Math.PI / 2, Math.PI / 2),
+      white,
+    );
+    fillet.position.set(s * (w / 2 - cornerR * 0.55), h / 2 + 0.28, d / 2 - cornerR * 0.55);
+    fillet.castShadow = true;
     g.add(fillet);
+
+    // Solid filler so shell reads opaque from plaza
+    const fill = new THREE.Mesh(new THREE.BoxGeometry(cornerR * 0.7, h, cornerR * 0.7), white);
+    fill.position.set(s * (w / 2 - cornerR * 0.85), h / 2 + 0.28, d / 2 - cornerR * 0.85);
+    g.add(fill);
   }
 
-  // Upper front spandrel (above glass) + side of wood bay
-  const glassW = w * 0.52;
-  const woodW = w * 0.38;
-  const glassH = h * 0.78;
-  const glassX = -woodSide * (w * 0.12);
+  // Soft curved roof parapet wrapping the shell
+  const roofShell = new THREE.Mesh(new THREE.BoxGeometry(w + 0.35, 0.38, d + 0.35), white);
+  roofShell.position.y = h + 0.28;
+  roofShell.castShadow = true;
+  g.add(roofShell);
+  for (const s of [-1, 1] as const) {
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.55, 0.55, d + 0.35, 16, 1, false, 0, Math.PI),
+      white,
+    );
+    rim.rotation.z = Math.PI / 2;
+    rim.position.set(s * (w / 2), h + 0.28, 0);
+    g.add(rim);
+  }
+  // Front curved roof lip
+  const frontLip = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.42, 0.42, w * 0.72, 16, 1, false, 0, Math.PI),
+    white,
+  );
+  frontLip.rotation.z = Math.PI / 2;
+  frontLip.rotation.y = Math.PI / 2;
+  frontLip.position.set(0, h + 0.28, d / 2 - 0.1);
+  g.add(frontLip);
 
-  // Warm wood vertical cladding bay
-  const wm = woodMat();
-  const woodBay = new THREE.Mesh(new THREE.BoxGeometry(woodW, h * 0.92, 0.22), wm);
-  woodBay.position.set(woodSide * (w / 2 - woodW / 2 - 0.05), h * 0.48 + 0.15, d / 2 - 0.05);
+  // Façade split: ~35% warm wood bay, ~65% big lit glass
+  const woodW = w * 0.34;
+  const glassW = w * 0.58;
+  const glassH = h * 0.88;
+  const glassX = -woodSide * (w * 0.12);
+  const wellDepth = 1.7;
+
+  // Warm wood bay — deep vertical oak battens (concept readable)
+  const woodBay = new THREE.Mesh(new THREE.BoxGeometry(woodW, h * 0.96, 0.42), wm);
+  woodBay.position.set(woodSide * (w / 2 - woodW / 2 - 0.05), h * 0.5 + 0.12, d / 2 - 0.02);
   woodBay.castShadow = true;
   g.add(woodBay);
-  for (let i = 0; i < 10; i++) {
-    const slat = new THREE.Mesh(new THREE.BoxGeometry(0.05, h * 0.88, 0.04), wm);
-    slat.position.set(woodSide * (w / 2 - 0.25 - i * 0.14), h * 0.48 + 0.15, d / 2 + 0.08);
+  const battenCount = 14;
+  for (let i = 0; i < battenCount; i++) {
+    const slat = new THREE.Mesh(new THREE.BoxGeometry(0.07, h * 0.92, 0.1), wm);
+    slat.position.set(
+      woodSide * (w / 2 - 0.18 - i * ((woodW - 0.25) / battenCount)),
+      h * 0.5 + 0.12,
+      d / 2 + 0.2,
+    );
     g.add(slat);
   }
-  // Side wood return
-  const woodReturn = new THREE.Mesh(new THREE.BoxGeometry(0.18, h * 0.9, d * 0.55), wm);
-  woodReturn.position.set(woodSide * (w / 2 - 0.1), h * 0.48 + 0.15, d * 0.1);
+  const woodReturn = new THREE.Mesh(new THREE.BoxGeometry(0.32, h * 0.94, d * 0.55), wm);
+  woodReturn.position.set(woodSide * (w / 2 - 0.1), h * 0.5 + 0.12, d * 0.02);
   woodReturn.castShadow = true;
   g.add(woodReturn);
+  // Wood canopy shelf over bay
+  const woodShelf = new THREE.Mesh(new THREE.BoxGeometry(woodW + 0.15, 0.12, 0.55), wm);
+  woodShelf.position.set(woodSide * (w / 2 - woodW / 2 - 0.05), h * 0.92, d / 2 + 0.15);
+  g.add(woodShelf);
 
-  // Front upper band
-  const band = new THREE.Mesh(new THREE.BoxGeometry(glassW + 0.4, h - glassH - 0.2, wallT), whiteMat());
-  band.position.set(glassX, 0.3 + glassH + (h - glassH) / 2, d / 2 - wallT / 2);
-  g.add(band);
+  // Soft white eyebrow over glass
+  const brow = new THREE.Mesh(new THREE.BoxGeometry(glassW + 0.7, 0.32, 0.6), white);
+  brow.position.set(glassX, 0.28 + glassH + 0.12, d / 2 - 0.05);
+  brow.castShadow = true;
+  g.add(brow);
 
-  // Recessed storefront well
-  const wellDepth = 1.35;
-  const wellFloor = new THREE.Mesh(new THREE.BoxGeometry(glassW + 0.2, 0.08, wellDepth), SharedMats.concrete);
-  wellFloor.position.set(glassX, 0.36, d / 2 - wellDepth / 2);
+  const wellFloor = new THREE.Mesh(new THREE.BoxGeometry(glassW + 0.3, 0.08, wellDepth), SharedMats.concrete);
+  wellFloor.position.set(glassX, 0.32, d / 2 - wellDepth / 2);
   wellFloor.receiveShadow = true;
   g.add(wellFloor);
 
-  // Interior back of recess (warm lit)
+  // Warm lit interior back (glowing storefront)
   const wellBack = new THREE.Mesh(
-    new THREE.PlaneGeometry(glassW * 0.95, glassH * 0.9),
-    new THREE.MeshStandardMaterial({ color: '#e8d4b8', roughness: 0.7, metalness: 0.02, emissive: '#ffcc88', emissiveIntensity: 0.18 }),
+    new THREE.PlaneGeometry(glassW * 0.96, glassH * 0.92),
+    new THREE.MeshStandardMaterial({
+      color: '#f2e2cc',
+      roughness: 0.62,
+      metalness: 0.02,
+      emissive: '#ffc888',
+      emissiveIntensity: 0.38,
+    }),
   );
-  wellBack.position.set(glassX, 0.3 + glassH * 0.48, d / 2 - wellDepth + 0.05);
+  wellBack.position.set(glassX, 0.28 + glassH * 0.48, d / 2 - wellDepth + 0.05);
   g.add(wellBack);
 
-  // Café tables inside recess
-  for (const sx of [-glassW * 0.28, glassW * 0.28]) {
-    const table = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.06, 16), wm);
-    table.position.set(glassX + sx, 0.95, d / 2 - wellDepth * 0.55);
+  // Interior props visible through glass
+  for (const sx of [-glassW * 0.28, glassW * 0.28] as const) {
+    const table = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 18), wm);
+    table.position.set(glassX + sx, 0.98, d / 2 - wellDepth * 0.55);
     g.add(table);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.85, 8), metalMat('#6a7380'));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.88, 8), metalMat('#6a7380'));
     stem.position.set(glassX + sx, 0.52, d / 2 - wellDepth * 0.55);
     g.add(stem);
   }
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(glassW * 0.55, 0.08, 0.35), wm);
+  shelf.position.set(glassX, 2.4, d / 2 - wellDepth + 0.35);
+  g.add(shelf);
 
-  // Physical glass pane
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.08), physicalGlass('#9ec8e0', 0.88));
-  glass.position.set(glassX, 0.3 + glassH / 2, d / 2 + 0.02);
+  // Big physical glass storefront
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.1), physicalGlass('#b8daf0', 0.88));
+  glass.position.set(glassX, 0.28 + glassH / 2, d / 2 + 0.06);
   g.add(glass);
-
-  // Mullions
-  const mull = metalMat('#d0d6de');
+  const mull = metalMat('#e8eef6');
   for (let i = -1; i <= 1; i++) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, glassH, 0.1), mull);
-    m.position.set(glassX + i * (glassW / 3), 0.3 + glassH / 2, d / 2 + 0.06);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.06, glassH, 0.11), mull);
+    m.position.set(glassX + i * (glassW / 3), 0.28 + glassH / 2, d / 2 + 0.1);
     g.add(m);
   }
-  const mid = new THREE.Mesh(new THREE.BoxGeometry(glassW, 0.06, 0.1), mull);
-  mid.position.set(glassX, 0.3 + glassH / 2, d / 2 + 0.06);
+  const mid = new THREE.Mesh(new THREE.BoxGeometry(glassW, 0.06, 0.11), mull);
+  mid.position.set(glassX, 0.28 + glassH * 0.5, d / 2 + 0.1);
   g.add(mid);
 
-  // Soft interior point light
-  const pt = new THREE.PointLight('#ffd7a8', 1.6, 14, 2);
-  pt.position.set(glassX, 2.4, d / 2 - wellDepth * 0.6);
+  const pt = new THREE.PointLight('#ffd7a8', 2.4, 18, 2);
+  pt.position.set(glassX, 2.7, d / 2 - wellDepth * 0.5);
   g.add(pt);
+  const pt2 = new THREE.PointLight('#ffe8c8', 1.0, 11, 2);
+  pt2.position.set(glassX, 1.15, d / 2 - 0.35);
+  g.add(pt2);
 
-  // Eye-level façade sign (concept: Solvind / Nordic Tech / Havblomst on front)
+  // Eye-level sign on glass eyebrow
   {
     const sc = document.createElement('canvas');
     sc.width = 768;
@@ -202,93 +260,92 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     sctx.roundRect(18, 18, 732, 124, 24);
     sctx.stroke();
     sctx.fillStyle = '#eef7ff';
-    sctx.font = '700 54px Inter, system-ui, sans-serif';
+    sctx.font = '700 52px Inter, system-ui, sans-serif';
     sctx.textAlign = 'center';
     sctx.textBaseline = 'middle';
     sctx.fillText(spec.label.toUpperCase(), 384, 88);
     const stex = new THREE.CanvasTexture(sc);
     stex.colorSpace = THREE.SRGBColorSpace;
-    const signW = Math.min(glassW * 0.92, 7.5);
+    const signW = Math.min(glassW * 0.95, 7.8);
     const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(signW, 0.85),
+      new THREE.PlaneGeometry(signW, 0.9),
       new THREE.MeshBasicMaterial({ map: stex, transparent: true }),
     );
-    sign.position.set(glassX, 0.3 + glassH + 0.55, d / 2 + 0.14);
+    sign.position.set(glassX, 0.28 + glassH + 0.5, d / 2 + 0.22);
     g.add(sign);
-    const signGlow = new THREE.Mesh(
-      new THREE.BoxGeometry(signW + 0.15, 0.95, 0.06),
-      glowMat(spec.logoColor, 0.55),
-    );
-    signGlow.position.set(glassX, 0.3 + glassH + 0.55, d / 2 + 0.08);
+    const signGlow = new THREE.Mesh(new THREE.BoxGeometry(signW + 0.2, 1.0, 0.08), glowMat(spec.logoColor, 0.7));
+    signGlow.position.set(glassX, 0.28 + glassH + 0.5, d / 2 + 0.14);
     g.add(signGlow);
   }
 
-  // Floor band between storeys
   for (let i = 1; i < storeys; i++) {
-    const fb = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.14, d - 0.2), whiteMat());
-    fb.position.y = 0.3 + i * 3.35;
+    const fb = new THREE.Mesh(new THREE.BoxGeometry(w - 0.35, 0.12, d - 0.35), white);
+    fb.position.y = 0.28 + i * 3.15;
     g.add(fb);
   }
 
-  // Ceiling / roof deck
-  const roofDeck = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.2, d + 0.4), whiteMat());
-  roofDeck.position.y = h + 0.35;
-  roofDeck.castShadow = true;
-  g.add(roofDeck);
-
-  // Slanted solar canopy (arrays)
-  const solarMat = metalMat('#1a3358');
-  solarMat.roughness = 0.25;
-  solarMat.metalness = 0.9;
-  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 2.8, 0.14, d * 0.72), solarMat);
-  solar.position.set(0, h + 0.95, d * 0.32);
-  solar.rotation.x = -0.28;
+  // Slanted BLUE solar canopy — large, concept-readable
+  const solarMat = new THREE.MeshStandardMaterial({
+    color: '#1a4a8a',
+    metalness: 0.88,
+    roughness: 0.26,
+    envMapIntensity: 1.25,
+  });
+  const cellMat = new THREE.MeshStandardMaterial({
+    color: '#2462a8',
+    metalness: 0.92,
+    roughness: 0.2,
+    envMapIntensity: 1.35,
+  });
+  const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 3.6, 0.14, d * 0.82), solarMat);
+  solar.position.set(0, h + 1.25, d * 0.22);
+  solar.rotation.x = -0.38;
   solar.castShadow = true;
   g.add(solar);
-  // solar cell grid
   for (let ix = -5; ix <= 5; ix++) {
     for (let iz = -2; iz <= 2; iz++) {
-      const cell = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.025, 0.55), metalMat('#1e4a7a'));
-      cell.position.set(ix * 0.95, h + 1.04, d * 0.18 + iz * 0.7);
-      cell.rotation.x = -0.28;
+      const cell = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.55), cellMat);
+      cell.position.set(ix * 1.0, h + 1.34, d * 0.08 + iz * 0.7);
+      cell.rotation.x = -0.38;
       g.add(cell);
     }
   }
-  // canopy supports
-  for (const s of [-1, 1]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.1, 8), metalMat('#6a7380'));
-    post.position.set(s * (w * 0.35), h + 0.2, d * 0.25);
+  for (const s of [-1, 1] as const) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.55, 8), metalMat('#8a929c'));
+    post.position.set(s * (w * 0.3), h + 0.45, d * 0.18);
     g.add(post);
   }
-  const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 2.0, 0.04, 0.06), glowMat('#7ef0ff', 0.55));
-  edge.position.set(0, h + 0.55, d * 0.38);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 2.6, 0.05, 0.07), glowMat('#7ef0ff', 0.75));
+  edge.position.set(0, h + 0.78, d * 0.4);
   g.add(edge);
 
-  // Holographic roof logo
-  const board = new THREE.Mesh(G.rbox(0.08), glowMat(spec.logoColor, 0.75));
-  board.scale.set(Math.min(7.2, w * 0.62), 0.95, 0.14);
-  board.position.set(0, h + 1.75, d * 0.35);
+  // Roof hologram logo board
+  const board = new THREE.Mesh(G.rbox(0.08), glowMat(spec.logoColor, 0.85));
+  board.scale.set(Math.min(7.2, w * 0.58), 0.9, 0.14);
+  board.position.set(0, h + 2.15, d * 0.28);
   g.add(board);
-  const label = document.createElement('canvas');
-  label.width = 512;
-  label.height = 128;
-  const lctx = label.getContext('2d')!;
-  lctx.fillStyle = '#0a1220ee';
-  lctx.roundRect(8, 8, 496, 112, 22);
-  lctx.fill();
-  lctx.fillStyle = '#e8f7ff';
-  lctx.font = '700 36px Inter, system-ui, sans-serif';
-  lctx.textAlign = 'center';
-  lctx.textBaseline = 'middle';
-  lctx.fillText(spec.label, 256, 68);
-  const ltex = new THREE.CanvasTexture(label);
-  ltex.colorSpace = THREE.SRGBColorSpace;
-  const plate = new THREE.Mesh(
-    new THREE.PlaneGeometry(Math.min(5.8, w * 0.5), 0.65),
-    new THREE.MeshBasicMaterial({ map: ltex, transparent: true }),
-  );
-  plate.position.set(0, h + 1.75, d * 0.35 + 0.12);
-  g.add(plate);
+  {
+    const label = document.createElement('canvas');
+    label.width = 512;
+    label.height = 128;
+    const lctx = label.getContext('2d')!;
+    lctx.fillStyle = '#0a1220ee';
+    lctx.roundRect(8, 8, 496, 112, 22);
+    lctx.fill();
+    lctx.fillStyle = '#e8f7ff';
+    lctx.font = '700 36px Inter, system-ui, sans-serif';
+    lctx.textAlign = 'center';
+    lctx.textBaseline = 'middle';
+    lctx.fillText(spec.label, 256, 68);
+    const ltex = new THREE.CanvasTexture(label);
+    ltex.colorSpace = THREE.SRGBColorSpace;
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(Math.min(5.8, w * 0.5), 0.65),
+      new THREE.MeshBasicMaterial({ map: ltex, transparent: true }),
+    );
+    plate.position.set(0, h + 2.15, d * 0.28 + 0.12);
+    g.add(plate);
+  }
 
   // Rear windows
   for (let row = 0; row < storeys; row++) {
@@ -296,8 +353,11 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
       const pw = (w * 0.55) / 3 - 0.12;
       const ph = 2.0;
       const px = -w * 0.22 + (col + 0.5) * ((w * 0.55) / 3);
-      const py = 1.6 + row * 3.35;
-      const well = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, 0.35), new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.6 }));
+      const py = 1.55 + row * 3.15;
+      const well = new THREE.Mesh(
+        new THREE.BoxGeometry(pw, ph, 0.35),
+        new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.6 }),
+      );
       well.position.set(px, py, -d / 2 + 0.2);
       g.add(well);
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(pw * 0.9, ph * 0.9), physicalGlass('#7aa8c0', 0.7));
@@ -307,11 +367,9 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     }
   }
 
-  g.userData.buildingH = h;
   return g;
 }
 
-/** Slim multi-tier stone/metal fountain — many thin arcing jets, translucent water, ring lights. */
 export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; rings: THREE.Mesh[] } {
   const group = new THREE.Group();
   // Clean white stone (concept fountain is bright white, not grey concrete)

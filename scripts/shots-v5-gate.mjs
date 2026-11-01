@@ -41,7 +41,7 @@ async function prep(page) {
       playerId: 'player-shot',
       bucks: 2480,
       avatar: {
-        skin: '#f0c7a0',
+        skin: '#f3c9a4',
         hair: 'kort',
         hairColor: '#2b2118',
         face: 'smil',
@@ -155,12 +155,13 @@ await page.evaluate(async () => {
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
   // Stand on south approach facing fountain — DEFAULT third-person cam
-  g.player.pos.set(0.4, 0, -8);
-  g.player.yaw = 0;
-  g.cam.yaw = 0;
-  g.cam.pitch = 0.42;
-  g.cam.dist = 17;
-  g.camShown = 17;
+  // From south of plaza face +Z (fountain). three.js yaw 0 = -Z, so use PI.
+  g.player.pos.set(0.5, 0, -7.5);
+  g.player.yaw = Math.PI;
+  g.cam.yaw = Math.PI;
+  g.cam.pitch = 0.4;
+  g.cam.dist = 14;
+  g.camShown = 14;
   g.rebuildAvatar?.();
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
@@ -180,23 +181,24 @@ await page.evaluate(() => {
   bag['bil-bla'] = 1;
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 34);
-  g.player.yaw = Math.PI; // toward plaza (-Z)
-  g.toggleDrive(); // sets default chase cam
+  // yaw 0 faces -Z (plaza); yaw PI faces +Z (was hitting Dørspillet)
+  g.player.pos.set(0, 0, 28);
+  g.player.yaw = 0;
+  g.toggleDrive();
 });
 await page.waitForTimeout(2200);
 await page.evaluate(() => {
   const g = window.__hv;
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 34);
-  g.player.yaw = Math.PI;
-  g.cam.yaw = Math.PI;
-  g.cam.pitch = 0.26;
-  g.cam.dist = 11.5;
-  g.camShown = 11.5;
+  g.player.pos.set(0, 0, 28);
+  g.player.yaw = 0;
+  g.cam.yaw = 0;
+  g.cam.pitch = 0.24;
+  g.cam.dist = 10.5;
+  g.camShown = 10.5;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 34);
-    g.vehicleMesh.rotation.y = Math.PI;
+    g.vehicleMesh.position.set(0, 0, 28);
+    g.vehicleMesh.rotation.y = 0;
   }
   g.hud?.setWhere?.('Dag · Sol');
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
@@ -213,11 +215,12 @@ await page.evaluate(async () => {
   g.enterHouse(); // sets default interior cam
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Walk into living — sofa left, island mid, holo+skyline ahead
-  g.player.pos.set(2.2, 0, 3.8);
-  g.player.yaw = Math.PI + 0.45;
-  g.cam.yaw = g.player.yaw;
-  g.cam.pitch = 0.4;
-  g.cam.dist = 9.5;
+  // Door at +Z; back wall / holo / skyline at -Z — face yaw 0
+  g.player.pos.set(2.5, 0, 2.8);
+  g.player.yaw = -0.35;
+  g.cam.yaw = -0.35;
+  g.cam.pitch = 0.34;
+  g.cam.dist = 7.8;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 800));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
@@ -235,6 +238,7 @@ await page.evaluate(async () => {
     equipped: [],
     avatar: {
       ...g.save.avatar,
+      skin: '#f3c9a4',
       shirt: '#2a6fd8',
       print: 'lyn',
       pants: '#1a2230',
@@ -248,12 +252,12 @@ await page.evaluate(async () => {
     },
   });
   g.rebuildAvatar?.();
-  g.player.pos.set(0.3, 0, -6);
-  g.player.yaw = 0;
-  g.cam.yaw = 0.15;
-  g.cam.pitch = 0.35;
-  g.cam.dist = 10;
-  g.camShown = 10;
+  g.player.pos.set(0.4, 0, -5.5);
+  g.player.yaw = Math.PI;
+  g.cam.yaw = Math.PI + 0.45;
+  g.cam.pitch = 0.28;
+  g.cam.dist = 6.8;
+  g.camShown = 6.8;
   await new Promise((r) => setTimeout(r, 3500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   g.editingAvatar = false;
@@ -281,8 +285,8 @@ await p2.evaluate(() => {
   if (g.highQuality) g.toggleQuality(); // LQ for iPhone
   g.freezeCam = null;
   g.player.pos.set(0.4, 0, -9);
-  g.player.yaw = 0;
-  g.cam.yaw = 0;
+  g.player.yaw = Math.PI;
+  g.cam.yaw = Math.PI;
   g.cam.pitch = 0.42;
   g.cam.dist = 16;
   g.camShown = 16;
