@@ -739,7 +739,9 @@ export function buildTown(): Town {
       const car = buildCar(c.id);
       car.position.set(c.x, 0, c.z);
       car.rotation.y = c.yaw;
+      car.name = `parked-${c.id}`;
       car.userData.noFade = true;
+      car.userData.parkedCar = true;
       {
         const hit = cyl(stat, '#888', [c.x, 0.4, c.z], [1.0, 0.8, 1.8]);
         hit.visible = false;

@@ -223,19 +223,38 @@ await page.evaluate(() => {
   g.camera.lookAt(fc.lx, fc.ly, fc.lz);
   g.hud?.setWhere?.('Dag · Sol');
 });
-// Keep re-asserting freezeCam while settling (RAF may lag one frame after evaluate)
-for (let i = 0; i < 8; i++) {
-  await page.evaluate(() => {
+// Hide parked decoy cars + reassert freezeCam
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.town?.group?.traverse((o) => {
+    if (o.userData?.parkedCar) o.visible = false;
+  });
+  // also hide any car mesh that isn't the player vehicle
+  g.town?.group?.traverse((o) => {
+    if (o === g.vehicleMesh) return;
+    if (/bil-|Car|car/i.test(o.name) || o.userData?.isCar) o.visible = false;
+  });
+});
+for (let i = 0; i < 10; i++) {
+  const info = await page.evaluate(() => {
     const g = window.__hv;
     const fc = g.freezeCam;
-    if (!fc) return;
-    g.camera.position.set(fc.x, fc.y, fc.z);
-    g.camera.lookAt(fc.lx, fc.ly, fc.lz);
+    if (fc) {
+      g.camera.position.set(fc.x, fc.y, fc.z);
+      g.camera.lookAt(fc.lx, fc.ly, fc.lz);
+    }
     g.editingAvatar = false;
+    return {
+      freeze: !!g.freezeCam,
+      pos: g.camera.position.toArray().map((n) => +n.toFixed(2)),
+      driving: !!g.driving,
+      veh: g.vehicleMesh?.position.toArray?.()?.map((n) => +n.toFixed(2)),
+    };
   });
-  await page.waitForTimeout(120);
+  if (i === 9) console.log('CARCAM', JSON.stringify(info));
+  await page.waitForTimeout(100);
 }
-await shot(page, '02-car-street', 1800);
+await shot(page, '02-car-street', 1500);
 
 // Interior — eye-level dollhouse-ish but concept-like living view
 await page.evaluate(async () => {
