@@ -424,13 +424,13 @@ export function createInterior(): Interior {
             backRest.position.y = 0.58;
             backRest.castShadow = true;
             sofa.add(backRest);
-            for (const [u, mat] of [[0.2, pillowMat], [0.5, accentPillow], [0.8, pillowMat]] as const) {
-              const ang = -Math.PI * 0.15 + u * Math.PI * 0.3;
-              const px = Math.sin(ang) * 1.5;
-              const pz = -0.35 - Math.cos(ang) * 0.15;
-              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), mat);
-              pillow.scale.set(1.15, 0.4, 0.9);
-              pillow.position.set(px, 0.72, pz);
+            for (const [u, mat] of [[0.18, pillowMat], [0.5, accentPillow], [0.82, pillowMat]] as const) {
+              const ang = -Math.PI * 0.2 + u * Math.PI * 0.4;
+              const px = Math.sin(ang) * 1.65;
+              const pz = 0.15 - Math.cos(ang) * 0.35;
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 10), mat);
+              pillow.scale.set(1.2, 0.55, 0.95);
+              pillow.position.set(px, 0.85, pz);
               sofa.add(pillow);
             }
             sofa.position.set(-1.6, y0, 0.35);
@@ -544,12 +544,12 @@ export function createInterior(): Interior {
               const dx = (nx + gx) / 2;
               const frameMat = new THREE.MeshStandardMaterial({ color: '#6a727c', metalness: 0.35, roughness: 0.4 });
               for (const sx of [-1, 1] as const) {
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.4, 0.12), frameMat);
-                post.position.set(dx + sx * 0.85, y0 + 1.2, nz + 0.05);
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.35, 0.08), frameMat);
+                post.position.set(dx + sx * 0.95, y0 + 1.2, nz + 0.05);
                 living.add(post);
               }
-              const lintel = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.12, 0.14), frameMat);
-              lintel.position.set(dx, y0 + 2.45, nz + 0.05);
+              const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.1, 0.1), frameMat);
+              lintel.position.set(dx, y0 + 2.4, nz + 0.05);
               living.add(lintel);
               const glow = new THREE.Mesh(
                 new THREE.BoxGeometry(1.7, 0.04, 0.05),
