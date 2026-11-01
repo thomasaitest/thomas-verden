@@ -83,8 +83,8 @@ async function prep(page) {
   await page.evaluate(async () => {
     const g = window.__hv;
     await g.assetsReady;
-    // ez-tree prototypes finish inside assetsReady; settle one more frame
-    await new Promise((r) => setTimeout(r, 1500));
+    // ez-tree + Quaternius NPC walkers settle
+    await new Promise((r) => setTimeout(r, 2800));
     g.rebuildAvatar?.();
     if (!g.highQuality) g.toggleQuality();
     g.lighting?.setExposure?.(0.58);
@@ -234,8 +234,8 @@ await page.evaluate(async () => {
   g.enterHouse(); // gameplay default interior cam facing window
   g.lighting?.setExposure?.(0.38);
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  // Stand in living looking at panoramic (−Z) — same pose enterHouse aims for
-  g.player.pos.set(0.3, 0, 2.2);
+  // Living looking −Z; slight left so bedroom doorway + pod read
+  g.player.pos.set(-1.2, 0, 1.5);
   g.player.yaw = 0;
   g.cam.yaw = 0.08;
   g.cam.pitch = 0.05;
