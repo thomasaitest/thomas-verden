@@ -1105,7 +1105,7 @@ export function buildTown(): Town {
         else if (equipUse.id === 'seesaw') seesawGroup.rotation.z = seesawAngle(u);
         else if (equipUse.id === 'merry') merryGroup.rotation.y = -merryAngle(u);
       }
-      if (waterSurf) waterSurf.position.y = 0.42 + Math.sin(t * 2) * 0.02;
+      if (waterSurf) waterSurf.position.y = 0.48 + Math.sin(t * 2) * 0.015;
       // Jets on for ~2.2s, off for ~1.8s
       const jetOn = true; // always on for visual fidelity
       for (const ring of fountainRings) {
@@ -1124,19 +1124,18 @@ export function buildTown(): Town {
           if ((o as THREE.Mesh).isMesh && o.userData.spin) o.rotation.y = t * 18 + di;
         });
       }
+      // Sleek fountain jets are authored in-place — only pulse opacity/scale, never rewrite positions
       for (let i = 0; i < jets.length; i++) {
         const j = jets[i]!;
         j.visible = jetOn;
-        if (jetOn) {
-          const pulse = 0.9 + Math.sin(t * 9 + i * 1.1) * 0.12;
-          const base = i < 6 ? 5.9 : i === 6 ? 6.7 : 5.4;
-          j.position.y = base + Math.abs(Math.sin(t * 7 + i)) * (i <= 6 ? 1.35 : 0.7);
-          if (i >= 7) {
-            const ang = ((i - 7) / 8) * Math.PI * 2 + 0.2 + t * 2.0;
-            j.position.x = Math.cos(ang) * (1.5 + Math.sin(t * 5 + i) * 0.55);
-            j.position.z = Math.sin(ang) * (1.5 + Math.sin(t * 5 + i) * 0.55);
-          }
-          j.scale.setScalar(pulse);
+        if (!jetOn) continue;
+        const pulse = 0.92 + Math.sin(t * 6 + i * 0.7) * 0.08;
+        j.scale.setScalar(pulse);
+        const mat = (j as THREE.Mesh).material as THREE.MeshPhysicalMaterial | THREE.MeshBasicMaterial;
+        if (mat && 'opacity' in mat) {
+          const baseOp = (j.userData.baseOpacity as number) ?? (mat.opacity || 0.7);
+          j.userData.baseOpacity = baseOp;
+          mat.opacity = Math.min(1, baseOp * (0.85 + Math.sin(t * 8 + i) * 0.15));
         }
       }
     },
