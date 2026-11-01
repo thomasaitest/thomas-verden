@@ -118,10 +118,10 @@ export function createInterior(): Interior {
             matFloor.map = null;
             matFloor.normalMap = SharedMats.interiorFloor.normalMap;
             if (matFloor.normalMap) matFloor.normalScale = new THREE.Vector2(0.18, 0.18);
-            matFloor.color.set(house.floorColor || '#c8ced6');
-            matFloor.roughness = 0.28;
-            matFloor.metalness = 0.12;
-            matFloor.envMapIntensity = 1.05;
+            matFloor.color.set(house.floorColor || '#aeb6c0');
+            matFloor.roughness = 0.32;
+            matFloor.metalness = 0.1;
+            matFloor.envMapIntensity = 0.9;
           } else {
             matFloor.color.set(house.floorColor || '#c9b8a0');
             matFloor.roughness = 0.45;
@@ -376,7 +376,7 @@ export function createInterior(): Interior {
           // Continuous curved light-grey sofa + small cushions facing window (−Z)
           {
             const sofa = new THREE.Group();
-            const fabric = new THREE.MeshStandardMaterial({ color: '#d5dde6', roughness: 0.62, metalness: 0.03, envMapIntensity: 0.55 });
+            const fabric = new THREE.MeshStandardMaterial({ color: '#c2ccd8', roughness: 0.64, metalness: 0.03, envMapIntensity: 0.55 });
             const cush = new THREE.MeshStandardMaterial({ color: '#eef3f8', roughness: 0.75, metalness: 0.02 });
             const accent = new THREE.MeshStandardMaterial({ color: '#9eb0c2', roughness: 0.7, metalness: 0.04 });
             // Continuous C-curve sofa (dense modules + cap strip reads as one piece)

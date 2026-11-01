@@ -22,12 +22,12 @@ async function prep(page) {
       editors: [],
       editRequests: [],
       wallColor: '#f3efe8',
-      floorColor: '#c8ced6',
+      floorColor: '#aeb6c0',
       locked: false,
       createdAt: now,
       items: [
-        // Bedroom alcove (+X) — one pod bed only (not in living)
-        { uid: 'it1', itemId: 'seng', x: 5.2, z: -3.5, rot: Math.PI / 2, scale: 1.05, color: '#e8eef6', floor: 0 },
+        // Bedroom alcove (back) — one pod bed, peeked through doorway
+        { uid: 'it1', itemId: 'seng', x: -3.2, z: -8.2, rot: 0, scale: 1.0, color: '#e8eef6', floor: 0 },
         // Living composition facing panoramic window (−Z)
         { uid: 'it3', itemId: 'langsofa', x: -1.4, z: 1.5, rot: 0, scale: 1.2, color: '#d5dde6', floor: 0 },
         { uid: 'it9', itemId: 'rundtteppe', x: -1.4, z: 0.1, rot: 0, scale: 1.5, color: '#8a96a4', floor: 0 },
@@ -212,9 +212,9 @@ await page.evaluate(() => {
   g.player.yaw = 0;
   // Match gameplay chase defaults (toggleDrive sets these; reaffirm)
   g.cam.yaw = 0.12; // slight rear ¾ — car centered
-  g.cam.pitch = 0.17;
-  g.cam.dist = 7.5;
-  g.camShown = 7.5;
+  g.cam.pitch = 0.16;
+  g.cam.dist = 8.0;
+  g.camShown = 8.0;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;

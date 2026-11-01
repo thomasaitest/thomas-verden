@@ -1269,15 +1269,15 @@ export class Game {
     // Driving chase: car centered lower-middle ~35% width, slight rear ¾ (concept 4-bil)
     // ~7.5 m back, cam ~2.0 m up, small yaw bias, look ahead down the road
     if (this.driving && !seat) {
-      const ahead = 2.4;
+      const ahead = 3.2;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         const wantYaw = p.yaw + 0.12;
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
-        // sin(0.17)*7.5 ≈ 1.27 → cam y ≈ 0.72+1.27 ≈ 1.99
-        this.cam.pitch += (0.17 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (7.5 - this.cam.dist) * Math.min(1, dt * 5);
+        // sin(0.16)*8.0 ≈ 1.27 → cam y ≈ 0.65+1.27 ≈ 1.92
+        this.cam.pitch += (0.16 - this.cam.pitch) * Math.min(1, dt * 5);
+        this.cam.dist += (8.0 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1320,7 +1320,7 @@ export class Game {
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
       const coll = this.mode === 'house'
         ? desired
-        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 5.5 : 2.0 });
+        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 6.0 : 2.0 });
       this.camera.position.copy(coll);
       this.camera.lookAt(target);
       if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
@@ -1913,8 +1913,8 @@ export class Game {
     this.syncVehicleMesh();
     // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
     this.cam.yaw = this.player.yaw + 0.12;
-    this.cam.pitch = 0.17;
-    this.cam.dist = 7.5;
+    this.cam.pitch = 0.16;
+    this.cam.dist = 8.0;
     this.camShown = this.cam.dist;
     this.editingAvatar = false;
     sfx.whoosh();
