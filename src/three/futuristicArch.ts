@@ -206,7 +206,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   solarMat.roughness = 0.25;
   solarMat.metalness = 0.9;
   const solar = new THREE.Mesh(new THREE.BoxGeometry(w + 2.6, 0.12, d * 0.62), solarMat);
-  solar.position.set(0, h + 0.85, d * 0.08);
+  solar.position.set(0, h + 0.85, d * 0.22);
   solar.rotation.x = -0.22;
   solar.castShadow = true;
   g.add(solar);
@@ -231,8 +231,8 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
 
   // Holographic roof logo
   const board = new THREE.Mesh(G.rbox(0.08), glowMat(spec.logoColor, 0.75));
-  board.scale.set(Math.min(6.5, w * 0.55), 0.75, 0.12);
-  board.position.set(0, h + 1.55, d * 0.02);
+  board.scale.set(Math.min(7.2, w * 0.62), 0.95, 0.14);
+  board.position.set(0, h + 1.75, d * 0.35);
   g.add(board);
   const label = document.createElement('canvas');
   label.width = 512;
@@ -252,7 +252,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     new THREE.PlaneGeometry(Math.min(5.8, w * 0.5), 0.65),
     new THREE.MeshBasicMaterial({ map: ltex, transparent: true }),
   );
-  plate.position.set(0, h + 1.55, d * 0.02 + 0.1);
+  plate.position.set(0, h + 1.75, d * 0.35 + 0.12);
   g.add(plate);
 
   // Rear windows
@@ -357,9 +357,9 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
 
   const jets: THREE.Mesh[] = [];
   const jetMat = new THREE.MeshPhysicalMaterial({
-    color: '#9ed8f0',
+    color: '#5ec8f0',
     transparent: true,
-    opacity: 0.72,
+    opacity: 0.85,
     transmission: 0.55,
     roughness: 0.08,
     metalness: 0,
@@ -372,7 +372,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
     for (let s = 0; s <= 20; s++) {
       const u = s / 20;
       const r = 0.4 + u * 3.6;
-      const y = 1.55 + Math.sin(u * Math.PI) * 2.35 - u * 0.08;
+      const y = 1.65 + Math.sin(u * Math.PI) * 2.8 - u * 0.05;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
     const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, 0.065, 6, false), jetMat);

@@ -533,9 +533,42 @@ function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
 }
 
 export function buildFurniture(model: string, color: string): THREE.Group {
+  if (model === 'counter') {
+    const g = new THREE.Group();
+    const path = FURN_GLB[model];
+    if (path && glbReady.has(path)) {
+      const m = glbReady.get(path)!.clone(true);
+      m.scale.setScalar(1.2);
+      g.add(m);
+    } else {
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.9, 0.7),
+        new THREE.MeshStandardMaterial({ color: color || '#2a3344', roughness: 0.45, metalness: 0.2 }),
+      );
+      body.position.y = 0.45;
+      g.add(body);
+      const top = new THREE.Mesh(
+        new THREE.BoxGeometry(1.9, 0.06, 0.75),
+        new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.25, metalness: 0.4 }),
+      );
+      top.position.y = 0.93;
+      g.add(top);
+    }
+    const led = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.04, 0.08), new THREE.MeshBasicMaterial({ color: '#ffd7a0' }));
+    led.position.set(0, 0.06, 0.32);
+    g.add(led);
+    g.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+    return g;
+  }
   if (model === 'sofalong') {
     const g = new THREE.Group();
-    buildCurvedWhiteSofa(g, color || '#e8eef4');
+    buildCurvedWhiteSofa(g, color || '#c8d0d8');
     g.traverse((o) => {
       const m = o as THREE.Mesh;
       if (m.isMesh) {

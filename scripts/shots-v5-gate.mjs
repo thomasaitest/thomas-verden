@@ -30,7 +30,6 @@ async function prep(page) {
         { uid: 'it2', itemId: 'spisebord', x: 4, z: 2, rot: 0, scale: 0.9, color: '#1a2230', floor: 0 },
         { uid: 'it3', itemId: 'langsofa', x: -2, z: 0.5, rot: 0.2, scale: 1.3, color: '#c8d0d8', floor: 0 },
         { uid: 'it4', itemId: 'tv', x: -2, z: -6, rot: 0, scale: 1.3, color: '#15202c', floor: 0 },
-        { uid: 'it5', itemId: 'kommode', x: -2, z: -1.2, rot: 0, scale: 0.9, color: '#1a2230', floor: 0 },
         { uid: 'it7', itemId: 'benk', x: 5.5, z: -1, rot: 1.57, scale: 1.2, color: '#2a3344', floor: 0 },
         { uid: 'it8', itemId: 'krakk', x: 4.3, z: -1, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
         { uid: 'it9', itemId: 'rundtteppe', x: -2, z: 0.8, rot: 0, scale: 1.5, color: '#3a4450', floor: 0 },
