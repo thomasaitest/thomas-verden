@@ -223,10 +223,10 @@ export interface CarItem {
   text: string;
 }
 export const CARS: CarItem[] = [
-  { id: 'bil-rosa', name: 'Rosa svevebil', emoji: '🚗', price: 250, color: '#ff8fb1', text: 'Åpen svevebil med glasskuppel' },
-  { id: 'bil-gul', name: 'Gul kapsel', emoji: '🚕', price: 250, color: '#e8d66a', text: 'Rund svevekapsel – kompakt og rask' },
-  { id: 'bil-bla', name: 'Blå fraktebil', emoji: '🚙', price: 300, color: '#5cc3f2', text: 'Høy svevebil med masse plass' },
-  { id: 'bil-gronn', name: 'Grønn terrengsvever', emoji: '🛻', price: 280, color: '#7ccf6a', text: 'Terrengsvever med lysbar' },
-  { id: 'bil-lilla', name: 'Lilla sportssvever', emoji: '🏎️', price: 400, color: '#c88bff', text: 'Lav sportssvever med spoiler' },
+  { id: 'bil-rosa', name: 'Rosa svevebil', emoji: '🚗', price: 250, color: '#e8a0b8', text: 'Åpen svevebil med glasskuppel' },
+  { id: 'bil-gul', name: 'Gul kapsel', emoji: '🚕', price: 250, color: '#c9b86a', text: 'Rund svevekapsel – kompakt og rask' },
+  { id: 'bil-bla', name: 'Blå fraktebil', emoji: '🚙', price: 300, color: '#6a90a8', text: 'Høy svevebil med masse plass' },
+  { id: 'bil-gronn', name: 'Grønn terrengsvever', emoji: '🛻', price: 280, color: '#5a8a62', text: 'Terrengsvever med lysbar' },
+  { id: 'bil-lilla', name: 'Lilla sportssvever', emoji: '🏎️', price: 400, color: '#8a90a8', text: 'Lav sportssvever med spoiler' },
 ];
 export const CAR_BY_ID = Object.fromEntries(CARS.map((c) => [c.id, c]));

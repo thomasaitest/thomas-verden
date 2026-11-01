@@ -17,7 +17,7 @@ import {
 import { collectColliders, solid } from './colliders.ts';
 import { fillCarShop, fillHospital, fillPetShop, fillShop } from './buildings.ts';
 import { EQUIPMENT, MERRY, SEESAW, SLIDE, SWING_PIVOT_Y, SWING_ROPE, SWING_XS, SWING_Z, TRAMP, merryAngle, seatAt, seesawAngle, swingAngle, type EquipDef, type Seat } from '../logic/playground.ts';
-import { box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, part, rbox, shadowAll, sph, textTexture } from './kit.ts';
+import { asphaltTexture, box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, noiseTexture, part, rbox, shadowAll, sph, textTexture, tileTexture } from './kit.ts';
 
 export type ZoneKind = 'home' | 'shop' | 'vet' | 'eggs' | 'doors' | 'play' | 'cars' | 'pets';
 export interface Zone {
@@ -172,7 +172,7 @@ function openBuilding(w: number, d: number, h: number, wall: string, _roof: stri
   solarRoof.userData.noCast = true;
   roofG.add(solarRoof);
   box(roofG, trim, [0, h + 0.15, d / 2 + 0.4], [w + 1.5, 0.2, 0.8]).userData.noCast = true;
-  const edgeGlow = new THREE.Mesh(G.box(), glowMat('#7ef0ff', 0.65));
+  const edgeGlow = new THREE.Mesh(G.box(), glowMat('#7ef0ff', 0.25));
   edgeGlow.position.set(0, h + 0.35, d / 2 + 0.9);
   edgeGlow.scale.set(w + 1.2, 0.08, 0.1);
   edgeGlow.userData.noCast = true;
@@ -225,7 +225,7 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
     box(g, '#2a4a78', [0, h + 0.98, i * (rd / 5) - 0.15], [rw - 0.5, 0.04, 0.06], [-0.18, 0, 0]).userData.noCast = true;
   }
   // front lip glow
-  const lip = new THREE.Mesh(G.box(), glowMat('#7ef0ff', 0.7));
+  const lip = new THREE.Mesh(G.box(), glowMat('#7ef0ff', 0.28));
   lip.position.set(0, h + 0.55, d / 2 + eave * 0.55);
   lip.scale.set(rw * 0.92, 0.08, 0.12);
   lip.userData.noCast = true;
@@ -277,33 +277,37 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
 }
 
 function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, collide = false) {
-  const trunk = cyl(g, '#8a5a3c', [x, 1.35 * s, z], [0.55 * s, 2.7 * s, 0.55 * s]);
-  if (collide) solid(trunk, 'circle', 0.85 * s, 8 * s);
+  const trunk = cyl(g, '#5a3d28', [x, 1.7 * s, z], [0.28 * s, 3.4 * s, 0.28 * s]);
+  if (collide) solid(trunk, 'circle', 0.7 * s, 8 * s);
+  // angled branches
+  for (const [bx, by, bz, brx, brz] of [
+    [0.35, 2.4, 0.1, 0.6, 0.2], [-0.3, 2.8, -0.15, -0.55, -0.25], [0.1, 3.2, 0.35, 0.2, 0.55],
+  ] as const) {
+    const b = cyl(g, '#5a3d28', [x + bx * s, by * s, z + bz * s], [0.1 * s, 1.1 * s, 0.1 * s], [brz * 0.7, 0, -brx * 0.7]);
+    b.userData.noCast = true;
+  }
   const puff = (col: string, ox: number, oy: number, oz: number, sx: number, sy: number, sz: number) =>
     sph(g, col, [x + ox * s, oy * s, z + oz * s], [sx * s, sy * s, sz * s]);
   if (kind === 0) {
-    // fluffy deciduous
-    puff('#3fae5a', 0, 3.6, 0, 3.8, 3.2, 3.8);
-    puff('#66d06a', 0.9, 4.4, 0.5, 2.6, 2.4, 2.6);
-    puff('#4fbf55', -0.8, 4.2, -0.4, 2.4, 2.2, 2.4);
-    puff('#7ccf6a', 0.2, 5.2, -0.2, 2.0, 1.8, 2.0);
-    puff('#5cc36b', -0.3, 3.2, 0.9, 1.8, 1.6, 1.8);
+    puff('#2f6e38', 0, 4.0, 0, 2.6, 2.2, 2.4);
+    puff('#3d8248', 0.85, 4.5, 0.35, 1.8, 1.5, 1.7);
+    puff('#255a30', -0.75, 4.3, -0.4, 1.7, 1.4, 1.6);
+    puff('#4a9054', 0.2, 5.3, -0.2, 1.4, 1.2, 1.3);
+    puff('#356e3e', -0.2, 4.8, 0.7, 1.3, 1.1, 1.2);
   } else if (kind === 1) {
-    // layered fir
-    cone(g, '#2f8a45', [x, 3.2 * s, z], [3.6 * s, 3.2 * s, 3.6 * s]);
-    cone(g, '#3fae5a', [x, 4.6 * s, z], [2.8 * s, 2.6 * s, 2.8 * s]);
-    cone(g, '#4fbf65', [x, 5.8 * s, z], [1.8 * s, 2.0 * s, 1.8 * s]);
+    cone(g, '#245830', [x, 3.5 * s, z], [2.4 * s, 3.6 * s, 2.4 * s]);
+    cone(g, '#2f6e38', [x, 5.0 * s, z], [1.8 * s, 2.8 * s, 1.8 * s]);
+    cone(g, '#3a8248', [x, 6.2 * s, z], [1.15 * s, 2.1 * s, 1.15 * s]);
   } else if (kind === 2) {
-    // pink blossom
-    puff('#ff9fc8', 0, 3.5, 0, 3.5, 3.1, 3.5);
-    puff('#ffc2dc', -0.7, 4.3, 0.3, 2.2, 2.0, 2.2);
-    puff('#ffa6d5', 0.8, 4.0, -0.5, 2.0, 1.8, 2.0);
+    puff('#3a6e42', 0, 3.9, 0, 2.5, 2.2, 2.5);
+    puff('#b8909a', -0.55, 4.5, 0.2, 1.3, 1.1, 1.3);
+    puff('#a88090', 0.5, 4.3, -0.3, 1.2, 1.0, 1.2);
+    puff('#4a7e52', 0.15, 5.1, 0.1, 1.35, 1.15, 1.3);
   } else {
-    // pastel purple
-    puff('#c9a0ff', 0, 3.6, 0, 3.6, 3.2, 3.6);
-    puff('#e0c6ff', 0.7, 4.4, 0.4, 2.4, 2.2, 2.4);
-    puff('#b78bff', -0.8, 4.1, -0.3, 2.2, 2.0, 2.2);
-    puff('#d8b4ff', 0.1, 5.1, 0.1, 1.8, 1.6, 1.8);
+    puff('#2e5e36', 0, 4.0, 0, 2.55, 2.3, 2.5);
+    puff('#3a7244', 0.7, 4.6, 0.35, 1.7, 1.4, 1.6);
+    puff('#255030', -0.65, 4.4, -0.3, 1.6, 1.35, 1.5);
+    puff('#45804e', -0.1, 5.2, 0.15, 1.3, 1.1, 1.25);
   }
 }
 
@@ -314,8 +318,14 @@ export function buildTown(): Town {
   const rects: RectCollider[] = [];
   const circles: CircleCollider[] = [];
 
-  // ground
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), mat(GRASS, 0, { metalness: 0.05, roughness: 0.85 }));
+  // ground – varied grass
+  const grassMat = new THREE.MeshStandardMaterial({
+    map: noiseTexture(128, { a: '#5f9a5a', b: '#4a8248', scale: 1.4 }),
+    metalness: 0.02,
+    roughness: 0.92,
+  });
+  grassMat.map!.repeat.set(SIZE / 8, SIZE / 8);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), grassMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   group.add(ground);
@@ -335,35 +345,43 @@ export function buildTown(): Town {
   const benches: { x: number; z: number; yaw: number }[] = [];
 
   // plaza + fountain (outer wall jumpable; rim and upper bowl are landable)
-  cyl(stat, ROAD, [0, 0.04, 0], [PLAZA_R * 2, 0.08, PLAZA_R * 2]);
-  solid(cyl(stat, '#e6ecff', [0, 0.55, 0], [9, 1.1, 9]), 'circle', 0, 1.15);
+  {
+    const plazaTex = tileTexture(256, { tile: '#c8ced6', mortar: '#9aa3ae', tiles: 8 });
+    plazaTex.repeat.set(4, 4);
+    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.1, 48), new THREE.MeshStandardMaterial({ map: plazaTex, metalness: 0.08, roughness: 0.7 }));
+    plaza.position.y = 0.05;
+    plaza.receiveShadow = true;
+    plaza.userData.noCast = true;
+    stat.add(plaza);
+  }
+  solid(cyl(stat, '#c8d0da', [0, 0.55, 0], [9, 1.1, 9]), 'circle', 0, 1.15);
   cyl(stat, '#7fd8ff', [0, 1.1, 0], [8, 0.2, 8]);
-  solid(cyl(stat, '#e6ecff', [0, 2.2, 0], [1.2, 3, 1.2]), 'circle', 0.1, 4.5);
-  solid(cyl(stat, '#e6ecff', [0, 3.6, 0], [4, 0.5, 4]), 'circle', 0, 3.9);
+  solid(cyl(stat, '#b8c2ce', [0, 2.2, 0], [1.2, 3, 1.2]), 'circle', 0.1, 4.5);
+  solid(cyl(stat, '#c0c8d2', [0, 3.6, 0], [4, 0.5, 4]), 'circle', 0, 3.9);
   surfaces.push({ x: 0, z: 0, r: 4.2, top: 1.15 }); // rim
   surfaces.push({ x: 0, z: 0, r: 1.9, top: 3.85 }); // upper bowl
-  const water = sph(group, '#bff0ff', [0, 4.2, 0], [1.6, 1.6, 1.6], undefined, 0.3);
+  const water = sph(group, '#8ec8e0', [0, 4.2, 0], [1.6, 1.6, 1.6], undefined, 0.08);
   // Water jets: tall bright arcs (~2–2.5 m) that pulse on/off — readable on iPhone
   const jets: THREE.Mesh[] = [];
   for (let i = 0; i < 6; i++) {
     const ang = (i / 6) * Math.PI * 2;
-    const j = cyl(group, '#7ef0ff', [Math.cos(ang) * 0.55, 5.9, Math.sin(ang) * 0.55], [0.38, 3.0, 0.38], undefined, 0.85);
+    const j = cyl(group, '#9ad8ef', [Math.cos(ang) * 0.55, 5.9, Math.sin(ang) * 0.55], [0.28, 2.6, 0.28], undefined, 0.25);
     j.userData.noCast = true;
     jets.push(j as THREE.Mesh);
   }
-  const centerJet = cyl(group, '#f2ffff', [0, 6.7, 0], [0.72, 3.6, 0.72], undefined, 1.0);
+  const centerJet = cyl(group, '#b8e4f4', [0, 6.4, 0], [0.5, 3.0, 0.5], undefined, 0.3);
   centerJet.userData.noCast = true;
   jets.push(centerJet as THREE.Mesh);
   for (let i = 0; i < 8; i++) {
     const ang = (i / 8) * Math.PI * 2 + 0.2;
-    const d = sph(group, '#c8f8ff', [Math.cos(ang) * 1.5, 5.4, Math.sin(ang) * 1.5], [0.42, 0.42, 0.42], undefined, 0.7);
+    const d = sph(group, '#a8d8e8', [Math.cos(ang) * 1.5, 5.2, Math.sin(ang) * 1.5], [0.28, 0.28, 0.28], undefined, 0.2);
     d.userData.noCast = true;
     jets.push(d as THREE.Mesh);
   }
   // fountain light rings (pulse with jets)
   const fountainRings: THREE.Mesh[] = [];
   for (const [ry, rr] of [[1.25, 3.6], [2.0, 2.2], [3.7, 1.5]] as const) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.07, 8, 40), glowMat('#5ccfff', 1.1));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.07, 8, 40), glowMat('#5ccfff', 0.35));
     ring.rotation.x = Math.PI / 2;
     ring.position.set(0, ry, 0);
     ring.userData.noCast = true;
@@ -371,7 +389,7 @@ export function buildTown(): Town {
     fountainRings.push(ring);
   }
   // basin water glow
-  cyl(group, '#3ecbff', [0, 1.05, 0], [7.6, 0.08, 7.6], undefined, 0.55).userData.noCast = true;
+  cyl(group, '#3ecbff', [0, 1.05, 0], [7.6, 0.08, 7.6], undefined, 0.2).userData.noCast = true;
 
   // road network (ring + approaches + neighbourhood) – never through buildings
   for (const s of roads) {
@@ -382,15 +400,24 @@ export function buildTown(): Town {
     const ang = Math.atan2(dx, dz);
     const mx = (s.x1 + s.x2) / 2;
     const mz = (s.z1 + s.z2) / 2;
-    box(stat, ROAD, [mx, 0.05, mz], [s.width, 0.06, L], [0, ang, 0]);
+    {
+      const roadMesh = new THREE.Mesh(G.box(), new THREE.MeshStandardMaterial({ map: asphaltTexture(128), metalness: 0.15, roughness: 0.85, color: '#6a7280' }));
+      roadMesh.position.set(mx, 0.05, mz);
+      roadMesh.scale.set(s.width, 0.06, L);
+      roadMesh.rotation.set(0, ang, 0);
+      roadMesh.receiveShadow = true;
+      roadMesh.userData.noCast = true;
+      if (roadMesh.material.map) roadMesh.material.map.repeat.set(1, Math.max(1, L / 8));
+      stat.add(roadMesh);
+    }
     // glowing centre lane
-    box(stat, LANE, [mx, 0.085, mz], [0.14, 0.02, Math.max(0.5, L - 0.8)], [0, ang, 0], 1.0).userData.noCast = true;
+    box(stat, LANE, [mx, 0.085, mz], [0.12, 0.02, Math.max(0.5, L - 0.8)], [0, ang, 0], 0.35).userData.noCast = true;
     // edge lines
     const half = s.width * 0.42;
     for (const side of [-1, 1]) {
       const ox = Math.cos(ang) * half * side;
       const oz = -Math.sin(ang) * half * side;
-      box(stat, LANE, [mx + ox, 0.082, mz + oz], [0.08, 0.015, Math.max(0.5, L - 0.4)], [0, ang, 0], 0.7).userData.noCast = true;
+      box(stat, LANE, [mx + ox, 0.082, mz + oz], [0.07, 0.015, Math.max(0.5, L - 0.4)], [0, ang, 0], 0.25).userData.noCast = true;
     }
   }
 
@@ -749,7 +776,7 @@ export function buildTown(): Town {
     const r = SIZE / 2 + 4 + (i % 3) * 3;
     tree(stat, Math.cos(a) * r, Math.sin(a) * r, 1.3, i % 4);
   }
-  const flowerCols = ['#ff8fb1', '#ffe066', '#ffffff', '#c88bff', '#ff6f6f'];
+  const flowerCols = ['#6a9a58', '#5a8a4a', '#7aaa68', '#4a7a40', '#8aba78'];
   for (let i = 0; i < 160; i++) {
     const x = (rnd() - 0.5) * SIZE * 0.9;
     const z = (rnd() - 0.5) * SIZE * 0.9;
@@ -765,8 +792,9 @@ export function buildTown(): Town {
   }
   // lamps and benches from the layout helper – never on a road
   for (const L of lampSpots(roads)) {
-    solid(cyl(stat, '#555a75', [L.x, 2.5, L.z], [0.25, 5, 0.25]), 'circle', 0.25, 5.5);
-    sph(stat, '#fff4c2', [L.x, 5.2, L.z], [0.8, 0.8, 0.8], undefined, 0.6);
+    solid(cyl(stat, '#2a3340', [L.x, 2.6, L.z], [0.12, 5.2, 0.12]), 'circle', 0.2, 5.5);
+    cyl(stat, '#1a2230', [L.x, 5.3, L.z], [0.55, 0.08, 0.55]);
+    sph(stat, '#e8f4ff', [L.x, 5.15, L.z], [0.35, 0.12, 0.35], undefined, 0.7);
   }
   for (const b of benchSpots(roads)) {
     // b.yaw = sit facing (away from the backrest). Avatar forward = (sin, cos).
@@ -786,10 +814,11 @@ export function buildTown(): Town {
       const lx = seatX + rx * sx + fx * sz;
       const lz = seatZ + rz * sx + fz * sz;
       // short legs stay solid so you can't walk through the bench footprint
-      solid(cyl(stat, '#8a5a3c', [lx, 0.35, lz], [0.16, 0.7, 0.16]), 'circle', 0.05, 0.8);
+      solid(cyl(stat, '#2a3344', [lx, 0.32, lz], [0.1, 0.64, 0.1]), 'circle', 0.05, 0.8);
     }
     // seat plank — visual only (no collider)
-    box(stat, '#cfd8e6', [seatX, 0.78, seatZ], [2.8, 0.16, 1.0], [0, sitYaw, 0]);
+    rbox(stat, '#c4a07a', [seatX, 0.72, seatZ], [2.6, 0.12, 0.85], [0, sitYaw, 0]);
+    box(stat, '#3ecbff', [seatX, 0.64, seatZ], [2.4, 0.03, 0.7], [0, sitYaw, 0], 0.2);
     // backrest — visual only (collider was shoving sitters behind the bench)
     box(
       stat,
@@ -798,14 +827,28 @@ export function buildTown(): Town {
       [2.8, 0.9, 0.14],
       [0, sitYaw, 0],
     );
-    box(stat, '#3ecbff', [seatX - fx * 0.5, 0.95, seatZ - fz * 0.5], [2.6, 0.05, 0.06], [0, sitYaw, 0], 0.55);
+    box(stat, '#3ecbff', [seatX - fx * 0.5, 0.95, seatZ - fz * 0.5], [2.6, 0.05, 0.06], [0, sitYaw, 0], 0.2);
     // Interaction / sit pose uses the centred sit point (not a corner of the bench).
     benches.push({ x: sitX, z: sitZ, yaw: sitYaw });
   }
   // hills at the edge
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;
-    sph(stat, '#6cc65a', [Math.cos(a) * (SIZE / 2 + 25), 0, Math.sin(a) * (SIZE / 2 + 25)], [50, 26, 50]);
+    sph(stat, '#3d7a48', [Math.cos(a) * (SIZE / 2 + 25), 0, Math.sin(a) * (SIZE / 2 + 25)], [50, 26, 50]);
+  }
+  // distant skyline towers (visual only)
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + 0.2;
+    const rr = SIZE / 2 + 55 + (i % 4) * 8;
+    const th = 28 + (i * 7) % 55;
+    const tw = 4 + (i % 3) * 2.5;
+    rbox(stat, i % 2 ? '#e8eef4' : '#d4dde6', [Math.cos(a) * rr, th / 2, Math.sin(a) * rr], [tw, th, tw]).userData.noCast = true;
+    if (i % 3 === 0) {
+      const spire = cone(stat, '#c8d4e0', [Math.cos(a) * rr, th + 6, Math.sin(a) * rr], [tw * 0.6, 12, tw * 0.6]);
+      spire.userData.noCast = true;
+    }
+    // window band glow
+    box(stat, '#7ec8ff', [Math.cos(a) * rr, th * 0.55, Math.sin(a) * rr], [tw + 0.05, th * 0.08, tw + 0.05], undefined, 0.35).userData.noCast = true;
   }
 
   // colliders come from the real meshes that were marked solid()

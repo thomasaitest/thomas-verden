@@ -5,7 +5,7 @@ import { blocked, type CircleCollider, type Colliders, type RectCollider } from 
 import { FLOOR_H, FLOORS, floorColliders, houseLayout, type HouseLayout } from '../logic/layout.ts';
 import { footprintOf } from './colliders.ts';
 import { buildFurniture } from './furniture.ts';
-import { box, G, mat, rbox, textTexture } from './kit.ts';
+import { box, G, mat, rbox, textTexture, tileTexture } from './kit.ts';
 
 export const WALL_H = 6.2;
 
@@ -80,9 +80,14 @@ export function createInterior(): Interior {
         const fg = floorGroups[f];
         const y0 = f * FLOOR_H;
         // floor slab (the upper one has a hole for the stairs)
+        const floorTex = tileTexture(256, { tile: house.floorColor, mortar: '#9aa3ae', tiles: 6 });
+        floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
         const slab = (x0: number, x1: number, z0: number, z1: number) => {
           if (x1 - x0 < 0.01 || z1 - z0 < 0.01) return;
-          const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.4, z1 - z0), mat(house.floorColor));
+          const matFloor = new THREE.MeshStandardMaterial({ map: floorTex.clone(), color: '#ffffff', roughness: 0.55, metalness: 0.05 });
+          matFloor.map!.repeat.set(Math.max(1, (x1 - x0) / 3), Math.max(1, (z1 - z0) / 3));
+          matFloor.map!.needsUpdate = true;
+          const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.4, z1 - z0), matFloor);
           m.position.set((x0 + x1) / 2, y0 - 0.2, (z0 + z1) / 2);
           m.receiveShadow = true;
           fg.add(m);
@@ -131,11 +136,11 @@ export function createInterior(): Interior {
           top.position.set(0, 4.2 + (WALL_H - 4.2) / 2, d / 2 + 0.2);
           front.add(top);
           rbox(front, '#a0632f', [0, 2.1, d / 2 + 0.25], [gap - 0.2, 4.2, 0.2]);
-          const exit = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.9), new THREE.MeshBasicMaterial({ map: textTexture('Gå ut', { bg: '#54c45e', fg: '#fff', w: 256, h: 96 }), transparent: true }));
+          const exit = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.9), new THREE.MeshBasicMaterial({ map: textTexture('Gå ut', { bg: '#0e1624', fg: '#7ef0ff', w: 256, h: 96, stroke: '#3ecbff' }), transparent: true }));
           exit.position.set(0, 4.8, d / 2 - 0.05);
           exit.rotation.y = Math.PI;
           front.add(exit);
-          const exitMat = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24), new THREE.MeshBasicMaterial({ color: '#7cf08a', transparent: true, opacity: 0.6 }));
+          const exitMat = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24), new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.35 }));
           exitMat.rotation.x = -Math.PI / 2;
           exitMat.position.set(0, 0.03, d / 2 - 1.2);
           fg.add(exitMat);
@@ -146,13 +151,35 @@ export function createInterior(): Interior {
             box(front, '#bfe9ff', [x, y0 + 3.3, d / 2 - 0.06], [2.4, 1.9, 0.06], undefined, 0.45);
           }
         }
-        // windows on side walls
+        // panoramic glass windows with generated skyline
         for (const [wall, s] of [[left, -1], [right, 1]] as const) {
           for (let i = -1; i <= 1; i += 2) {
-            box(wall, '#ffffff', [s * (w / 2 - 0.02), y0 + 3.3, i * d * 0.22], [0.1, 2.2, 2.6]);
-            box(wall, '#bfe9ff', [s * (w / 2 - 0.06), y0 + 3.3, i * d * 0.22], [0.06, 1.9, 2.3], undefined, 0.45);
+            box(wall, '#8aa0b8', [s * (w / 2 - 0.02), y0 + 3.3, i * d * 0.22], [0.08, 2.6, 2.8]);
+            const glass = box(wall, '#9ad8ff', [s * (w / 2 - 0.08), y0 + 3.3, i * d * 0.22], [0.04, 2.3, 2.5], undefined, 0.35);
+            glass.material = new THREE.MeshStandardMaterial({ color: '#9ad8ff', transparent: true, opacity: 0.28, metalness: 0.1, roughness: 0.1, depthWrite: false });
+            // skyline silhouette card behind glass
+            const sky = document.createElement('canvas');
+            sky.width = 256; sky.height = 128;
+            const sctx = sky.getContext('2d')!;
+            const grd = sctx.createLinearGradient(0, 0, 0, 128);
+            grd.addColorStop(0, '#8eb8e0'); grd.addColorStop(1, '#d8e6f0');
+            sctx.fillStyle = grd; sctx.fillRect(0, 0, 256, 128);
+            sctx.fillStyle = '#6a7a88';
+            for (let k = 0; k < 14; k++) {
+              const bw = 8 + (k * 5) % 18;
+              const bh = 30 + (k * 17) % 70;
+              sctx.fillRect(6 + k * 18, 128 - bh, bw, bh);
+            }
+            const stex = new THREE.CanvasTexture(sky);
+            stex.colorSpace = THREE.SRGBColorSpace;
+            const card = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.1), new THREE.MeshBasicMaterial({ map: stex }));
+            card.position.set(s * (w / 2 - 0.2), y0 + 3.3, i * d * 0.22);
+            card.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2;
+            wall.add(card);
           }
         }
+        // ceiling LED channel
+        box(fg, '#3ecbff', [0, y0 + WALL_H - 0.15, 0], [w * 0.65, 0.04, 0.08], undefined, 0.85);
         // inner walls between the rooms, with door gaps
         for (const r of L.walls[f]) {
           const g = new THREE.Group();
@@ -205,9 +232,9 @@ export function createInterior(): Interior {
           const t = i / 6;
           box(stairs, '#ffffff', [x, t * FLOOR_H + 0.5, st.zBottom - t * (st.zBottom - st.zTop)], [0.1, 1.0, 0.1]);
         }
-        box(stairs, '#c98a55', [x, FLOOR_H + 1.0, (st.zTop + st.zBottom) / 2], [0.12, 0.12, st.zBottom - st.zTop]);
+        box(stairs, '#9ad8ff', [x, FLOOR_H + 1.0, (st.zTop + st.zBottom) / 2], [0.08, 0.08, st.zBottom - st.zTop], undefined, 0.25);
       }
-      box(stairs, '#c98a55', [smx, FLOOR_H + 1.0, st.zBottom + 0.12], [st.x1 - st.x0 + 0.3, 0.12, 0.12]);
+      box(stairs, '#9ad8ff', [smx, FLOOR_H + 1.0, st.zBottom + 0.12], [st.x1 - st.x0 + 0.3, 0.08, 0.08], undefined, 0.25);
       for (const x of [st.x0, smx, st.x1]) box(stairs, '#ffffff', [x, FLOOR_H + 0.5, st.zBottom + 0.12], [0.1, 1.0, 0.1]);
       floorGroups[0].add(stairs);
       // Moderne: visual spiral newel (gameplay ramp stays straight) so the plan reads as a corner spiral.

@@ -21,7 +21,11 @@ import { guestHouseFromWire, houseToWire, type HouseWire } from './logic/houseWi
 import { canEnterHouse, doorPrompt, lockLabel } from './logic/houseLock.ts';
 import { friendDoorPos, HOME_ENTER_RADIUS, isRemotePlot, nearFriendDoor } from './logic/visitDoor.ts';
 import { miniReward, startMini, stepMini, type MiniState } from './logic/minigames.ts';
-import { buildCar, buildPram, CAR_SEAT_Y } from './three/vehicles.ts';
+import { buildCar, buildPram, CAR_AVATAR_SCALE, CAR_SEAT_Y } from './three/vehicles.ts';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Input } from './input.ts';
 import { animateAvatar, buildAvatar, type AvatarPose, type AvatarRig } from './three/avatarModel.ts';
 import { createInterior, type Interior } from './three/interior.ts';
@@ -80,6 +84,9 @@ const RIDE = 15;
 
 export class Game {
   renderer: THREE.WebGLRenderer;
+  composer: EffectComposer | null = null;
+  private bloomPass: UnrealBloomPass | null = null;
+  highQuality = false;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
   town: Town;
@@ -157,18 +164,27 @@ export class Game {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.95;
     host.append(this.renderer.domElement);
     this.thumbs = new Thumbs(this.renderer);
+    // Environment map for glass / metal reflections
+    try {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      pmrem.compileEquirectangularShader();
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+    } catch {
+      /* env optional */
+    }
 
     this.save = loadSave(localStorage);
     setSoundEnabled(this.save.sound);
 
-    this.hemi = new THREE.HemisphereLight('#e8f4ff', '#7aa070', 1.35);
+    this.hemi = new THREE.HemisphereLight('#cfe6ff', '#6a8a6a', 0.85);
     this.scene.add(this.hemi);
-    this.sun = new THREE.DirectionalLight('#fff6e8', 2.25);
+    this.sun = new THREE.DirectionalLight('#fff6e8', 1.85);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
+    this.sun.shadow.mapSize.set(2048, 2048);
     const sc = this.sun.shadow.camera;
     sc.left = -30;
     sc.right = 30;
@@ -207,7 +223,10 @@ export class Game {
       activity: () => this.toggleActivity(),
       mp: () => this.mp?.openMenu(),
       emote: () => this.mp?.openEmotes(),
+      quality: () => this.toggleQuality(),
     });
+    this.setupPost();
+    this.hud.setQualityLabel(this.highQuality);
     this.hud.soundBtn.textContent = this.save.sound ? '🔊' : '🔇';
     this.input = new Input(this.renderer.domElement, this.hud.joyBase, this.hud.joyKnob, this.hud.jump);
     this.input.onTap = (t) => this.onTap(t.x, t.y);
@@ -915,11 +934,47 @@ export class Game {
     this.commit({ ...save, houses: save.houses.map((x2) => (x2.id === h.id ? h : x2)) });
   }
 
+
+  private setupPost() {
+    const w = Math.max(1, this.host.clientWidth || window.innerWidth);
+    const h = Math.max(1, this.host.clientHeight || window.innerHeight);
+    const composer = new EffectComposer(this.renderer);
+    composer.addPass(new RenderPass(this.scene, this.camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.0, 0.2, 0.95);
+    this.bloomPass = bloom;
+    composer.addPass(bloom);
+    this.composer = composer;
+    // Start LQ (no bloom) — HQ toggle enables mild bloom + shadows for capable GPUs
+    this.applyQuality(false);
+  }
+
+  toggleQuality() {
+    this.applyQuality(!this.highQuality);
+  }
+
+  private applyQuality(high: boolean) {
+    this.highQuality = high;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, high ? 1.5 : 1.15));
+    this.renderer.shadowMap.enabled = high;
+    this.sun.castShadow = high;
+    this.renderer.toneMappingExposure = high ? 0.95 : 0.9;
+    if (this.bloomPass) {
+      this.bloomPass.strength = high ? 0.12 : 0.0;
+      this.bloomPass.threshold = high ? 0.9 : 1.0;
+    }
+    this.hud.setQualityLabel(high);
+    this.resize();
+  }
+
   // ---------- loop ----------
   resize() {
     const w = this.host.clientWidth;
     const h = this.host.clientHeight;
     this.renderer.setSize(w, h);
+    if (this.composer) {
+      this.composer.setSize(w, h);
+      this.bloomPass?.resolution.set(w, h);
+    }
     this.camera.aspect = w / h;
     this.camera.fov = w < h ? 68 : 55;
     this.camera.updateProjectionMatrix();
@@ -932,7 +987,8 @@ export class Game {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       this.step(dt);
-      this.renderer.render(this.scene, this.camera);
+      if (this.composer && this.highQuality) this.composer.render();
+      else this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -1091,7 +1147,7 @@ export class Game {
     this.avatarHolder.position.copy(p.pos);
     if (this.driving) {
       this.avatarHolder.position.y = CAR_SEAT_Y;
-      this.avatarHolder.scale.setScalar(0.72);
+      this.avatarHolder.scale.setScalar(CAR_AVATAR_SCALE);
     } else {
       this.avatarHolder.scale.setScalar(1);
     }
@@ -1115,6 +1171,19 @@ export class Game {
     this.avatarShadow.position.set(p.pos.x, this.groundAt(p.pos.x, p.pos.y, p.pos.z) + 0.03, p.pos.z);
     this.avatarShadow.visible = !ride && !this.driving;
     this.updateVehicleMesh();
+    if (this.driving) {
+      const spd = this.player.speed * 18;
+      this.hud.setSpeed(Math.min(300, spd));
+    }
+    if (Math.floor(this.time * 4) !== Math.floor((this.time - dt) * 4)) {
+      this.hud.drawMiniMap({
+        roads: this.town.roads,
+        px: this.player.pos.x,
+        pz: this.player.pos.z,
+        yaw: this.player.yaw,
+        size: this.town.size,
+      });
+    }
 
     // day/night + weather outdoors
     if (this.mode === 'town') {

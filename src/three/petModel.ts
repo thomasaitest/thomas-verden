@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { PetSpecies } from '../logic/pets.ts';
-import { box, cone, cyl, G, part, sph, type V3 } from './kit.ts';
+import { box, cone, cyl, G, part, rbox, sph, type V3 } from './kit.ts';
 
 export interface PetRig {
   root: THREE.Group;
@@ -18,13 +18,14 @@ export interface PetRig {
 }
 
 const EYE = '#2b2340';
-const BLUSH = '#ff9fb8';
+const BLUSH = 'rgba(255,160,160,0.25)';
 
 function eyes(head: THREE.Object3D, y: number, z: number, spread: number, size = 0.13) {
   for (const s of [-1, 1]) {
     sph(head, EYE, [s * spread, y, z], [size, size * 1.15, size * 0.7]);
     sph(head, '#ffffff', [s * spread + 0.025, y + 0.035, z + size * 0.3], [size * 0.38, size * 0.38, size * 0.3]);
-    sph(head, BLUSH, [s * (spread + 0.09), y - 0.11, z - 0.03], [0.11, 0.06, 0.04]);
+    // subtle cheek, no candy blush
+    sph(head, '#e8b0a8', [s * (spread + 0.08), y - 0.1, z - 0.02], [0.06, 0.035, 0.025]);
   }
 }
 
@@ -261,6 +262,45 @@ function bug(sp: PetSpecies, rig: Partial<PetRig>, body: THREE.Group) {
   rig.topY = 1.05;
 }
 
+
+function robotDog(sp: PetSpecies, rig: Partial<PetRig>, body: THREE.Group) {
+  const [c1, c2, c3] = sp.colors;
+  const legLen = 0.32;
+  const bodyY = legLen + 0.28;
+  // metallic body
+  rbox(body, c1, [0, bodyY, 0], [0.7, 0.45, 0.95]);
+  rbox(body, c2, [0, bodyY + 0.05, 0.05], [0.55, 0.28, 0.75]);
+  // glow panel
+  box(body, c3, [0, bodyY + 0.12, 0.48], [0.35, 0.12, 0.04], undefined, 0.8);
+  rig.legs = [
+    leg(body, c2, [0.22, legLen, 0.28], legLen, 0.12, c1),
+    leg(body, c2, [-0.22, legLen, 0.28], legLen, 0.12, c1),
+    leg(body, c2, [0.22, legLen, -0.28], legLen, 0.12, c1),
+    leg(body, c2, [-0.22, legLen, -0.28], legLen, 0.12, c1),
+  ];
+  const head = new THREE.Group();
+  head.position.set(0, bodyY + 0.35, 0.55);
+  body.add(head);
+  rig.head = head;
+  rbox(head, c1, [0, 0, 0], [0.48, 0.4, 0.45]);
+  // visor eyes
+  box(head, c3, [0, 0.04, 0.23], [0.36, 0.1, 0.04], undefined, 1.0);
+  // ears / antennas
+  for (const s of [-1, 1]) {
+    cyl(head, c2, [s * 0.16, 0.28, -0.05], [0.05, 0.22, 0.05]);
+    sph(head, c3, [s * 0.16, 0.4, -0.05], [0.07, 0.07, 0.07], undefined, 0.7);
+  }
+  const tail = new THREE.Object3D();
+  tail.position.set(0, bodyY + 0.1, -0.5);
+  body.add(tail);
+  cyl(tail, c2, [0, 0.05, -0.08], [0.06, 0.06, 0.25], [Math.PI / 2, 0, 0]);
+  sph(tail, c3, [0, 0.05, -0.22], [0.08, 0.08, 0.08], undefined, 0.5);
+  rig.tail = tail;
+  rig.seatY = bodyY + 0.35;
+  rig.topY = bodyY + 0.75;
+  rig.biped = false;
+}
+
 export function buildPet(sp: PetSpecies): PetRig {
   const root = new THREE.Group();
   const body = new THREE.Group();
@@ -270,6 +310,7 @@ export function buildPet(sp: PetSpecies): PetRig {
   else if (sp.body === 'dino') dino(sp, rig, body);
   else if (sp.body === 'turtle') turtle(sp, rig, body);
   else if (sp.body === 'bug') bug(sp, rig, body);
+  else if (sp.body === 'robot') robotDog(sp, rig, body);
   else quadruped(sp, rig, body);
   root.traverse((o) => {
     if ((o as THREE.Mesh).isMesh) o.castShadow = true;

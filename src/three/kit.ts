@@ -36,7 +36,7 @@ export function mat(color: string, emissive = 0, opts: MatOpts = {}): THREE.Mesh
 
 /** Glass-like transparent material. */
 export function glassMat(color = '#bfe9ff', opacity = 0.32): THREE.MeshStandardMaterial {
-  return mat(color, 0.15, { metalness: 0.05, roughness: 0.12, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+  return mat(color, 0.02, { metalness: 0.35, roughness: 0.08, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
 }
 
 /** Bright emissive accent (lane lines, holos, thrusters). */
@@ -212,4 +212,65 @@ export function blobShadow(size = 1): THREE.Mesh {
   m.position.y = 0.02;
   m.renderOrder = 1;
   return m;
+}
+
+/** Procedural canvas noise for subtle surface variation (no photo textures). */
+export function noiseTexture(size = 128, opts: { a?: string; b?: string; scale?: number } = {}): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d')!;
+  const a = opts.a ?? '#6a9a6a';
+  const b = opts.b ?? '#5a8a5a';
+  ctx.fillStyle = a;
+  ctx.fillRect(0, 0, size, size);
+  for (let i = 0; i < size * size * 0.35; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const r = (opts.scale ?? 1) * (0.4 + Math.random() * 1.8);
+    ctx.fillStyle = Math.random() > 0.5 ? b : a;
+    ctx.globalAlpha = 0.35 + Math.random() * 0.4;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+export function tileTexture(size = 256, opts: { mortar?: string; tile?: string; tiles?: number } = {}): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d')!;
+  const n = opts.tiles ?? 6;
+  const mortar = opts.mortar ?? '#9aa4b0';
+  const tile = opts.tile ?? '#d0d6de';
+  ctx.fillStyle = mortar;
+  ctx.fillRect(0, 0, size, size);
+  const gap = 3;
+  const tw = (size - gap * (n + 1)) / n;
+  for (let iy = 0; iy < n; iy++) for (let ix = 0; ix < n; ix++) {
+    const shade = Math.floor(-8 + Math.random() * 16);
+    ctx.fillStyle = shadeTile(tile, shade);
+    ctx.fillRect(gap + ix * (tw + gap), gap + iy * (tw + gap), tw, tw);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function shadeTile(hex: string, d: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, Math.min(255, ((n >> 16) & 255) + d));
+  const g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d));
+  const b = Math.max(0, Math.min(255, (n & 255) + d));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+export function asphaltTexture(size = 256): THREE.CanvasTexture {
+  return noiseTexture(size, { a: '#4a5160', b: '#3a414e', scale: 1.2 });
 }

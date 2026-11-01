@@ -692,28 +692,27 @@ function accessory(body: THREE.Group, head: THREE.Group, a: Avatar) {
 export function buildAvatar(a: Avatar): AvatarRig {
   const root = new THREE.Group();
   const body = new THREE.Group();
-  body.scale.set(0.92, 1.08, 0.92);
+  // Taller, slimmer human proportions
+  body.scale.set(0.88, 1.18, 0.88);
   root.add(body);
   const legs = [-1, 1].map((s) => {
     const pivot = new THREE.Object3D();
-    pivot.position.set(s * 0.24, 0.9, 0);
+    pivot.position.set(s * 0.18, 0.95, 0);
     body.add(pivot);
     const skirtLike = a.bottom === 'skjort' || a.bottom === 'miniskjort' || a.bottom === 'langtskort' || a.bottom === 'tutu' || a.bottom === 'plissert' || a.bottom === 'kjole' || a.bottom === 'ballkjole';
     if (a.bottom === 'shorts') {
-      box(pivot, a.pants, [0, -0.2, 0], [0.48, 0.4, 0.5]);
-      box(pivot, a.skin, [0, -0.58, 0], [0.38, 0.36, 0.4]);
-    } else if (skirtLike) box(pivot, a.skin, [0, -0.38, 0], [0.38, 0.76, 0.4]);
-    else if (a.bottom === 'overall' || a.bottom === 'jeans' || a.bottom === 'joggebukse') {
-      box(pivot, a.pants, [0, -0.38, 0], [0.46, 0.76, 0.48]);
-    } else box(pivot, a.pants, [0, -0.38, 0], [0.46, 0.76, 0.48]);
+      cyl(pivot, a.pants, [0, -0.18, 0], [0.28, 0.36, 0.28]);
+      cyl(pivot, a.skin, [0, -0.55, 0], [0.22, 0.4, 0.22]);
+    } else if (skirtLike) cyl(pivot, a.skin, [0, -0.42, 0], [0.22, 0.84, 0.22]);
+    else cyl(pivot, a.pants, [0, -0.42, 0], [0.26, 0.84, 0.26]);
     if (a.shoeStyle === 'stovler') {
-      rbox(pivot, a.shoes, [0, -0.62, 0.01], [0.5, 0.5, 0.52]);
-      rbox(pivot, a.shoes, [0, -0.84, 0.07], [0.5, 0.14, 0.6]);
+      cyl(pivot, a.shoes, [0, -0.78, 0.02], [0.28, 0.28, 0.3]);
+      rbox(pivot, a.shoes, [0, -0.92, 0.08], [0.32, 0.1, 0.42]);
     } else if (a.shoeStyle === 'sneakers') {
-      rbox(pivot, a.shoes, [0, -0.78, 0.04], [0.48, 0.2, 0.58]);
-      box(pivot, '#ffffff', [0, -0.9, 0.05], [0.5, 0.06, 0.62]);
-      box(pivot, '#ffffff', [0, -0.78, 0.2], [0.34, 0.05, 0.1]);
-    } else rbox(pivot, a.shoes, [0, -0.82, 0.04], [0.48, 0.18, 0.56]);
+      rbox(pivot, a.shoes, [0, -0.88, 0.06], [0.3, 0.14, 0.42]);
+      box(pivot, '#ffffff', [0, -0.95, 0.06], [0.32, 0.04, 0.44]);
+      box(pivot, '#3ecbff', [0, -0.88, 0.22], [0.22, 0.04, 0.06], undefined, 0.4);
+    } else rbox(pivot, a.shoes, [0, -0.9, 0.05], [0.28, 0.12, 0.4]);
     return pivot;
   });
   if (a.bottom === 'skjort') { cyl(body, a.pants, [0, 0.78, 0], [1.15, 0.5, 0.78]); cyl(body, a.pants, [0, 0.55, 0], [1.25, 0.08, 0.9], undefined, 0.45); }
@@ -730,7 +729,7 @@ export function buildAvatar(a: Avatar): AvatarRig {
     cyl(body, '#ffffff', [0, 0.95, 0], [0.9, 0.12, 0.6]);
   }
   if (a.bottom === 'plissert') {
-    cyl(body, a.pants, [0, 0.78, 0], [1.2, 0.55, 0.82]);
+    cyl(body, a.pants, [0, 0.78, 0], [1.05, 0.55, 0.72], undefined, 0.55);
     for (let i = 0; i < 8; i++) {
       const a0 = (i / 8) * Math.PI * 2;
       box(body, a.pants, [Math.cos(a0) * 0.5, 0.75, Math.sin(a0) * 0.35], [0.08, 0.5, 0.2]);
@@ -757,24 +756,27 @@ export function buildAvatar(a: Avatar): AvatarRig {
     box(body, a.pants, [0, 0.98, 0], [0.96, 0.18, 0.5]);
     for (const s of [-1, 1]) box(body, '#ffffff', [s * 0.24, 0.55, 0.22], [0.12, 0.5, 0.04]);
   }
-  box(body, a.pants, [0, 0.98, 0], [0.96, 0.18, 0.5]);
-  rbox(body, a.shirt, [0, 1.42, 0], [0.98, 0.8, 0.5]);
+  box(body, a.pants, [0, 1.02, 0], [0.72, 0.14, 0.38]);
+  rbox(body, a.shirt, [0, 1.48, 0], [0.72, 0.85, 0.38]);
   const pt = printTexture(a.print);
-  if (pt) decal(body, pt, [0, 1.42, 0.252], a.print === 'striper' ? 0.96 : 0.55, a.print === 'striper' ? 0.78 : 0.55);
+  if (pt) decal(body, pt, [0, 1.48, 0.2], a.print === 'striper' ? 0.7 : 0.42, a.print === 'striper' ? 0.7 : 0.42);
   const arms = [-1, 1].map((s) => {
     const pivot = new THREE.Object3D();
-    pivot.position.set(s * 0.72, 1.76, 0);
+    pivot.position.set(s * 0.48, 1.85, 0);
     body.add(pivot);
-    rbox(pivot, a.shirt, [0, -0.2, 0], [0.44, 0.42, 0.46]);
-    rbox(pivot, a.skin, [0, -0.6, 0], [0.4, 0.5, 0.42]);
+    cyl(pivot, a.shirt, [0, -0.18, 0], [0.2, 0.36, 0.2]);
+    cyl(pivot, a.skin, [0, -0.58, 0], [0.16, 0.48, 0.16]);
+    // hand
+    sph(pivot, a.skin, [0, -0.86, 0], [0.14, 0.12, 0.14]);
     return pivot;
   });
   const head = new THREE.Group();
-  head.position.set(0, 2.2, 0);
+  head.position.set(0, 2.15, 0);
   body.add(head);
-  part(head, G.rbox(0.22), a.skin, [0, 0, 0], [0.74, 0.74, 0.72]);
-  box(body, a.skin, [0, 1.86, 0], [0.32, 0.12, 0.3]);
-  decal(head, faceTexture(a.face), [0, -0.02, 0.362], 0.72, 0.72);
+  // Smaller, rounder head (human ratio)
+  part(head, G.sph(), a.skin, [0, 0.05, 0], [0.52, 0.58, 0.5]);
+  cyl(body, a.skin, [0, 1.92, 0], [0.16, 0.14, 0.16]);
+  decal(head, faceTexture(a.face), [0, 0.02, 0.26], 0.48, 0.48);
   hair(head, a);
   hat(head, a);
   accessory(body, head, a);
@@ -872,11 +874,14 @@ export function animateAvatar(rig: AvatarRig, t: number, pose: AvatarPose, speed
     rig.body.position.set(0, 0.4 + Math.sin(t * 1.6) * 0.02, 0.15);
     rig.head.rotation.set(0.15, Math.sin(t * 0.7) * 0.05, 0);
   } else if (pose === 'drive') {
-    l.rotation.set(-1.35, 0, 0.25);
-    r.rotation.set(-1.35, 0, -0.25);
-    la.rotation.set(-1.1, 0, 0.2);
-    ra.rotation.set(-1.1, 0, -0.2);
-    rig.body.position.y = 0;
+    // Crouched in seat – hips drop so head clears canopy
+    l.rotation.set(-1.45, 0, 0.28);
+    r.rotation.set(-1.45, 0, -0.28);
+    la.rotation.set(-1.05, 0, 0.15);
+    ra.rotation.set(-1.05, 0, -0.15);
+    rig.body.position.set(0, -0.55, 0.12);
+    rig.body.rotation.x = 0.12;
+    rig.head.rotation.set(-0.05, 0, 0);
   }
   if (holding) {
     la.rotation.set(-1.3, 0, 0.25);

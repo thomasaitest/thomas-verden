@@ -2,7 +2,7 @@ import { pickWeighted, uid, type Rng } from './rng.ts';
 
 export type Rarity = 'vanlig' | 'uvanlig' | 'sjelden' | 'ultra' | 'legendarisk';
 /** Procedural 3D body used to draw the whole animal. */
-export type BodyType = 'dog' | 'cat' | 'bunny' | 'bear' | 'pig' | 'horse' | 'bird' | 'penguin' | 'dragon' | 'dino' | 'turtle' | 'bug' | 'fox';
+export type BodyType = 'dog' | 'cat' | 'bunny' | 'bear' | 'pig' | 'horse' | 'bird' | 'penguin' | 'dragon' | 'dino' | 'turtle' | 'bug' | 'fox' | 'robot';
 
 export interface PetSpecies {
   id: string;
@@ -45,6 +45,7 @@ export const SPECIES: PetSpecies[] = [
   { id: 'panda', name: 'Panda', body: 'bear', rarity: 'uvanlig', colors: ['#ffffff', '#2b2b38', '#2b2b38'], spots: true },
   { id: 'pingvin', name: 'Pingvin', body: 'penguin', rarity: 'uvanlig', colors: ['#2f3550', '#ffffff', '#ffb02e'] },
   { id: 'dalmatiner', name: 'Dalmatiner', body: 'dog', rarity: 'uvanlig', colors: ['#ffffff', '#ffffff', '#2b2b38'], spots: true },
+  { id: 'robothund', name: 'Robothund', body: 'robot', rarity: 'uvanlig', colors: ['#d8e0e8', '#8aa0b8', '#3ecbff'] },
   { id: 'hest', name: 'Hest', body: 'horse', rarity: 'uvanlig', colors: ['#a86b3c', '#fff1dc', '#4a2e1c'], mane: true, bornRide: 0.3 },
   { id: 'bie', name: 'Bie', body: 'bug', rarity: 'uvanlig', colors: ['#ffd23f', '#2b2b38', '#2b2b38'], wings: true, bornFly: 0.2 },
   { id: 'koala', name: 'Koala', body: 'bear', rarity: 'uvanlig', colors: ['#a7adb8', '#f1f1f4', '#4a4a58'] },
