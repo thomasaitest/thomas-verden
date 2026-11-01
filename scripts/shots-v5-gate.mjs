@@ -179,10 +179,11 @@ await page.evaluate(() => {
   g.enterHouse();
   const d = g.interior.d / 2;
   // stand near sofa looking toward kitchen island + back holo wall
-  g.player.pos.set(1.2, 0, 3.2);
-  g.player.yaw = Math.PI + 0.35;
+  g.player.pos.set(-0.2, 0, 4.0);
+  g.player.yaw = Math.PI + 0.15;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  g.freezeCam = { x: 2.8, y: 1.65, z: 4.6, lx: -1.2, ly: 1.45, lz: -2.5 };
+  // OTS toward sofa (-1.5,1.2), kitchen island (4.8,-2.2), holo on back wall
+  g.freezeCam = { x: 1.6, y: 1.7, z: 5.8, lx: 0.5, ly: 1.5, lz: -3.5 };
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2800);

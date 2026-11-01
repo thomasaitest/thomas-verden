@@ -399,22 +399,22 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   const jets: THREE.Mesh[] = [];
   // Bright opaque water streams — MeshBasic so they always read (Physical+transmission vanished under ACES)
   const jetMat = new THREE.MeshBasicMaterial({
-    color: '#c8f0ff',
+    color: '#d8f4ff',
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.72,
     depthWrite: false,
   });
   const mistMat = new THREE.MeshBasicMaterial({
-    color: '#e8f8ff',
+    color: '#f0fbff',
     transparent: true,
-    opacity: 0.35,
+    opacity: 0.42,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
 
   // Outer ring of thick arcing jets
-  for (let i = 0; i < 20; i++) {
-    const ang = (i / 20) * Math.PI * 2;
+  for (let i = 0; i < 28; i++) {
+    const ang = (i / 28) * Math.PI * 2;
     const pts: THREE.Vector3[] = [];
     for (let s = 0; s <= 24; s++) {
       const u = s / 24;
@@ -422,14 +422,14 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
       const y = 1.7 + Math.sin(u * Math.PI) * 3.2 - u * 0.08;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.095, 7, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 48, 0.048, 6, false), jetMat);
     tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
   }
   // Inner ring
-  for (let i = 0; i < 12; i++) {
-    const ang = (i / 12) * Math.PI * 2 + 0.12;
+  for (let i = 0; i < 16; i++) {
+    const ang = (i / 16) * Math.PI * 2 + 0.12;
     const pts: THREE.Vector3[] = [];
     for (let s = 0; s <= 16; s++) {
       const u = s / 16;
@@ -437,7 +437,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
       const y = 3.0 + Math.sin(u * Math.PI) * 1.35;
       pts.push(new THREE.Vector3(Math.cos(ang) * r, y, Math.sin(ang) * r));
     }
-    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.07, 6, false), jetMat);
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.038, 5, false), jetMat);
     tube.frustumCulled = false;
     group.add(tube);
     jets.push(tube);
@@ -448,7 +448,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
     const u = s / 24;
     plumePts.push(new THREE.Vector3(Math.sin(u * 14) * 0.06, 3.1 + u * 3.4, Math.cos(u * 14) * 0.06));
   }
-  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 36, 0.11, 7, false), jetMat);
+  const plume = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(plumePts), 36, 0.055, 6, false), jetMat);
   plume.frustumCulled = false;
   group.add(plume);
   jets.push(plume);
@@ -485,7 +485,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   for (const j of jets) {
     const m = j.material as THREE.MeshBasicMaterial;
     const c = m.clone();
-    if (c.color.getHexString() === 'c8f0ff') c.opacity = 0.88;
+    if (c.color.getHexString() === 'd8f4ff' || c.color.getHexString() === 'c8f0ff') c.opacity = 0.78;
     else c.opacity = Math.max(0.4, c.opacity);
     j.material = c;
     j.userData.baseOpacity = c.opacity;

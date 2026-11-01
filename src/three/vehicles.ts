@@ -89,11 +89,11 @@ export function buildCar(carId: string): THREE.Group {
   hull.receiveShadow = true;
   g.add(hull);
 
-  // Rounded upper deck
-  const deck = new THREE.Mesh(new THREE.CapsuleGeometry(bodyH * 0.55, bodyLen * 0.55, 6, 16), silver);
-  deck.rotation.z = Math.PI / 2;
-  deck.scale.set(1, bodyW * 0.55, 1.15);
-  deck.position.set(0, hoverY + bodyH * 0.85, 0.05);
+  // Rounded upper deck along car length (capsule default = Y; rotate to Z)
+  const deck = new THREE.Mesh(new THREE.CapsuleGeometry(bodyH * 0.48, bodyLen * 0.48, 6, 16), silver);
+  deck.rotation.x = Math.PI / 2;
+  deck.scale.set(bodyW * 0.52, 1, 1.05);
+  deck.position.set(0, hoverY + bodyH * 0.82, 0.08);
   deck.castShadow = true;
   g.add(deck);
 

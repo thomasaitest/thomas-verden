@@ -642,12 +642,14 @@ export function buildTown(): Town {
 
   // VERTICAL SLICE street: façades + sidewalks from plaza toward home (+Z belt)
   {
+    // Side façades face the road (inward); endcaps face along the belt
     const streetLabels = [
-      { label: 'Aether Atelier', logoColor: '#7ef0ff', x: -16, z: 44, rot: Math.PI },
-      { label: 'Nordlys', logoColor: '#5a8cff', x: 0, z: 46, rot: Math.PI },
-      { label: 'Pulse Gym', logoColor: '#ff6f6f', x: 16, z: 44, rot: Math.PI },
-      { label: 'Orbit Deli', logoColor: '#e8a040', x: -16, z: 64, rot: 0 },
-      { label: 'Cloud Clinic', logoColor: '#54c45e', x: 16, z: 64, rot: 0 },
+      { label: 'Aether Atelier', logoColor: '#7ef0ff', x: -14, z: 28, rot: Math.PI / 2 },
+      { label: 'Nordlys', logoColor: '#5a8cff', x: 14, z: 28, rot: -Math.PI / 2 },
+      { label: 'Pulse Gym', logoColor: '#ff6f6f', x: -14, z: 42, rot: Math.PI / 2 },
+      { label: 'Orbit Deli', logoColor: '#e8a040', x: 14, z: 42, rot: -Math.PI / 2 },
+      { label: 'Cloud Clinic', logoColor: '#54c45e', x: -14, z: 56, rot: Math.PI / 2 },
+      { label: 'Lumen Spa', logoColor: '#c88bff', x: 14, z: 56, rot: -Math.PI / 2 },
     ];
     for (const s of streetLabels) {
       const shop = buildFuturisticShop({ label: s.label, logoColor: s.logoColor, w: 12, d: 8, storeys: 2 + (Math.abs(s.x) > 10 ? 1 : 0) });
@@ -684,6 +686,33 @@ export function buildTown(): Town {
     }
   }
 
+
+  // concept drones hovering over plaza
+  {
+    const droneMat = new THREE.MeshStandardMaterial({ color: '#c8d0da', metalness: 0.75, roughness: 0.3 });
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + 0.4;
+      const dr = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.55), droneMat);
+      dr.add(body);
+      for (const [ox, oz] of [[-0.28, -0.28], [0.28, -0.28], [-0.28, 0.28], [0.28, 0.28]] as const) {
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.28), droneMat);
+        arm.position.set(ox * 0.5, 0.02, oz * 0.5);
+        dr.add(arm);
+        const rotor = new THREE.Mesh(new THREE.CircleGeometry(0.18, 12), glowMat('#7ef0ff', 0.6));
+        rotor.rotation.x = -Math.PI / 2;
+        rotor.position.set(ox, 0.08, oz);
+        rotor.userData.spin = true;
+        dr.add(rotor);
+      }
+      const r = 6 + (i % 3) * 2.5;
+      dr.position.set(Math.sin(a) * r, 5.5 + (i % 3) * 0.8, Math.cos(a) * r);
+      dr.userData.drone = true;
+      dr.userData.baseY = dr.position.y;
+      dr.userData.ang = a;
+      group.add(dr);
+    }
+  }
 
   // parked plaza cars (sleek hover props)
   {
