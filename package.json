@@ -1,0 +1,27 @@
+{
+  "name": "thomas-verden",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "mp:dev": "npm --prefix server run dev",
+    "mp:test": "vitest run src/mp",
+    "mp:e2e": "node scripts/mp-e2e.mjs"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "playwright-core": "^1.64.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@fontsource/fredoka": "^5.2.8",
+    "three": "^0.186.1"
+  }
+}
