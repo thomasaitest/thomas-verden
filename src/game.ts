@@ -1267,15 +1267,15 @@ export class Game {
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
     // Driving chase: full car in lower-middle (concept 4-bil) — ~7 m back, ~2.2 m up
     if (this.driving && !seat) {
-      // Slight look-ahead; keep cam ~7–8 m behind car centre (ahead eats into dist)
-      const ahead = 0.85;
+      // Look slightly ahead of car; keep ~10 m back so whole body stays in lower-middle
+      const ahead = 0.6;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
-        // sin(0.18)*7 ≈ 1.25 → camera y ≈ 0.95+1.25 ≈ 2.2
-        this.cam.pitch += (0.2 - this.cam.pitch) * Math.min(1, dt * 3);
-        this.cam.dist += (8.5 - this.cam.dist) * Math.min(1, dt * 3);
+        // sin(0.18)*10 ≈ 1.8 → cam y ≈ 0.95+1.8 ≈ 2.75 (rear 3/4)
+        this.cam.pitch += (0.18 - this.cam.pitch) * Math.min(1, dt * 4);
+        this.cam.dist += (10.5 - this.cam.dist) * Math.min(1, dt * 4);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1910,11 +1910,12 @@ export class Game {
     this.sleeping = null;
     this.driving = id;
     this.syncVehicleMesh();
-    // Default chase cam (gameplay): ~8 m back, ~2.2 m up, whole car in lower-middle
+    // Default chase cam: ~10.5 m back so full car fits (FOV 55)
     this.cam.yaw = this.player.yaw;
-    this.cam.pitch = 0.2;
-    this.cam.dist = 8.5;
+    this.cam.pitch = 0.18;
+    this.cam.dist = 10.5;
     this.camShown = this.cam.dist;
+    this.editingAvatar = false;
     sfx.whoosh();
     toast(`Kjører ${CAR_BY_ID[id]?.name ?? 'bil'}! Bruk styrespaken 🚗`, 'ok');
     this.updateHud();

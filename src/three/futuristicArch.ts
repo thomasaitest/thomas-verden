@@ -5,7 +5,6 @@
  */
 import * as THREE from 'three';
 import { glowMat, G } from './kit.ts';
-import { loadModel } from './assets.ts';
 import {
   loadPbr,
   physicalGlass,
@@ -20,14 +19,10 @@ import {
 
 let mapsReady: Promise<void> | null = null;
 
-const treeCache = new Map<string, THREE.Group>();
-const TREE_PATHS = ['nature/tree_oak.glb', 'nature/tree_detailed.glb', 'nature/tree_pineTallA.glb', 'nature/plant_bushDetailed.glb'];
-
 export async function preloadArchMaterials(): Promise<void> {
   if (mapsReady) return mapsReady;
   mapsReady = (async () => {
     await preloadSharedPbr();
-    // Warm individual map cache used by any late callers
     try {
       await Promise.all([
         loadPbr('wood-siding', [2, 3]),
@@ -40,17 +35,7 @@ export async function preloadArchMaterials(): Promise<void> {
     } catch {
       /* offline / tests */
     }
-    await Promise.all([
-      preloadNaturalTrees(),
-      ...TREE_PATHS.map(async (p) => {
-        if (treeCache.has(p)) return;
-        try {
-          treeCache.set(p, await loadModel(p));
-        } catch {
-          /* keep procedural */
-        }
-      }),
-    ]);
+    await preloadNaturalTrees();
   })();
   return mapsReady;
 }

@@ -94,6 +94,7 @@ async function prep(page) {
     g.weatherLocked = 'clear';
     g.editingAvatar = false;
     g.paused = false;
+    document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
     g.hud?.setWhere?.('Dag · Sol');
     document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
     g.syncPets?.();
@@ -202,25 +203,27 @@ await page.evaluate(() => {
 await page.waitForTimeout(2200);
 await page.evaluate(() => {
   const g = window.__hv;
+  g.editingAvatar = false;
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   if (!g.driving) g.toggleDrive();
   g.player.pos.set(0, 0, 32);
   g.player.yaw = 0;
   g.cam.yaw = 0;
-  g.cam.pitch = 0.2;
-  g.cam.dist = 8.5;
-  g.camShown = 8.5;
+  g.cam.pitch = 0.18;
+  g.cam.dist = 10.5;
+  g.camShown = 10.5;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 32);
     g.vehicleMesh.rotation.y = 0;
   }
-  // Explicit rear 3/4 framing (~7.5 m back, ~2.2 m up, look slightly ahead of car)
-  // freezeCam bypasses any leftover collide/lerp so the gate shot matches gameplay intent
-  g.freezeCam = { x: 2.2, y: 2.35, z: 32 + 7.2, lx: 0, ly: 0.85, lz: 32 - 1.2 };
+  // Rear 3/4: ~10.5 m back, ~2.6 m up, slight X offset, look at car body
+  const fc = { x: 3.2, y: 2.65, z: 32 + 10.5, lx: 0.15, ly: 0.75, lz: 32 };
+  g.freezeCam = fc;
+  g.camera.position.set(fc.x, fc.y, fc.z);
+  g.camera.lookAt(fc.lx, fc.ly, fc.lz);
   g.hud?.setWhere?.('Dag · Sol');
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
-  console.log('CARCAM', g.driving, g.cam, g.camera.position.toArray(), g.freezeCam);
 });
-await shot(page, '02-car-street', 2200);
+await shot(page, '02-car-street', 2500);
 
 // Interior — eye-level dollhouse-ish but concept-like living view
 await page.evaluate(async () => {

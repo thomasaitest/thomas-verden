@@ -121,7 +121,9 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   const cached = treeCache.get(path);
   if (cached) {
     const model = cached.clone(true);
-    // Baked presets already scaled; slight per-instance variation
+    model.name = `ez-${path.split('/').pop()}`;
+    model.userData.ezTree = true;
+    prepareTree(model);
     const s = 0.95 + (kind % 3) * 0.08;
     model.scale.setScalar(s);
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);

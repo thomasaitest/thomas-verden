@@ -15,7 +15,7 @@ function yieldFrame() {
   return new Promise<void>((r) => requestAnimationFrame(() => r()));
 }
 
-async function waitTextures(root: THREE.Object3D, ms = 8000) {
+async function waitTextures(root: THREE.Object3D, ms = 12000) {
   const maps: THREE.Texture[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -23,7 +23,7 @@ async function waitTextures(root: THREE.Object3D, ms = 8000) {
     const mats = Array.isArray(m.material) ? m.material : [m.material];
     for (const mat of mats) {
       const std = mat as THREE.MeshStandardMaterial;
-      for (const k of ['map', 'normalMap', 'roughnessMap', 'aoMap', 'alphaMap'] as const) {
+      for (const k of ['map', 'normalMap', 'roughnessMap', 'aoMap'] as const) {
         const t = (std as any)[k] as THREE.Texture | undefined;
         if (t) maps.push(t);
       }
@@ -31,15 +31,17 @@ async function waitTextures(root: THREE.Object3D, ms = 8000) {
   });
   const start = performance.now();
   while (performance.now() - start < ms) {
-    if (maps.every((t) => (t.image && (t.image as HTMLImageElement).width > 0) || (t.source?.data && (t.source.data as any).width > 0))) {
-      return true;
-    }
+    if (maps.every((t) => {
+      const img = t.image as HTMLImageElement | ImageBitmap | undefined;
+      const w = (img as any)?.width ?? (t.source?.data as any)?.width ?? 0;
+      return w > 0;
+    })) return true;
     await yieldFrame();
   }
   return false;
 }
 
-/** Replace materials with export-safe MeshStandardMaterial (valid maps only). */
+/** Export-safe materials: bark solid; leaves keep PNG albedo when loaded (no webp). */
 function sanitizeForExport(root: THREE.Object3D, leafHex: number, barkHex: number) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -47,16 +49,38 @@ function sanitizeForExport(root: THREE.Object3D, leafHex: number, barkHex: numbe
     const isLeaf = /leaf/i.test(m.name) || m === (root as any).leavesMesh;
     const old = (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.MeshStandardMaterial;
     const map = old?.map;
-    const hasMap = !!(map && ((map.image as HTMLImageElement)?.width > 0 || (map.source?.data as any)?.width > 0));
-    // Solid PBR only — no leaf maps (keeps GLB free of webp/png decode issues under SwiftShader)
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(isLeaf ? leafHex : barkHex),
-      roughness: isLeaf ? 0.78 : 0.92,
-      metalness: 0.02,
-      side: THREE.DoubleSide,
-      depthWrite: true,
-    });
-    m.material = mat;
+    const w = (map?.image as any)?.width ?? (map?.source?.data as any)?.width ?? 0;
+    const hasMap = !!(map && w > 0);
+    if (isLeaf && hasMap) {
+      // Draw leaf atlas onto a canvas so exporter gets a real PNG-capable image
+      const img = map.image as CanvasImageSource;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = (map.image as any).height || w;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.flipY = false;
+      m.material = new THREE.MeshStandardMaterial({
+        map: tex,
+        color: 0xffffff,
+        roughness: 0.8,
+        metalness: 0.02,
+        side: THREE.DoubleSide,
+        transparent: true,
+        alphaTest: 0.4,
+        depthWrite: true,
+      });
+    } else {
+      m.material = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(isLeaf ? leafHex : barkHex),
+        roughness: isLeaf ? 0.8 : 0.92,
+        metalness: 0.02,
+        side: THREE.DoubleSide,
+        depthWrite: true,
+      });
+    }
     m.castShadow = true;
     m.receiveShadow = true;
   });
@@ -95,7 +119,6 @@ async function bake() {
     tree.options.bark.tint = spec.bark;
     tree.options.bark.textured = true;
     if (tree.options.leaves.count > 48) tree.options.leaves.count = 48;
-    // Keep branch complexity moderate for file size
     if (tree.options.branch?.sections) {
       for (const k of Object.keys(tree.options.branch.sections)) {
         const key = Number(k);
@@ -105,7 +128,6 @@ async function bake() {
     tree.generate();
     await waitTextures(tree, 12000);
     sanitizeForExport(tree, spec.leaf, spec.bark);
-    // Hide trellis if present
     if ((tree as any).trellisMesh) (tree as any).trellisMesh.visible = false;
 
     const wrap = new THREE.Group();
