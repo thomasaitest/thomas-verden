@@ -171,7 +171,7 @@ await page.evaluate(async () => {
   g.player.pos.set(0.5, 0, -7.5);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI;
-  g.cam.pitch = 0.15;
+  g.cam.pitch = 0.145;
   g.cam.dist = 7.2;
   g.camShown = 7.2;
   g.rebuildAvatar?.();
@@ -209,9 +209,9 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 36);
   g.player.yaw = 0;
   g.cam.yaw = 0.12;
-  g.cam.pitch = 0.15;
-  g.cam.dist = 14.5;
-  g.camShown = 14.5;
+  g.cam.pitch = 0.145;
+  g.cam.dist = 11.5;
+  g.camShown = 11.5;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 36);
     g.vehicleMesh.rotation.y = 0;

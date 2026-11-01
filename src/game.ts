@@ -1273,18 +1273,19 @@ export class Game {
     const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.55 : 1.55), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
-    // Driving chase: ~35% frame width, centered lower third, road to horizon (concept 4-bil)
-    // Car is ~4.5 m — stand ~10.5 m back, cam ~2.0 m, slight ¾
+    // Driving chase: ~30–35% frame width, camY ≈ 2.2, slight ¾ (concept 4-bil)
     if (this.driving && !seat) {
-      const ahead = 5.5;
+      const ahead = 4.8;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
+      // Raise look-at a touch so lower third stays on car body
+      target.y = p.pos.y + 0.7;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         const wantYaw = p.yaw + 0.12;
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
-        // sin(0.18)*10.5 ≈ 1.88 → cam y ≈ 0.55+1.88 ≈ 2.43; pitch 0.15 → ~2.1
-        this.cam.pitch += (0.15 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (14.5 - this.cam.dist) * Math.min(1, dt * 5);
+        // sin(0.145)*11.5 ≈ 1.66 → cam y ≈ 0.7+1.66 ≈ 2.36
+        this.cam.pitch += (0.145 - this.cam.pitch) * Math.min(1, dt * 5);
+        this.cam.dist += (11.5 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1918,7 +1919,7 @@ export class Game {
     this.sleeping = null;
     this.driving = id;
     this.syncVehicleMesh();
-    // Default chase cam: ~12 m back, slight 3/4 yaw, full car in lower-middle
+    // Default chase cam: ~11.5 m back, slight 3/4 yaw, full car in lower-middle
     this.cam.yaw = this.player.yaw + 0.12;
     this.cam.pitch = 0.15;
     this.cam.dist = 13.2;

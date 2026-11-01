@@ -108,10 +108,10 @@ export const SharedMats = {
     envMapIntensity: 0.6,
   }),
   asphalt: new THREE.MeshStandardMaterial({
-    color: '#4a4a50',
-    metalness: 0.05,
-    roughness: 0.88,
-    envMapIntensity: 0.4,
+    color: '#5a5e66',
+    metalness: 0.04,
+    roughness: 0.9,
+    envMapIntensity: 0.35,
   }),
   metal: new THREE.MeshStandardMaterial({
     color: '#8a929c',
@@ -168,6 +168,8 @@ export async function preloadSharedPbr(): Promise<void> {
       applyMaps(SharedMats.paving, paving, 0.05);
       SharedMats.paving.color.set('#b8c0c8');
       applyMaps(SharedMats.asphalt, asphalt, 0.05);
+      SharedMats.asphalt.color.set('#5c6068');
+      SharedMats.asphalt.roughness = 0.92;
       applyMaps(SharedMats.metal, metal, 0.85);
       SharedMats.metal.metalness = 0.85;
       SharedMats.metal.roughness = 0.35;

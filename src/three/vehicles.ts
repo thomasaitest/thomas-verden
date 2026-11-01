@@ -1,11 +1,11 @@
-/** Sleek futuristic hover-cars — ~4.5×1.85×1.3 m, glossy silver, dark canopy, compact cyan thrusters. */
+/** Sleek futuristic hover-cars — concept silhouette: bubble canopy, fenders, 4 hover pods. */
 import * as THREE from 'three';
 import { CAR_BY_ID } from '../logic/catalog.ts';
 import { glowMat, rbox } from './kit.ts';
 import { physicalGlass } from './pbrTextures.ts';
 
 /** Seat height so GLTF driver (after body drop) sits inside cabin under canopy. */
-export const CAR_SEAT_Y = 0.38;
+export const CAR_SEAT_Y = 0.42;
 export const CAR_AVATAR_SCALE = 0.52;
 export const PRAM_PULL_BACK = 1.45;
 
@@ -26,159 +26,196 @@ function carKind(carId: string): CarKind {
   return 'sedan';
 }
 
-/** Compact rear thruster — tiny rim + cyan core (bloom-safe, not giant rings). */
-function compactThruster(g: THREE.Group, x: number, y: number, z: number) {
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.07, 0.014, 8, 20),
-    new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.92, roughness: 0.22, envMapIntensity: 1.0 }),
+/** Hover pod under a fender — dark disc + cyan glow ring. */
+function hoverPod(g: THREE.Group, x: number, y: number, z: number) {
+  const disc = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.26, 0.08, 16),
+    new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.85, roughness: 0.28 }),
   );
-  rim.position.set(x, y, z);
-  g.add(rim);
-  const core = new THREE.Mesh(new THREE.CircleGeometry(0.055, 16), glowMat('#3ecbff', 1.4));
-  core.position.set(x, y, z + 0.01);
-  g.add(core);
-  const jet = new THREE.Mesh(
-    new THREE.ConeGeometry(0.045, 0.18, 10, 1, true),
-    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
+  disc.position.set(x, y, z);
+  g.add(disc);
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.2, 0.025, 8, 24),
+    new THREE.MeshBasicMaterial({ color: '#3ecbff' }),
   );
-  jet.position.set(x, y, z + 0.11);
-  jet.rotation.x = Math.PI / 2;
-  g.add(jet);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(x, y - 0.02, z);
+  g.add(ring);
+  const glow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.18, 16),
+    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.35, depthWrite: false }),
+  );
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.set(x, y - 0.06, z);
+  g.add(glow);
 }
 
-/** Low sleek wedge hover-car — concept scale ~4.5 m × 1.85 m × ~1.3 m tall. */
+/** Concept hover-car: tall bubble canopy, curved fenders, 4 cyan hover pods, chrome panel lines. */
 export function buildCar(carId: string): THREE.Group {
   const def = CAR_BY_ID[carId];
   const raw = def?.color ?? '#d0d8e4';
-  const color = hexMix(raw, '#e8eef4', 0.88);
+  const color = hexMix(raw, '#e8eef4', 0.82);
   const dark = hexMix(color, '#0e141c', 0.78);
   const kind = carKind(carId);
   const g = new THREE.Group();
 
-  // Target real-world-ish scale (lane ~3.5–3.6 m)
-  const bodyLen = kind === 'van' ? 4.4 : kind === 'sport' ? 4.0 : 4.15;
-  const bodyW = kind === 'sport' ? 1.65 : 1.7;
-  const hoverY = 0.16;
-  const bodyH = 0.62; // hull; + canopy ≈ 1.15–1.25 m
+  const bodyLen = kind === 'van' ? 4.5 : kind === 'sport' ? 4.15 : 4.3;
+  const bodyW = kind === 'sport' ? 1.78 : 1.85;
+  const hoverY = 0.28;
 
-  const silver = new THREE.MeshStandardMaterial({
+  const chrome = new THREE.MeshStandardMaterial({
     color,
-    metalness: 0.96,
-    roughness: 0.14,
-    envMapIntensity: 2.0,
+    metalness: 0.97,
+    roughness: 0.12,
+    envMapIntensity: 2.2,
   });
   const darkMat = new THREE.MeshStandardMaterial({
     color: dark,
     metalness: 0.9,
-    roughness: 0.2,
-    envMapIntensity: 1.3,
+    roughness: 0.22,
+    envMapIntensity: 1.2,
   });
-  const creaseMat = new THREE.MeshStandardMaterial({
-    color: '#121820',
-    metalness: 0.75,
-    roughness: 0.3,
+  const crease = new THREE.MeshStandardMaterial({
+    color: '#0e141c',
+    metalness: 0.7,
+    roughness: 0.35,
   });
 
-  // Low wedge / teardrop side profile (sleek, not bulbous)
-  const profile = new THREE.Shape();
-  const L = bodyLen;
-  const H = bodyH;
-  profile.moveTo(-L * 0.48, 0.02);
-  profile.quadraticCurveTo(-L * 0.5, H * 0.25, -L * 0.42, H * 0.48); // nose
-  profile.quadraticCurveTo(-L * 0.22, H * 0.78, -L * 0.05, H * 0.88); // cabin rise
-  profile.quadraticCurveTo(L * 0.12, H * 0.92, L * 0.28, H * 0.72); // roof
-  profile.quadraticCurveTo(L * 0.42, H * 0.45, L * 0.48, H * 0.22); // taper rear
-  profile.lineTo(L * 0.46, 0.02);
-  profile.closePath();
-
-  const hullGeo = new THREE.ExtrudeGeometry(profile, {
-    depth: bodyW * 0.92,
-    bevelEnabled: true,
-    bevelThickness: 0.06,
-    bevelSize: 0.05,
-    bevelSegments: 3,
-    steps: 1,
-  });
-  hullGeo.center();
-  const hull = new THREE.Mesh(hullGeo, silver);
-  hull.rotation.y = Math.PI / 2;
-  hull.position.set(0, hoverY + 0.04, 0);
+  // Main body — rounded capsule-ish hull (not flat wedge)
+  const hull = new THREE.Mesh(
+    new THREE.CapsuleGeometry(bodyW * 0.38, bodyLen * 0.55, 8, 20),
+    chrome,
+  );
+  hull.rotation.z = Math.PI / 2;
+  hull.scale.set(1, 0.55, 0.85);
+  hull.position.set(0, hoverY + 0.32, 0);
   hull.castShadow = true;
   hull.receiveShadow = true;
   g.add(hull);
 
-  // Subtle side character lines
+  // Lower belly / chassis
+  const belly = new THREE.Mesh(
+    new THREE.BoxGeometry(bodyW * 0.72, 0.14, bodyLen * 0.78),
+    darkMat,
+  );
+  belly.position.set(0, hoverY + 0.12, 0.02);
+  belly.castShadow = true;
+  g.add(belly);
+
+  // Nose scoop
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    chrome,
+  );
+  nose.scale.set(bodyW * 0.55, 0.35, 0.7);
+  nose.position.set(0, hoverY + 0.28, -bodyLen * 0.38);
+  nose.rotation.x = Math.PI;
+  g.add(nose);
+
+  // Rear haunches
+  const rear = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
+    chrome,
+  );
+  rear.scale.set(bodyW * 0.58, 0.4, 0.55);
+  rear.position.set(0, hoverY + 0.3, bodyLen * 0.34);
+  g.add(rear);
+
+  // Curved fenders over each hover pod
+  for (const [sx, sz] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ] as const) {
+    const fx = sx * bodyW * 0.42;
+    const fz = sz * bodyLen * 0.28;
+    const fender = new THREE.Mesh(
+      new THREE.TorusGeometry(0.32, 0.1, 10, 20, Math.PI),
+      chrome,
+    );
+    fender.rotation.z = sx > 0 ? -Math.PI / 2 : Math.PI / 2;
+    fender.rotation.y = sz > 0 ? Math.PI : 0;
+    fender.position.set(fx, hoverY + 0.22, fz);
+    fender.scale.set(1, 0.85, 1.1);
+    g.add(fender);
+    hoverPod(g, fx, hoverY - 0.02, fz);
+  }
+
+  // Panel / crease lines
   for (const s of [-1, 1] as const) {
-    const line = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.016, bodyLen * 0.62), creaseMat);
-    line.position.set(s * (bodyW * 0.46), hoverY + 0.38, 0.05);
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.02, bodyLen * 0.55), crease);
+    line.position.set(s * bodyW * 0.38, hoverY + 0.42, 0);
     g.add(line);
   }
-  // Hood seam
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.55, 0.01, 0.012), creaseMat);
-  hood.position.set(0, hoverY + 0.55, -bodyLen * 0.12);
-  g.add(hood);
+  const hoodLine = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.4, 0.012, 0.014), crease);
+  hoodLine.position.set(0, hoverY + 0.48, -bodyLen * 0.18);
+  g.add(hoodLine);
 
-  // Thin cyan side accent
+  // Front headlight strips (cyan/white)
   for (const s of [-1, 1] as const) {
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.035, bodyLen * 0.55), glowMat('#3ecbff', 1.4));
-    belt.position.set(s * (bodyW * 0.48), hoverY + 0.28, 0.05);
-    g.add(belt);
+    const hl = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35, 0.04, 0.06),
+      glowMat('#e8f6ff', 2.2),
+    );
+    hl.position.set(s * bodyW * 0.28, hoverY + 0.3, -bodyLen * 0.46);
+    g.add(hl);
   }
-
-  // Chassis plate
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.88, 0.05, bodyLen * 0.75), darkMat);
-  chassis.position.set(0, hoverY + 0.02, 0.02);
-  g.add(chassis);
-
-  // Two compact rear cyan thrusters only
-  compactThruster(g, -0.32, hoverY + 0.28, bodyLen * 0.46);
-  compactThruster(g, 0.32, hoverY + 0.28, bodyLen * 0.46);
-
-  // Small under-hover glow (not thruster rings)
-  const under = new THREE.Mesh(
-    new THREE.PlaneGeometry(bodyW * 0.7, bodyLen * 0.55),
-    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.12, depthWrite: false }),
+  // Thin LED brow
+  const brow = new THREE.Mesh(
+    new THREE.BoxGeometry(bodyW * 0.55, 0.025, 0.03),
+    glowMat('#3ecbff', 1.6),
   );
-  under.rotation.x = -Math.PI / 2;
-  under.position.y = 0.03;
-  g.add(under);
+  brow.position.set(0, hoverY + 0.38, -bodyLen * 0.45);
+  g.add(brow);
 
-  // Dark glass bubble canopy — avatar readable
+  // Tall rounded bubble canopy (glass dome) — avatar readable
   const canopy = new THREE.Mesh(
-    new THREE.SphereGeometry(0.72, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    physicalGlass('#0c1520', 0.5),
+    new THREE.SphereGeometry(0.85, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.62),
+    physicalGlass('#0c1520', 0.45),
   );
   const cm = canopy.material as THREE.MeshPhysicalMaterial;
-  cm.color.set('#0a121c');
-  cm.opacity = 0.55;
-  cm.transmission = 0.35;
+  cm.color.set('#081018');
+  cm.opacity = 0.48;
+  cm.transmission = 0.42;
   cm.transparent = true;
-  cm.roughness = 0.05;
-  cm.metalness = 0.12;
-  cm.envMapIntensity = 1.5;
-  canopy.position.set(0, hoverY + 0.55, -0.12);
-  canopy.scale.set(bodyW * 0.42, 0.48, 0.95);
+  cm.roughness = 0.04;
+  cm.metalness = 0.08;
+  cm.envMapIntensity = 1.6;
+  canopy.position.set(0, hoverY + 0.55, -0.05);
+  canopy.scale.set(bodyW * 0.48, 0.72, 0.85);
+  canopy.castShadow = true;
   g.add(canopy);
 
+  // Chrome canopy ring
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.32, 0.012, 8, 28),
-    new THREE.MeshStandardMaterial({ color: dark, metalness: 0.9, roughness: 0.2 }),
+    new THREE.TorusGeometry(0.55, 0.02, 8, 32),
+    new THREE.MeshStandardMaterial({ color: '#c8d0d8', metalness: 0.95, roughness: 0.15 }),
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, hoverY + 0.52, -0.12);
-  rim.scale.set(bodyW * 0.42, 0.95, 1);
+  rim.position.set(0, hoverY + 0.52, -0.05);
+  rim.scale.set(bodyW * 0.48, 0.9, 1);
   g.add(rim);
 
-  // Cabin
-  rbox(g, '#1a2230', [0, hoverY + 0.32, -0.05], [bodyW * 0.28, 0.06, 0.35]);
-  rbox(g, '#121820', [0, hoverY + 0.45, 0.12], [bodyW * 0.26, 0.18, 0.06]);
-  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.025, 0.025), glowMat('#4de0ff', 1.3));
-  dash.position.set(0, hoverY + 0.48, -0.28);
+  // Cabin seat + dash
+  rbox(g, '#1a2230', [0, hoverY + 0.35, -0.05], [bodyW * 0.32, 0.08, 0.4]);
+  rbox(g, '#121820', [0, hoverY + 0.5, 0.15], [bodyW * 0.3, 0.2, 0.06]);
+  const dash = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.03), glowMat('#4de0ff', 1.4));
+  dash.position.set(0, hoverY + 0.52, -0.32);
   g.add(dash);
 
-  // Tiny taillights
+  // Compact rear taillights (not giant thruster rings)
   for (const s of [-1, 1] as const) {
-    rbox(g, '#ff4b6a', [s * bodyW * 0.28, hoverY + 0.3, bodyLen * 0.45], [0.18, 0.04, 0.03], undefined, 0.85);
+    rbox(g, '#ff4b6a', [s * bodyW * 0.3, hoverY + 0.35, bodyLen * 0.44], [0.22, 0.05, 0.04], undefined, 0.9);
+  }
+  // Small rear cyan vents
+  for (const s of [-1, 1] as const) {
+    const vent = new THREE.Mesh(
+      new THREE.CircleGeometry(0.06, 12),
+      glowMat('#3ecbff', 1.5),
+    );
+    vent.position.set(s * 0.28, hoverY + 0.28, bodyLen * 0.46);
+    g.add(vent);
   }
 
   g.userData.carId = carId;

@@ -399,14 +399,14 @@ export function buildTown(): Town {
       if (roadMesh.material.map) roadMesh.material.map.repeat.set(1, Math.max(1, L / 8));
       stat.add(roadMesh);
     }
-    // glowing centre lane
-    box(stat, LANE, [mx, 0.085, mz], [0.12, 0.02, Math.max(0.5, L - 0.8)], [0, ang, 0], 0.35).userData.noCast = true;
-    // edge lines
-    const half = s.width * 0.42;
+    // Thin white centre lane (not a glowing slab)
+    box(stat, '#e8eef4', [mx, 0.088, mz], [0.055, 0.012, Math.max(0.5, L - 0.8)], [0, ang, 0]).userData.noCast = true;
+    // Glowing cyan edge lines at curb
+    const half = s.width * 0.48;
     for (const side of [-1, 1]) {
       const ox = Math.cos(ang) * half * side;
       const oz = -Math.sin(ang) * half * side;
-      box(stat, LANE, [mx + ox, 0.082, mz + oz], [0.07, 0.015, Math.max(0.5, L - 0.4)], [0, ang, 0], 0.25).userData.noCast = true;
+      box(stat, '#3ecbff', [mx + ox, 0.09, mz + oz], [0.09, 0.025, Math.max(0.5, L - 0.4)], [0, ang, 0], 1.4).userData.noCast = true;
     }
   }
 
@@ -695,11 +695,11 @@ export function buildTown(): Town {
       [0, 48, 48, 3.2],
       [-22, 48, 3.2, 28],
       [22, 48, 3.2, 28],
-      // N–S road sidewalks (plaza approach, camera side)
-      [-5.6, 8, 2.4, 52],
-      [5.6, 8, 2.4, 52],
-      [-5.6, -12, 2.4, 28],
-      [5.6, -12, 2.4, 28],
+      // N–S road sidewalks closer to curb (light grey paving both sides)
+      [-3.55, 8, 2.6, 56],
+      [3.55, 8, 2.6, 56],
+      [-3.55, -14, 2.6, 32],
+      [3.55, -14, 2.6, 32],
     ] as const) {
       const walk = new THREE.Mesh(
         new THREE.BoxGeometry(sx, 0.08, sz),
@@ -710,12 +710,15 @@ export function buildTown(): Town {
       walk.userData.noCast = true;
       group.add(walk);
     }
-    // planting beds between sidewalk and façades
+    // planting beds / planters along chase road (concept roadside palms/beds)
     for (const [x, z, sx, sz] of [
       [-12, 32, 3.2, 8], [12, 32, 3.2, 8],
       [-12, 46, 3.2, 8], [12, 46, 3.2, 8],
-      [-8.5, 10, 2.2, 6], [8.5, 10, 2.2, 6],
-      [-8.5, -8, 2.2, 5], [8.5, -8, 2.2, 5],
+      [-6.8, 20, 2.0, 5], [6.8, 20, 2.0, 5],
+      [-6.8, 28, 2.0, 5], [6.8, 28, 2.0, 5],
+      [-6.8, 36, 2.0, 5], [6.8, 36, 2.0, 5],
+      [-6.8, 10, 2.0, 5], [6.8, 10, 2.0, 5],
+      [-6.8, -6, 2.0, 5], [6.8, -6, 2.0, 5],
     ] as const) {
       const bed = new THREE.Mesh(
         new THREE.BoxGeometry(sx, 0.18, sz),
@@ -736,14 +739,14 @@ export function buildTown(): Town {
       soil.userData.noCast = true;
       group.add(soil);
     }
-    // cyan curb / edge lights along road edges
-    for (const side of [-4.05, 4.05] as const) {
-      for (let z = -24; z <= 56; z += 3.2) {
+    // cyan curb lights flush with sidewalk edge
+    for (const side of [-2.15, 2.15] as const) {
+      for (let z = -24; z <= 56; z += 2.8) {
         const strip = new THREE.Mesh(
-          new THREE.BoxGeometry(0.12, 0.05, 2.4),
-          glowMat('#3ecbff', 1.6),
+          new THREE.BoxGeometry(0.14, 0.06, 2.2),
+          glowMat('#3ecbff', 1.8),
         );
-        strip.position.set(side, 0.06, z);
+        strip.position.set(side, 0.07, z);
         strip.userData.noCast = true;
         group.add(strip);
       }
@@ -760,8 +763,10 @@ export function buildTown(): Town {
         group.add(strip);
       }
     }
-    // street trees (chase-cam belt + plaza approach)
+    // street trees / palm-ish along chase road (both sides like concept)
     for (const [x, z] of [
+      [-6.5, 18], [6.5, 18], [-6.5, 24], [6.5, 24], [-6.5, 30], [6.5, 30],
+      [-6.5, 36], [6.5, 36], [-6.5, 42], [6.5, 42],
       [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
       [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
     ] as const) {
@@ -871,14 +876,12 @@ export function buildTown(): Town {
       { id: 'bil-gul', x: 1.55, z: 10, yaw: 0 },
       { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
-      // Gate-visible from south approach (z≈-7.5 looking +Z): ring sides + north road
+      // Gate-visible: one clear hover car on N–S road past fountain (in south cam frustum)
+      { id: 'bil-gul', x: 1.55, z: 6.5, yaw: 0 },
       { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
       { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
-      { id: 'bil-gul', x: 14.2, z: -3.5, yaw: Math.PI / 2 },
-      { id: 'bil-gronn', x: -14.2, z: -2.0, yaw: -Math.PI / 2 },
-      { id: 'bil-bla', x: 14.2, z: 4.0, yaw: Math.PI / 2 },
-      { id: 'bil-rosa', x: -14.2, z: 5.5, yaw: -Math.PI / 2 },
-      { id: 'bil-lilla', x: 1.55, z: 14.5, yaw: 0 },
+      { id: 'bil-gronn', x: 14.2, z: -2.0, yaw: Math.PI / 2 },
+      { id: 'bil-bla', x: -14.2, z: 3.0, yaw: -Math.PI / 2 },
     ];
     for (const c of traffic) {
       const car = buildCar(c.id);
