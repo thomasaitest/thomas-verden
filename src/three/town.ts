@@ -324,7 +324,7 @@ export function buildTown(): Town {
   // lighter grass rings near plaza / hedges for concept variation
   {
     const lush = grassGroundMaterial().clone();
-    lush.color = lush.color.clone().offsetHSL(0.02, 0.05, 0.08);
+    lush.color = lush.color.clone().offsetHSL(0.01, -0.08, 0.02);
     for (const [r, y] of [[22, 0.02], [32, 0.015]] as const) {
       const ring = new THREE.Mesh(new THREE.RingGeometry(r - 3.5, r, 64), lush);
       ring.rotation.x = -Math.PI / 2;
@@ -705,7 +705,7 @@ export function buildTown(): Town {
       walk.position.set(x, 0.06, z);
       walk.receiveShadow = true;
       walk.userData.noCast = true;
-      stat.add(walk);
+      group.add(walk);
     }
     // planting beds between sidewalk and façades
     for (const [x, z, sx, sz] of [
@@ -722,7 +722,7 @@ export function buildTown(): Town {
       bed.position.set(x, 0.1, z);
       bed.receiveShadow = true;
       bed.userData.noCast = true;
-      stat.add(bed);
+      group.add(bed);
       const soil = new THREE.Mesh(
         new THREE.BoxGeometry(sx - 0.25, 0.08, sz - 0.25),
         grassGroundMaterial().clone(),
@@ -731,7 +731,7 @@ export function buildTown(): Town {
       soil.position.set(x, 0.2, z);
       soil.receiveShadow = true;
       soil.userData.noCast = true;
-      stat.add(soil);
+      group.add(soil);
     }
     // cyan curb / edge lights along road edges
     for (const side of [-4.05, 4.05] as const) {
@@ -742,7 +742,7 @@ export function buildTown(): Town {
         );
         strip.position.set(side, 0.06, z);
         strip.userData.noCast = true;
-        stat.add(strip);
+        group.add(strip);
       }
     }
     for (const z of [45.5, 50.5] as const) {
@@ -754,7 +754,7 @@ export function buildTown(): Town {
         );
         strip.position.set(x, 0.06, z);
         strip.userData.noCast = true;
-        stat.add(strip);
+        group.add(strip);
       }
     }
     // street trees (chase-cam belt + plaza approach)
@@ -1044,7 +1044,9 @@ export function buildTown(): Town {
     const bench = buildModernBench();
     bench.position.set(b.x, 0, b.z);
     bench.rotation.y = sitYaw;
-    stat.add(bench);
+    // keep unmerged so wood/metal slats survive mergeStatic
+    group.add(bench);
+    shadowAll(bench);
     // footprint collider
     solid(cyl(stat, '#2a3344', [b.x, 0.3, b.z], [0.5, 0.6, 0.5]), 'circle', 0.05, 0.7);
     const sitX = b.x + fx * 0.12;

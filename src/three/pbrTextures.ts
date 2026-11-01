@@ -199,7 +199,7 @@ export async function preloadSharedPbr(): Promise<void> {
         SharedMats.grass.aoMap = null;
         if (SharedMats.grass.normalMap) SharedMats.grass.normalScale = new THREE.Vector2(0.08, 0.08);
       }
-      SharedMats.grass.color.set('#8aad78');
+      SharedMats.grass.color.set('#9bb888');
       SharedMats.grass.roughness = 0.94;
       SharedMats.grass.metalness = 0.0;
       SharedMats.grass.envMapIntensity = 0.28;
