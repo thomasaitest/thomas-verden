@@ -275,7 +275,7 @@ await page.evaluate(async () => {
   g.camShown = 5.2;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   // Eye-level look into the window wall (skyline + holo + island)
-  const fc = { x: 1.2, y: 1.55, z: 6.2, lx: -0.5, ly: 2.4, lz: -6.5 };
+  const fc = { x: 0.8, y: 1.7, z: 5.5, lx: 0.5, ly: 2.8, lz: -9.5 };
   g.freezeCam = fc;
   g.camera.position.set(fc.x, fc.y, fc.z);
   g.camera.lookAt(fc.lx, fc.ly, fc.lz);

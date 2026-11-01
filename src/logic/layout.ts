@@ -189,8 +189,8 @@ function planModerne(w: number, d: number): Built {
   const f1: RectCollider[] = [];
   // Glass wall (many gaps)
   wallX(f0, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, 0, d / 3]);
-  // Bedroom nook — only to the RIGHT of the stair corridor
-  wallZ(f0, nookZ, nookX, glassX, [nookX + 2.5]);
+  // Bedroom nook side only — NO cross wall on f0 so living sees panoramic glass (concept 2-hus-inne)
+  // (cross wall was reading as a blank white slab in the default living cam)
   wallX(f0, nookX, -d / 2, nookZ, [roomDoorZ(d)]);
   wallX(f1, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, d / 3]);
   wallZ(f1, d / 2 - 6.5, -w / 2 + 5, glassX, [-w / 6]);
