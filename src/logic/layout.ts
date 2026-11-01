@@ -178,28 +178,30 @@ function planGard(w: number, d: number): Built {
   return { stairs, rooms, walls: [f0, f1], door: { x: (eX + w / 2) / 2, z: d / 2 - 1.4 } };
 }
 
-/** Moderne: mostly open, glass wall to kitchen, spiral stair hard left in open stue. */
+/** Moderne: open stue + kitchen glass; bedroom alcove back-left with doorway (pod peek). */
 function planModerne(w: number, d: number): Built {
   const glassX = w / 2 - 7;
-  const nookX = -w / 2 + 7.5;
-  const nookZ = -d / 2 + 5.8;
-  // Spiral-feel stair on the left of the open stue, fully clear of the bedroom nook walls
-  const stairs = mkStairs(-w / 2 + 2.3, 1.05, nookZ + 0.5, 8.0);
+  // Alcove pocket on back-left so panoramic window center stays clear (no mid-room pillars)
+  const nookX = -w / 2 + 6.4;
+  const nookZ = -d / 2 + 5.2;
+  // Stair on left of open stue, clear of alcove
+  const stairs = mkStairs(-w / 2 + 2.0, 1.05, nookZ + 1.2, 7.5);
   const f0: RectCollider[] = [];
   const f1: RectCollider[] = [];
-  // Glass wall (many gaps)
+  // Glass wall to kitchen (many gaps) — thin, skipped visually on ground floor
   wallX(f0, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, 0, d / 3]);
-  // Bedroom alcove: side wall + short cross wall with doorway (pod peeked from living, panoramic still open center)
-  wallX(f0, nookX, -d / 2, nookZ, [roomDoorZ(d)]);
-  // Short divider only on left half of back — door gap; center panoramic stays open
-  wallZ(f0, nookZ, nookX, Math.min(nookX + 6.2, -1.2), [nookX + 2.6]);
+  // Bedroom alcove LEFT of nookX: solid side wall (no mid-room pillar into panoramic bay)
+  wallX(f0, nookX, -d / 2, nookZ, []);
+  // Short cross wall faces living (+Z) with doorway — pod peeks from default cam looking −Z/left
+  wallZ(f0, nookZ, -w / 2, nookX, [(-w / 2 + nookX) / 2]);
   wallX(f1, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, d / 3]);
   wallZ(f1, d / 2 - 6.5, -w / 2 + 5, glassX, [-w / 6]);
   wallX(f1, 0, d / 2 - 6.5, d / 2, [d / 2 - 3.0]);
   const rooms: Room[] = [
-    { id: 'f0-sove', name: 'Soverom', floor: 0, x0: nookX, x1: glassX, z0: -d / 2, z1: nookZ },
+    // True alcove pocket (left-back) — bed/pod lives here, visible through doorway from stue
+    { id: 'f0-sove', name: 'Soverom', floor: 0, x0: -w / 2, x1: nookX, z0: -d / 2, z1: nookZ },
     { id: 'f0-stue', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: glassX, z0: nookZ, z1: d / 2 },
-    { id: 'f0-stueb', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: nookX, z0: -d / 2, z1: nookZ },
+    { id: 'f0-stueb', name: 'Åpen stue', floor: 0, x0: nookX, x1: glassX, z0: -d / 2, z1: nookZ },
     { id: 'f0-kjokken', name: 'Kjøkken', floor: 0, x0: glassX, x1: w / 2, z0: -d / 2, z1: d / 2 },
     { id: 'f1-kontor', name: 'Kontor', floor: 1, x0: -w / 2, x1: 0, z0: d / 2 - 6.5, z1: d / 2 },
     { id: 'f1-media', name: 'Mediarom', floor: 1, x0: 0, x1: glassX, z0: d / 2 - 6.5, z1: d / 2 },

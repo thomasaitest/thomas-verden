@@ -544,7 +544,7 @@ export class Game {
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#9aa3ae');
     this.scene.fog = null;
-    this.lighting?.setExposure?.(0.38);
+    this.lighting?.setExposure?.(0.32);
     this.actors.forEach((a) => a.pos.set(this.player.pos.x + (this.rng() - 0.5) * 3, 0, this.player.pos.z - 2.5));
     this.syncPets();
     sfx.door();

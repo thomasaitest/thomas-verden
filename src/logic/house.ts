@@ -79,19 +79,25 @@ export function starterFurniture(style: HouseStyle): PlacedItem[] {
   const shelfP = placeInLayout(L, 0, spots.table.x + 3.2, spots.table.z - 1.2, itemRadius(1.6, 1));
   const counterP = placeInLayout(L, 0, spots.table.x + 1.2, spots.table.z - 2.4, itemRadius(1.4, 1));
   const stoolP = placeInLayout(L, 0, counterP.x, counterP.z + 1.1, itemRadius(0.7, 1));
-  return [
+  // Moderne living vignette (smooth sofa / holo-TV / rug) is built in interior.ts — skip modular langsofa & TV
+  const items: PlacedItem[] = [
     { uid: uid('it'), itemId: 'seng', x: bedP.x, z: bedP.z, rot: spots.bed.rot, scale: 1, color: '#e8eef6', floor: 0 },
     { uid: uid('it'), itemId: 'spisebord', x: tableP.x, z: tableP.z, rot: spots.table.rot, scale: 1, color: '#2a3344', floor: 0 },
-    { uid: uid('it'), itemId: 'langsofa', x: sofaP.x, z: sofaP.z, rot: Math.PI, scale: 1, color: '#e8eef4', floor: 0 },
-    { uid: uid('it'), itemId: 'tv', x: tvP.x, z: tvP.z, rot: -Math.PI / 2, scale: 1, color: '#15202c', floor: 0 },
-    { uid: uid('it'), itemId: 'kommode', x: coffeeP.x, z: coffeeP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-    { uid: uid('it'), itemId: 'bokhylle', x: shelfP.x, z: shelfP.z, rot: Math.PI / 2, scale: 1, color: '#c98a55', floor: 0 },
-    { uid: uid('it'), itemId: 'benk', x: counterP.x, z: counterP.z, rot: 0, scale: 1, color: '#2a3344', floor: 0 },
-    { uid: uid('it'), itemId: 'krakk', x: stoolP.x, z: stoolP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
     { uid: uid('it'), itemId: 'dyreseng', x: petP.x, z: petP.z, rot: 0, scale: 1, color: '#8aa0b8', floor: 0 },
     { uid: uid('it'), itemId: 'badekar', x: bathP.x, z: bathP.z, rot: 0, scale: 1, color: '#ffffff', floor: 0 },
-    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1.15, color: '#8a96a4', floor: 0 },
   ];
+  if (style !== 'moderne') {
+    items.push(
+      { uid: uid('it'), itemId: 'langsofa', x: sofaP.x, z: sofaP.z, rot: Math.PI, scale: 1, color: '#e8eef4', floor: 0 },
+      { uid: uid('it'), itemId: 'tv', x: tvP.x, z: tvP.z, rot: -Math.PI / 2, scale: 1, color: '#15202c', floor: 0 },
+      { uid: uid('it'), itemId: 'kommode', x: coffeeP.x, z: coffeeP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+      { uid: uid('it'), itemId: 'bokhylle', x: shelfP.x, z: shelfP.z, rot: Math.PI / 2, scale: 1, color: '#c98a55', floor: 0 },
+      { uid: uid('it'), itemId: 'benk', x: counterP.x, z: counterP.z, rot: 0, scale: 1, color: '#2a3344', floor: 0 },
+      { uid: uid('it'), itemId: 'krakk', x: stoolP.x, z: stoolP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+      { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1.15, color: '#8a96a4', floor: 0 },
+    );
+  }
+  return items;
 }
 
 /** Add missing starter bed/table to an existing house without duplicating. */
@@ -116,7 +122,7 @@ export function ensureStarterFurniture(house: House): House {
 export function newHouse(style: HouseStyle, ownerId: string, now = Date.now()): House {
   const items = starterFurniture(style);
   void (HOUSE_BY_STYLE[style] ?? HOUSE_BY_STYLE.hytte);
-  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: '#c5ccd4', floorColor: '#8a929c', items, createdAt: now, locked: false };
+  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: style === 'moderne' ? '#6a7078' : '#c5ccd4', floorColor: style === 'moderne' ? '#7a828c' : '#8a929c', items, createdAt: now, locked: false };
 }
 
 export function canEdit(house: House, playerId: string): boolean {

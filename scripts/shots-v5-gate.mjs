@@ -21,17 +21,13 @@ async function prep(page) {
       ownerId: 'player-shot',
       editors: [],
       editRequests: [],
-      wallColor: '#8e949c',
-      floorColor: '#aeb6c0',
+      wallColor: '#6a7078',
+      floorColor: '#7a828c',
       locked: false,
       createdAt: now,
       items: [
-        // Bedroom alcove (back) — one pod bed, peeked through doorway
-        { uid: 'it1', itemId: 'seng', x: -3.2, z: -8.2, rot: 0, scale: 1.0, color: '#e8eef6', floor: 0 },
-        // Living composition facing panoramic window (−Z)
-        { uid: 'it3', itemId: 'langsofa', x: -1.4, z: 1.5, rot: 0, scale: 1.2, color: '#d5dde6', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -1.4, z: 0.1, rot: 0, scale: 1.5, color: '#8a96a4', floor: 0 },
-        { uid: 'it11', itemId: 'salongbord', x: -1.4, z: -0.15, rot: 0.05, scale: 1.1, color: '#1a2230', floor: 0 },
+        // Pod only in left-back alcove (peeked through doorway) — living sofa is interior vignette
+        { uid: 'it1', itemId: 'seng', x: -10.6, z: -7.4, rot: Math.PI / 2, scale: 1.0, color: '#e8eef6', floor: 0 },
       ],
     };
     const save = {
@@ -232,12 +228,12 @@ await page.evaluate(async () => {
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
   g.enterHouse(); // gameplay default interior cam facing window
-  g.lighting?.setExposure?.(0.38);
+  g.lighting?.setExposure?.(0.32);
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Living looking −Z; slight left so bedroom doorway + pod read
-  g.player.pos.set(-1.2, 0, 1.5);
-  g.player.yaw = 0;
-  g.cam.yaw = 0.08;
+  g.player.pos.set(-2.4, 0, 2.0);
+  g.player.yaw = -0.18;
+  g.cam.yaw = -0.12;
   g.cam.pitch = 0.05;
   g.cam.dist = 5.6;
   g.camShown = 5.6;

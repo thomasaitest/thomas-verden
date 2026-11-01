@@ -871,9 +871,13 @@ export function buildTown(): Town {
       { id: 'bil-gul', x: 1.55, z: 10, yaw: 0 },
       { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
-      // Gate-visible road cars (south approach + mid belt)
+      // Gate-visible: N–S past fountain + plaza ring E/W (not on plaza cobbles)
       { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
       { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
+      { id: 'bil-gul', x: 14.2, z: -1.2, yaw: Math.PI / 2 },
+      { id: 'bil-gronn', x: -14.2, z: 2.4, yaw: -Math.PI / 2 },
+      { id: 'bil-bla', x: 14.2, z: 8.5, yaw: Math.PI / 2 },
+      { id: 'bil-rosa', x: -1.55, z: 8.5, yaw: Math.PI },
     ];
     for (const c of traffic) {
       const car = buildCar(c.id);
