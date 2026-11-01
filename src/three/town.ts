@@ -709,19 +709,28 @@ export function buildTown(): Town {
   }
 
 
-  // parked cars on road / curb — NOT on plaza around fountain
+  // parked cars on asphalt parking bays (NOT plaza, NOT grass)
   {
     const parked = [
-      // south approach road (concept street parking)
-      { id: 'bil-bla', x: 5.2, z: -18.5, yaw: Math.PI },
-      { id: 'bil-lilla', x: -5.2, z: -20.0, yaw: 0 },
-      // north road toward home belt
-      { id: 'bil-rosa', x: 5.4, z: 18.5, yaw: 0 },
-      { id: 'bil-gronn', x: -5.4, z: 20.5, yaw: Math.PI },
-      { id: 'bil-gul', x: 5.2, z: 24.0, yaw: 0 },
-      { id: 'bil-bla', x: -5.2, z: 28.0, yaw: Math.PI },
+      // south approach — on asphalt, clear of chase cam at z≈28
+      { id: 'bil-bla', x: 1.7, z: -18.5, yaw: Math.PI },
+      { id: 'bil-lilla', x: -1.7, z: -22.0, yaw: 0 },
+      // north road — before chase spawn (z=28)
+      { id: 'bil-rosa', x: 1.7, z: 16.5, yaw: 0 },
+      { id: 'bil-gronn', x: -1.7, z: 19.5, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.7, z: 35.0, yaw: 0 },
+      { id: 'bil-bla', x: -1.7, z: 38.0, yaw: Math.PI },
     ];
     for (const c of parked) {
+      // asphalt bay pad under each car
+      const bay = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.05, 5.2),
+        asphaltGroundMaterial(),
+      );
+      bay.position.set(c.x, 0.08, c.z);
+      bay.receiveShadow = true;
+      bay.userData.noCast = true;
+      stat.add(bay);
       const car = buildCar(c.id);
       car.position.set(c.x, 0, c.z);
       car.rotation.y = c.yaw;

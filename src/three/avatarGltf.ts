@@ -326,6 +326,19 @@ export function tickGltfAvatar(rig: AvatarRig, dt: number, pose: AvatarPose, spe
       act.fadeOut(0.15);
     }
   }
+  // animateAvatar early-outs for gltf — apply seated drop so driver sits UNDER canopy
+  if (pose === 'drive') {
+    rig.body.position.set(0, -0.85, 0.05);
+    rig.body.rotation.x = 0.18;
+  } else if (pose === 'sit') {
+    rig.body.position.set(0, -0.28, -0.05);
+    rig.body.rotation.x = -0.05;
+  } else if (pose === 'sleep') {
+    /* keep */
+  } else {
+    rig.body.position.set(0, 0, 0);
+    rig.body.rotation.x = 0;
+  }
   ext.mixer.update(dt);
   return true;
 }

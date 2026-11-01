@@ -21,19 +21,19 @@ async function prep(page) {
       ownerId: 'player-shot',
       editors: [],
       editRequests: [],
-      wallColor: '#c5ccd4',
-      floorColor: '#8a929c',
+      wallColor: '#f3efe8',
+      floorColor: '#c4b4a0',
       locked: false,
       createdAt: now,
       items: [
-        { uid: 'it1', itemId: 'seng', x: 8.2, z: -5.5, rot: 1.57, scale: 1, color: '#e8eef6', floor: 0 },
-        { uid: 'it3', itemId: 'langsofa', x: -2.8, z: 0.2, rot: 0.35, scale: 1.4, color: '#d8dde4', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -2.2, z: 1.0, rot: 0, scale: 1.7, color: '#3a4450', floor: 0 },
-        { uid: 'it11', itemId: 'salongbord', x: -1.6, z: 2.2, rot: 0.2, scale: 1.15, color: '#c8d0d8', floor: 0 },
-        { uid: 'it7', itemId: 'benk', x: 3.2, z: -1.5, rot: 0, scale: 1.4, color: '#1a2230', floor: 0 },
-        { uid: 'it8', itemId: 'krakk', x: 2.4, z: -0.5, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it8b', itemId: 'krakk', x: 4.0, z: -0.5, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
-        { uid: 'it10', itemId: 'potteplante', x: 5.5, z: -5.5, rot: 0, scale: 1.15, color: '#5cc36b', floor: 0 },
+        // bedroom pod visible through doorway (back-left nook)
+        { uid: 'it1', itemId: 'seng', x: -2.5, z: -7.5, rot: 0, scale: 1.1, color: '#e8eef6', floor: 0 },
+        // curved sofa on round rug — living, facing window (-Z) / holo wall
+        { uid: 'it3', itemId: 'langsofa', x: -3.0, z: 0.8, rot: 3.29159265, scale: 1.5, color: '#e8eef4', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -2.6, z: 1.6, rot: 0, scale: 1.85, color: '#4a5560', floor: 0 },
+        { uid: 'it11', itemId: 'salongbord', x: -2.4, z: 2.4, rot: 0.1, scale: 1.2, color: '#1a2230', floor: 0 },
+        { uid: 'it10', itemId: 'potteplante', x: -5.0, z: -0.5, rot: 0, scale: 1.2, color: '#5cc36b', floor: 0 },
+        { uid: 'it10b', itemId: 'potteplante', x: 6.5, z: -6.0, rot: 0, scale: 1.1, color: '#5cc36b', floor: 0 },
       ],
     };
     const save = {
@@ -161,9 +161,9 @@ await page.evaluate(async () => {
   g.player.pos.set(0.5, 0, -7.5);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI;
-  g.cam.pitch = 0.16;
-  g.cam.dist = 7.5;
-  g.camShown = 7.5;
+  g.cam.pitch = 0.15;
+  g.cam.dist = 7.2;
+  g.camShown = 7.2;
   g.rebuildAvatar?.();
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
@@ -184,7 +184,7 @@ await page.evaluate(() => {
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
   // yaw 0 faces -Z (plaza); yaw PI faces +Z (was hitting Dørspillet)
-  g.player.pos.set(0, 0, 28);
+  g.player.pos.set(0, 0, 32);
   g.player.yaw = 0;
   g.toggleDrive();
 });
@@ -192,14 +192,14 @@ await page.waitForTimeout(2200);
 await page.evaluate(() => {
   const g = window.__hv;
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 28);
+  g.player.pos.set(0, 0, 32);
   g.player.yaw = 0;
   g.cam.yaw = 0;
-  g.cam.pitch = 0.12;
-  g.cam.dist = 6.4;
-  g.camShown = 6.4;
+  g.cam.pitch = 0.22;
+  g.cam.dist = 6.6;
+  g.camShown = 6.6;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 28);
+    g.vehicleMesh.position.set(0, 0, 32);
     g.vehicleMesh.rotation.y = 0;
   }
   g.hud?.setWhere?.('Dag · Sol');
@@ -218,12 +218,12 @@ await page.evaluate(async () => {
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Walk into living — sofa left, island mid, holo+skyline ahead
   // Door at +Z; back wall / holo / skyline at -Z — face yaw 0
-  g.player.pos.set(0.2, 0, -0.5);
-  g.player.yaw = 0.05;
-  g.cam.yaw = 0.05;
-  g.cam.pitch = 0.18;
-  g.cam.dist = 5.5;
-  g.camShown = 5.5;
+  g.player.pos.set(0.5, 0, 4.2);
+  g.player.yaw = 0.0;
+  g.cam.yaw = 0.0;
+  g.cam.pitch = 0.08;
+  g.cam.dist = 3.8;
+  g.camShown = 3.8;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 800));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());

@@ -90,8 +90,13 @@ export function createInterior(): Interior {
       walls = [];
       partitions = [];
       const wallMat = SharedMats.interiorWall.clone();
-      wallMat.color.set(house.wallColor || '#c5ccd4');
-      const trim = '#d8dee6';
+      // Concept living: warm light walls (not grey concrete)
+      const warmWall = house.style === 'moderne' ? '#f3efe8' : (house.wallColor || '#efeae3');
+      wallMat.color.set(house.style === 'moderne' ? warmWall : (house.wallColor || warmWall));
+      wallMat.roughness = 0.72;
+      wallMat.metalness = 0.02;
+      wallMat.map = null; // drop concrete albedo that reads as grey bunker
+      const trim = '#e8e2d8';
       const st = L.stairs;
       for (let f = 0; f < FLOORS; f++) {
         const fg = floorGroups[f];
@@ -100,10 +105,11 @@ export function createInterior(): Interior {
         const slab = (x0: number, x1: number, z0: number, z1: number) => {
           if (x1 - x0 < 0.01 || z1 - z0 < 0.01) return;
           const matFloor = SharedMats.interiorFloor.clone();
-          matFloor.color.set(house.floorColor || '#8a929c');
-          matFloor.roughness = 0.4;
-          matFloor.metalness = 0.12;
-          matFloor.envMapIntensity = 1.0;
+          // Warm wood/concrete hybrid (concept polished floor)
+          matFloor.color.set(house.style === 'moderne' ? '#c4b4a0' : (house.floorColor || '#b8a890'));
+          matFloor.roughness = 0.35;
+          matFloor.metalness = 0.08;
+          matFloor.envMapIntensity = 1.05;
           const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.4, z1 - z0), matFloor);
           m.position.set((x0 + x1) / 2, y0 - 0.2, (z0 + z1) / 2);
           m.receiveShadow = true;
@@ -137,6 +143,18 @@ export function createInterior(): Interior {
           return g;
         };
         const back = mk(0, -d / 2 - 0.2, w + 0.8, 0.4, 'z', -d / 2, -1);
+        if (house.style === 'moderne' && f === 0) {
+          // Open center of back wall so panoramic skyline reads (no blank bunker wall)
+          back.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (m.isMesh && m.geometry) {
+              // shrink solid wall visually — keep thin side returns only via scale on root mesh
+            }
+          });
+          back.children.forEach((ch, i) => {
+            if (i === 0) ch.visible = false; // hide main wall slab
+          });
+        }
         // panoramic skyline window on back wall (concept 2-hus-inne)
         {
           const panW = Math.min(w * 0.72, 14);
@@ -257,7 +275,7 @@ export function createInterior(): Interior {
             new THREE.PlaneGeometry(4.4, 2.6),
             new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.6, roughness: 0.3 }),
           );
-          holoFrame.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.25);
+          holoFrame.position.set(-3.2, y0 + 2.55, -d / 2 + 0.25);
           fg.add(holoFrame);
           {
             const hc = document.createElement('canvas');
@@ -285,10 +303,10 @@ export function createInterior(): Interior {
               new THREE.PlaneGeometry(4.2, 2.4),
               new THREE.MeshBasicMaterial({ map: htex, transparent: true, opacity: 0.95 }),
             );
-            holo.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.28);
+            holo.position.set(-3.2, y0 + 2.55, -d / 2 + 0.28);
             fg.add(holo);
             const holoGlow = new THREE.Mesh(new THREE.PlaneGeometry(4.35, 2.55), glowMat('#3a7cff', 0.45));
-            holoGlow.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.26);
+            holoGlow.position.set(-3.2, y0 + 2.55, -d / 2 + 0.26);
             fg.add(holoGlow);
           }
           // shelves flanking holo
@@ -297,60 +315,114 @@ export function createInterior(): Interior {
               new THREE.BoxGeometry(0.9, 2.2, 0.35),
               SharedMats.wood.clone(),
             );
-            shelf.position.set(-w * 0.18 + sx * 2.6, y0 + 2.4, -d / 2 + 0.45);
+            shelf.position.set(-3.2 + sx * 2.55, y0 + 2.35, -d / 2 + 0.45);
             fg.add(shelf);
           }
 
-          // panoramic city window on back wall (concept skyline)
+          // Large panoramic city window (concept 2-hus-inne) — dominates back wall
           {
+            const panW = Math.min(w * 0.55, 12);
+            const panH = 3.8;
             const sky = document.createElement('canvas');
-            sky.width = 512; sky.height = 256;
+            sky.width = 768; sky.height = 320;
             const sctx = sky.getContext('2d')!;
-            const grd = sctx.createLinearGradient(0, 0, 0, 256);
-            grd.addColorStop(0, '#9ec4e8'); grd.addColorStop(0.55, '#d2e4f2'); grd.addColorStop(1, '#e8eef4');
-            sctx.fillStyle = grd; sctx.fillRect(0, 0, 512, 256);
-            sctx.fillStyle = '#6a7a88';
-            for (let k = 0; k < 22; k++) {
-              const bw = 10 + (k * 7) % 28;
-              const bh = 40 + (k * 19) % 140;
-              sctx.fillRect(8 + k * 23, 256 - bh, bw, bh);
-              sctx.fillStyle = '#8ecbff88';
-              for (let wy = 0; wy < 6; wy++) sctx.fillRect(12 + k * 23, 256 - bh + 8 + wy * 14, bw - 8, 6);
-              sctx.fillStyle = '#6a7a88';
+            const grd = sctx.createLinearGradient(0, 0, 0, 320);
+            grd.addColorStop(0, '#7eb0d8'); grd.addColorStop(0.45, '#c5d8e8'); grd.addColorStop(1, '#e8eef4');
+            sctx.fillStyle = grd; sctx.fillRect(0, 0, 768, 320);
+            sctx.fillStyle = '#5a6a78';
+            for (let k = 0; k < 28; k++) {
+              const bw = 12 + (k * 7) % 32;
+              const bh = 50 + (k * 19) % 180;
+              sctx.fillRect(10 + k * 27, 320 - bh, bw, bh);
+              sctx.fillStyle = '#8ecbffaa';
+              for (let wy = 0; wy < 8; wy++) sctx.fillRect(14 + k * 27, 320 - bh + 10 + wy * 16, bw - 8, 7);
+              sctx.fillStyle = '#5a6a78';
             }
             const stex = new THREE.CanvasTexture(sky);
             stex.colorSpace = THREE.SRGBColorSpace;
             const livingSky = new THREE.Mesh(
-              new THREE.PlaneGeometry(5.2, 2.8),
+              new THREE.PlaneGeometry(panW * 0.98, panH * 0.95),
               new THREE.MeshBasicMaterial({ map: stex }),
             );
-            livingSky.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.22);
+            livingSky.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.12);
             fg.add(livingSky);
             const frame = new THREE.Mesh(
-              new THREE.BoxGeometry(5.4, 3.0, 0.08),
-              new THREE.MeshStandardMaterial({ color: '#d0d6de', metalness: 0.4, roughness: 0.35 }),
+              new THREE.BoxGeometry(panW, panH + 0.2, 0.1),
+              new THREE.MeshStandardMaterial({ color: '#e8eef4', metalness: 0.35, roughness: 0.35 }),
             );
-            frame.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.18);
+            frame.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.08);
             fg.add(frame);
             const pane = new THREE.Mesh(
-              new THREE.PlaneGeometry(5.15, 2.75),
-              physicalGlass('#b8d8ec', 0.55),
+              new THREE.PlaneGeometry(panW * 0.97, panH * 0.94),
+              physicalGlass('#b8d8ec', 0.5),
             );
-            pane.position.set(w * 0.28, y0 + 2.7, -d / 2 + 0.26);
+            pane.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.18);
             fg.add(pane);
+          }
+          // Kitchen island with under-glow (concept)
+          if (house.style === 'moderne') {
+            const island = new THREE.Group();
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(2.8, 0.95, 1.2),
+              new THREE.MeshStandardMaterial({ color: '#d8dde4', roughness: 0.4, metalness: 0.1 }),
+            );
+            base.position.y = 0.48;
+            island.add(base);
+            const top = new THREE.Mesh(
+              new THREE.BoxGeometry(2.95, 0.08, 1.3),
+              new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.25, metalness: 0.4 }),
+            );
+            top.position.y = 1.0;
+            island.add(top);
+            const glow = new THREE.Mesh(
+              new THREE.BoxGeometry(2.7, 0.04, 1.1),
+              glowMat('#ffe0b0', 1.8),
+            );
+            glow.position.y = 0.06;
+            island.add(glow);
+            const faucet = new THREE.Mesh(
+              new THREE.TorusGeometry(0.12, 0.025, 8, 16, Math.PI),
+              new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.9, roughness: 0.2 }),
+            );
+            faucet.position.set(0.6, 1.2, 0);
+            faucet.rotation.y = Math.PI / 2;
+            island.add(faucet);
+            island.position.set(4.2, y0, -1.2);
+            fg.add(island);
+            for (const sx of [-0.55, 0.55]) {
+              const stool = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.22, 0.25, 0.7, 16),
+                new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.35, metalness: 0.5 }),
+              );
+              stool.position.set(4.2 + sx, y0 + 0.35, 0.2);
+              fg.add(stool);
+              const seat = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16),
+                SharedMats.wood.clone(),
+              );
+              seat.position.set(4.2 + sx, y0 + 0.72, 0.2);
+              fg.add(seat);
+            }
           }
         }
         // inner walls between the rooms, with door gaps
         for (const r of L.walls[f]) {
           const g = new THREE.Group();
-          const m = new THREE.Mesh(G.box(), wallMat);
-          m.scale.set(r.hw * 2, WALL_H - 0.2, r.hd * 2);
+          // Moderne "glass wall" (tall thin partitions along x) — glass, not grey pillars
+          const isGlassWall = house.style === 'moderne' && r.hw < 0.35 && r.hd > 1.5;
+          const m = new THREE.Mesh(
+            G.box(),
+            isGlassWall ? physicalGlass('#b8d4e8', 0.55) : wallMat,
+          );
+          m.scale.set(isGlassWall ? 0.12 : r.hw * 2, WALL_H - 0.2, r.hd * 2);
           m.position.set(r.x, y0 + (WALL_H - 0.2) / 2, r.z);
-          m.receiveShadow = true;
-          m.castShadow = true;
+          m.receiveShadow = !isGlassWall;
+          m.castShadow = !isGlassWall;
           g.add(m);
-          box(g, trim, [r.x, y0 + 0.2, r.z], [r.hw * 2 + 0.05, 0.4, r.hd * 2 + 0.05]);
-          box(g, trim, [r.x, y0 + WALL_H - 0.2, r.z], [r.hw * 2 + 0.08, 0.2, r.hd * 2 + 0.08]);
+          if (!isGlassWall) {
+            box(g, trim, [r.x, y0 + 0.2, r.z], [r.hw * 2 + 0.05, 0.4, r.hd * 2 + 0.05]);
+            box(g, trim, [r.x, y0 + WALL_H - 0.2, r.z], [r.hw * 2 + 0.08, 0.2, r.hd * 2 + 0.08]);
+          }
           fg.add(g);
           partitions.push({ mesh: g, rect: r, floor: f });
         }
@@ -399,21 +471,8 @@ export function createInterior(): Interior {
       box(stairs, '#9ad8ff', [smx, FLOOR_H + 1.0, st.zBottom + 0.12], [st.x1 - st.x0 + 0.3, 0.08, 0.08], undefined, 0.25);
       for (const x of [st.x0, smx, st.x1]) box(stairs, '#ffffff', [x, FLOOR_H + 0.5, st.zBottom + 0.12], [0.1, 1.0, 0.1]);
       floorGroups[0].add(stairs);
-      // Moderne: visual spiral newel (gameplay ramp stays straight) so the plan reads as a corner spiral.
-      if (house.style === 'moderne') {
-        const post = new THREE.Group();
-        const turns = 5;
-        for (let i = 0; i < turns * 8; i++) {
-          const t = i / (turns * 8);
-          const ang = t * Math.PI * 2 * turns;
-          const y = t * FLOOR_H;
-          const r = 0.55;
-          const peg = box(post, i % 2 ? '#cfd8ff' : '#9aa6d6', [smx + Math.cos(ang) * r, y + 0.15, st.zBottom - t * (st.zBottom - st.zTop)], [0.18, 0.12, 0.18]);
-          peg.castShadow = false;
-        }
-        box(post, '#8891b8', [smx, FLOOR_H / 2, (st.zTop + st.zBottom) / 2], [0.22, FLOOR_H, 0.22]);
-        floorGroups[0].add(post);
-      }
+      // Moderne: keep stair open/light — no heavy spiral newel (was reading as giant pillars)
+
       itemKeys.clear();
       furn.clear();
       items.clear();

@@ -110,7 +110,7 @@ export class Game {
   /** Lying in a house bed (does not change time of day). */
   sleeping: SleepSpot | null = null;
   private sleepZzz: THREE.Sprite | null = null;
-  cam = { yaw: 0, pitch: 0.16, dist: 7.5 };
+  cam = { yaw: 0, pitch: 0.15, dist: 7.2 };
   /** Camera distance actually used this frame (shorter than cam.dist while a building is in the way). */
   private camShown = 15;
   avatar!: AvatarRig;
@@ -538,8 +538,8 @@ export class Game {
     // Face into the house (−Z from the door). yaw 0 = −Z in three.js.
     this.player.yaw = 0;
     this.cam.yaw = 0;
-    this.cam.pitch = 0.22;
-    this.cam.dist = 6.8;
+    this.cam.pitch = 0.12;
+    this.cam.dist = 4.8;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#d8dde4');
     this.scene.fog = null;
@@ -572,8 +572,8 @@ export class Game {
     this.player.vy = 0;
     this.player.yaw = p.yaw;
     this.cam.yaw = p.yaw; // behind player
-    this.cam.pitch = 0.16;
-    this.cam.dist = 7.5;
+    this.cam.pitch = 0.15;
+    this.cam.dist = 7.2;
     this.actors.forEach((a, uid) => {
       const i = this.save.equipped.indexOf(uid);
       a.pos.set(p.x + Math.sin(p.yaw + Math.PI + i) * 2.5, 0, p.z + Math.cos(p.yaw + Math.PI + i) * 2.5);
@@ -855,8 +855,8 @@ export class Game {
       this.cam.pitch = Math.max(this.cam.pitch, 0.85);
       this.cam.dist = Math.max(this.cam.dist, 20);
     } else {
-      this.cam.pitch = 0.22;
-      this.cam.dist = 6.8;
+      this.cam.pitch = 0.12;
+      this.cam.dist = 4.8;
     }
     this.updateHud();
   }
@@ -1151,6 +1151,9 @@ export class Game {
     this.avatarHolder.position.copy(p.pos);
     if (this.driving) {
       this.avatarHolder.position.y = CAR_SEAT_Y;
+      // seat under canopy (car forward = −Z)
+      this.avatarHolder.position.x -= Math.sin(p.yaw) * 0.15;
+      this.avatarHolder.position.z -= Math.cos(p.yaw) * 0.15;
       this.avatarHolder.scale.setScalar(CAR_AVATAR_SCALE);
     } else {
       this.avatarHolder.scale.setScalar(1);
@@ -1259,19 +1262,18 @@ export class Game {
       this.camera.position.set(f.x, f.y, f.z);
       this.camera.lookAt(f.lx, f.ly, f.lz);
     } else {
-    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 1.05 : 2.15), p.pos.z);
+    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.85 : 1.55), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
-    // Driving chase: look ahead along facing so road/façades/trees fill the frame
+    // Driving chase: concept framing — ~6.5 m behind, ~2 m up, car in lower-middle third
     if (this.driving && !seat) {
-      const ahead = 2.6;
+      const ahead = 4.5;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
-      // keep chase defaults sticky unless player is actively orbiting
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
-        this.cam.pitch += (0.12 - this.cam.pitch) * Math.min(1, dt * 2);
-        this.cam.dist += (6.4 - this.cam.dist) * Math.min(1, dt * 2);
+        this.cam.pitch += (0.22 - this.cam.pitch) * Math.min(1, dt * 2);
+        this.cam.dist += (6.6 - this.cam.dist) * Math.min(1, dt * 2);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view

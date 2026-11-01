@@ -11,8 +11,9 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { N8AOPass } from 'n8ao';
 
-export const HDRI_URL = '/env/kloppenheim_06_puresky_1k.hdr';
+export const HDRI_URL = '/env/kloofendal_43d_clear_puresky_1k.hdr';
 export const HDRI_FALLBACK = '/env/syferfontein_1d_clear_1k.hdr';
+export const HDRI_FALLBACK2 = '/env/kloppenheim_06_puresky_1k.hdr';
 
 export interface LightingRig {
   hemi: THREE.HemisphereLight;
@@ -37,7 +38,7 @@ export function createLighting(
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // Soft ambient fill — keep low so HDRI + sun do the work
-  const hemi = new THREE.HemisphereLight('#d8e6f4', '#5a6a48', 0.28);
+  const hemi = new THREE.HemisphereLight('#c8dff8', '#6a8a58', 0.32);
   scene.add(hemi);
 
   const sun = new THREE.DirectionalLight('#fff2dc', 2.4);
@@ -66,7 +67,7 @@ export function createLighting(
         rgbe.load(url, resolve, undefined, reject);
       });
     let tex: THREE.DataTexture | null = null;
-    for (const url of [HDRI_URL, HDRI_FALLBACK]) {
+    for (const url of [HDRI_URL, HDRI_FALLBACK, HDRI_FALLBACK2]) {
       try {
         tex = await tryUrl(url);
         break;
@@ -80,7 +81,7 @@ export function createLighting(
     scene.environment = env;
     scene.background = env;
     scene.backgroundBlurriness = 0.0;
-    scene.backgroundIntensity = 1.05;
+    scene.backgroundIntensity = 1.15;
     scene.environmentIntensity = 1.0;
     tex.dispose();
   })();
@@ -140,7 +141,7 @@ export function createLighting(
       }
       if (n8) (n8 as any).enabled = high;
       if (fxaa) fxaa.enabled = high;
-      scene.backgroundIntensity = high ? 1.05 : 0.9;
+      scene.backgroundIntensity = high ? 1.15 : 0.95;
       scene.environmentIntensity = high ? 1.05 : 0.8;
     },
     resize(w, h) {
