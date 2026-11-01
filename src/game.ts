@@ -1285,7 +1285,7 @@ export class Game {
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
         // sin(0.145)*11.5 ≈ 1.66 → cam y ≈ 0.7+1.66 ≈ 2.36
         this.cam.pitch += (0.145 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (11.5 - this.cam.dist) * Math.min(1, dt * 5);
+        this.cam.dist += (12.0 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view

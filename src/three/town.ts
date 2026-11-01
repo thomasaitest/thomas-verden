@@ -877,7 +877,7 @@ export function buildTown(): Town {
       { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
       // Gate-visible: one clear hover car on N–S road past fountain (in south cam frustum)
-      { id: 'bil-gul', x: 1.55, z: 6.5, yaw: 0 },
+      { id: 'bil-gul', x: 1.6, z: -3.2, yaw: Math.PI },
       { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
       { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
       { id: 'bil-gronn', x: 14.2, z: -2.0, yaw: Math.PI / 2 },
