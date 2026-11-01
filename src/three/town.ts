@@ -311,11 +311,24 @@ export function buildTown(): Town {
   const rects: RectCollider[] = [];
   const circles: CircleCollider[] = [];
 
-  // ground – PBR grass
+  // ground – PBR grass (lush light green)
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), grassGroundMaterial());
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   group.add(ground);
+  // lighter grass rings near plaza / hedges for concept variation
+  {
+    const lush = grassGroundMaterial().clone();
+    lush.color = lush.color.clone().offsetHSL(0.02, 0.05, 0.08);
+    for (const [r, y] of [[22, 0.02], [32, 0.015]] as const) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(r - 3.5, r, 64), lush);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = y;
+      ring.receiveShadow = true;
+      ring.userData.noCast = true;
+      group.add(ring);
+    }
+  }
 
   const P = {
     home: { x: PLACES.home.x, z: PLACES.home.z },
@@ -638,11 +651,11 @@ export function buildTown(): Town {
     }
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.55;
-      tree(stat, Math.sin(a) * 18.5, Math.cos(a) * 18.5, 1.25 + (i % 3) * 0.12, i % 3, true);
+      tree(stat, Math.sin(a) * 18.5, Math.cos(a) * 18.5, 1.15 + (i % 3) * 0.1, i % 3, true);
     }
     // extra trees in southern approach (camera side) so skyline isn't a wall
     for (const [x, z] of [[-8, -16], [8, -16], [-12, -12], [12, -12], [0, -18]] as const) {
-      tree(stat, x, z, 1.2, Math.abs(x + z) % 3, true);
+      tree(stat, x, z, 1.1, Math.abs(x + z) % 3, true);
     }
   }
 
@@ -691,19 +704,22 @@ export function buildTown(): Town {
       [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
       [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
     ] as const) {
-      tree(stat, x, z, 1.15, Math.abs(x + z) % 3, true);
+      tree(stat, x, z, 1.05, Math.abs(x + z) % 3, true);
     }
   }
 
 
-  // parked plaza cars (sleek hover props)
+  // parked cars on road / curb — NOT on plaza around fountain
   {
     const parked = [
-      { id: 'bil-bla', x: 6.2, z: -2.5, yaw: -0.35 },
-      { id: 'bil-lilla', x: -5.8, z: -1.5, yaw: 0.55 },
-      { id: 'bil-rosa', x: 8.5, z: 4.0, yaw: -1.0 },
-      { id: 'bil-gronn', x: -8.0, z: 3.0, yaw: 1.1 },
-      { id: 'bil-gul', x: 4.0, z: 8.5, yaw: -0.2 },
+      // south approach road (concept street parking)
+      { id: 'bil-bla', x: 5.2, z: -18.5, yaw: Math.PI },
+      { id: 'bil-lilla', x: -5.2, z: -20.0, yaw: 0 },
+      // north road toward home belt
+      { id: 'bil-rosa', x: 5.4, z: 18.5, yaw: 0 },
+      { id: 'bil-gronn', x: -5.4, z: 20.5, yaw: Math.PI },
+      { id: 'bil-gul', x: 5.2, z: 24.0, yaw: 0 },
+      { id: 'bil-bla', x: -5.2, z: 28.0, yaw: Math.PI },
     ];
     for (const c of parked) {
       const car = buildCar(c.id);

@@ -12,6 +12,11 @@ import {
   preloadSharedPbr,
   SharedMats,
 } from './pbrTextures.ts';
+import {
+  preloadNaturalTrees,
+  buildNaturalTree as buildEzTree,
+  buildPlanter as buildEzPlanter,
+} from './naturalTrees.ts';
 
 let mapsReady: Promise<void> | null = null;
 
@@ -35,8 +40,9 @@ export async function preloadArchMaterials(): Promise<void> {
     } catch {
       /* offline / tests */
     }
-    await Promise.all(
-      TREE_PATHS.map(async (p) => {
+    await Promise.all([
+      preloadNaturalTrees(),
+      ...TREE_PATHS.map(async (p) => {
         if (treeCache.has(p)) return;
         try {
           treeCache.set(p, await loadModel(p));
@@ -44,7 +50,7 @@ export async function preloadArchMaterials(): Promise<void> {
           /* keep procedural */
         }
       }),
-    );
+    ]);
   })();
   return mapsReady;
 }
@@ -553,92 +559,11 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
 }
 
 export function buildNaturalTree(kind = 0): THREE.Group {
-  const g = new THREE.Group();
-  const paths = ['nature/tree_oak.glb', 'nature/tree_detailed.glb', 'nature/tree_pineTallA.glb'];
-  const path = paths[kind % paths.length]!;
-  const cached = treeCache.get(path);
-  if (cached) {
-    const model = cached.clone(true);
-    model.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
-    // Kenney trees are ~1–2 units; scale up
-    const s = kind % 2 ? 2.4 : 2.8;
-    model.scale.setScalar(s);
-    g.add(model);
-    return g;
-  }
-  // Procedural fallback
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#5a3d28', roughness: 0.92, metalness: 0.02 });
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 + (kind % 3) * 0.04, 0.26 + (kind % 3) * 0.04, 2.6 + (kind % 2), 10), trunkMat);
-  trunk.position.y = 1.3 + (kind % 2) * 0.2;
-  trunk.castShadow = true;
-  g.add(trunk);
-  const leafMat = SharedMats.grass.clone();
-  leafMat.color.set(kind % 2 ? '#4a8a48' : '#3d7a40');
-  const blobs = [
-    [0, 3.2, 0, 1.6],
-    [0.55, 3.6, 0.2, 1.1],
-    [-0.5, 3.5, -0.25, 1.15],
-    [0.2, 4.2, -0.3, 0.95],
-    [-0.15, 4.0, 0.35, 0.9],
-  ] as const;
-  for (const [x, y, z, r] of blobs) {
-    const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(r * (0.85 + (kind % 3) * 0.08), 1), leafMat);
-    leaf.position.set(x, y + (kind % 2) * 0.15, z);
-    leaf.castShadow = true;
-    leaf.receiveShadow = true;
-    g.add(leaf);
-  }
-  return g;
+  return buildEzTree(kind);
 }
 
 export function buildPlanter(): THREE.Group {
-  const g = new THREE.Group();
-  const pot = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 1.1), SharedMats.concrete);
-  pot.position.y = 0.28;
-  pot.castShadow = true;
-  pot.receiveShadow = true;
-  g.add(pot);
-  const soil = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.9), new THREE.MeshStandardMaterial({ color: '#3a2a1c', roughness: 1 }));
-  soil.position.y = 0.58;
-  g.add(soil);
-  const bushPath = 'nature/plant_bushDetailed.glb';
-  const bushCached = treeCache.get(bushPath);
-  if (bushCached) {
-    for (const [x, z, s] of [
-      [-0.5, 0, 1.1],
-      [0.15, 0.1, 1.25],
-      [0.55, -0.05, 1.0],
-    ] as const) {
-      const b = bushCached.clone(true);
-      b.position.set(x, 0.55, z);
-      b.scale.setScalar(s);
-      b.traverse((o) => {
-        const m = o as THREE.Mesh;
-        if (m.isMesh) m.castShadow = true;
-      });
-      g.add(b);
-    }
-  } else {
-    const bushMat = SharedMats.grass.clone();
-    bushMat.color.set('#4a8a48');
-    for (const [x, z, s] of [
-      [-0.55, 0, 0.45],
-      [0, 0.1, 0.5],
-      [0.55, -0.05, 0.42],
-    ] as const) {
-      const b = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 1), bushMat);
-      b.position.set(x, 0.85, z);
-      b.castShadow = true;
-      g.add(b);
-    }
-  }
-  return g;
+  return buildEzPlanter();
 }
 
 export function buildModernBench(): THREE.Group {

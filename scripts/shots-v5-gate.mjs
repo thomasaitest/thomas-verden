@@ -73,6 +73,8 @@ async function prep(page) {
   await page.evaluate(async () => {
     const g = window.__hv;
     await g.assetsReady;
+    // ez-tree prototypes finish inside assetsReady; settle one more frame
+    await new Promise((r) => setTimeout(r, 1500));
     g.rebuildAvatar?.();
     if (!g.highQuality) g.toggleQuality();
     g.lighting?.setExposure?.(0.58);
@@ -126,7 +128,7 @@ const shot = async (page, name, wait = 1000) => {
     } catch {}
   });
   await page.waitForTimeout(wait);
-  await page.screenshot({ path: `${out}/${name}.png`, timeout: 90000, animations: 'disabled' });
+  await page.screenshot({ path: `${out}/${name}.png`, timeout: 180000, animations: 'disabled' });
   console.log('saved', name);
 };
 
@@ -159,9 +161,9 @@ await page.evaluate(async () => {
   g.player.pos.set(0.5, 0, -7.5);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI;
-  g.cam.pitch = 0.4;
-  g.cam.dist = 14;
-  g.camShown = 14;
+  g.cam.pitch = 0.16;
+  g.cam.dist = 7.5;
+  g.camShown = 7.5;
   g.rebuildAvatar?.();
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
@@ -193,9 +195,9 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 28);
   g.player.yaw = 0;
   g.cam.yaw = 0;
-  g.cam.pitch = 0.24;
-  g.cam.dist = 10.5;
-  g.camShown = 10.5;
+  g.cam.pitch = 0.12;
+  g.cam.dist = 6.4;
+  g.camShown = 6.4;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 28);
     g.vehicleMesh.rotation.y = 0;
@@ -216,11 +218,12 @@ await page.evaluate(async () => {
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Walk into living — sofa left, island mid, holo+skyline ahead
   // Door at +Z; back wall / holo / skyline at -Z — face yaw 0
-  g.player.pos.set(2.5, 0, 2.8);
-  g.player.yaw = -0.35;
-  g.cam.yaw = -0.35;
-  g.cam.pitch = 0.34;
-  g.cam.dist = 7.8;
+  g.player.pos.set(0.2, 0, -0.5);
+  g.player.yaw = 0.05;
+  g.cam.yaw = 0.05;
+  g.cam.pitch = 0.18;
+  g.cam.dist = 5.5;
+  g.camShown = 5.5;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 800));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
@@ -255,9 +258,9 @@ await page.evaluate(async () => {
   g.player.pos.set(0.4, 0, -5.5);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI + 0.45;
-  g.cam.pitch = 0.28;
-  g.cam.dist = 6.8;
-  g.camShown = 6.8;
+  g.cam.pitch = 0.16;
+  g.cam.dist = 5.5;
+  g.camShown = 5.5;
   await new Promise((r) => setTimeout(r, 3500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   g.editingAvatar = false;
@@ -287,9 +290,9 @@ await p2.evaluate(() => {
   g.player.pos.set(0.4, 0, -9);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI;
-  g.cam.pitch = 0.42;
-  g.cam.dist = 16;
-  g.camShown = 16;
+  g.cam.pitch = 0.2;
+  g.cam.dist = 9;
+  g.camShown = 9;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(p2, '05-iphone-plaza', 1600);

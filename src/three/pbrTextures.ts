@@ -120,10 +120,10 @@ export const SharedMats = {
     envMapIntensity: 1.0,
   }),
   grass: new THREE.MeshStandardMaterial({
-    color: '#6a9a58',
+    color: '#b8e090',
     metalness: 0.02,
-    roughness: 0.92,
-    envMapIntensity: 0.45,
+    roughness: 0.88,
+    envMapIntensity: 0.65,
   }),
   interiorFloor: new THREE.MeshStandardMaterial({
     color: '#8a929c',
@@ -172,6 +172,10 @@ export async function preloadSharedPbr(): Promise<void> {
       SharedMats.metal.metalness = 0.85;
       SharedMats.metal.roughness = 0.35;
       applyMaps(SharedMats.grass, grass, 0.02);
+      // CC0 grass albedo is dark (~68,91,40); multiply up to lush concept green
+      SharedMats.grass.color.set('#c8f0a0');
+      SharedMats.grass.roughness = 0.86;
+      SharedMats.grass.envMapIntensity = 0.7;
       applyMaps(SharedMats.interiorFloor, concrete, 0.12);
       SharedMats.interiorFloor.color.set('#8a929c');
       SharedMats.interiorFloor.roughness = 0.42;

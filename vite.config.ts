@@ -45,6 +45,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,ico,woff,woff2}'],
         navigateFallback: 'index.html',
+        // ez-tree ships bark/leaf textures inline (~4MB)
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
     }),
   ],

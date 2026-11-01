@@ -81,24 +81,23 @@ export function buildCar(carId: string): THREE.Group {
     envMapIntensity: 1.15,
   });
 
-  // Side-profile extrude — tall enough to read as a sculpted sedan, not a pancake
+  // Teardrop side-profile — long taper rear, pointed nose (concept 4-bil)
   const profile = new THREE.Shape();
   const L = bodyLen;
-  // Nose (front = +Z after rotate) sits at +L/2 in shape X before rotate
-  profile.moveTo(-L * 0.48, 0.04);
-  profile.quadraticCurveTo(-L * 0.5, 0.22, -L * 0.46, 0.38); // rear bumper rise
-  profile.quadraticCurveTo(-L * 0.38, 0.72, -L * 0.22, 0.82); // rear deck
-  profile.quadraticCurveTo(-L * 0.05, 0.95, L * 0.08, 0.98); // cabin roof line
-  profile.quadraticCurveTo(L * 0.28, 0.88, L * 0.38, 0.62); // windshield rake
-  profile.quadraticCurveTo(L * 0.48, 0.4, L * 0.5, 0.22); // nose drop
+  profile.moveTo(-L * 0.5, 0.04); // rear tip
+  profile.quadraticCurveTo(-L * 0.52, 0.18, -L * 0.48, 0.32);
+  profile.quadraticCurveTo(-L * 0.4, 0.55, -L * 0.28, 0.72); // rising taper
+  profile.quadraticCurveTo(-L * 0.12, 0.92, L * 0.02, 0.98); // cabin peak
+  profile.quadraticCurveTo(L * 0.22, 0.9, L * 0.36, 0.58); // windshield rake
+  profile.quadraticCurveTo(L * 0.46, 0.35, L * 0.52, 0.18); // pointed nose
   profile.lineTo(L * 0.48, 0.04);
   profile.closePath();
   const hullGeo = new THREE.ExtrudeGeometry(profile, {
-    depth: bodyW * 0.78,
+    depth: bodyW * 0.72,
     bevelEnabled: true,
-    bevelThickness: 0.14,
-    bevelSize: 0.12,
-    bevelSegments: 3,
+    bevelThickness: 0.16,
+    bevelSize: 0.14,
+    bevelSegments: 4,
     steps: 1,
   });
   hullGeo.center();
@@ -129,9 +128,9 @@ export function buildCar(carId: string): THREE.Group {
 
   // Tapered rear fairing — single continuous sculpt, not a second dome
   const rearFair = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), silver);
-  rearFair.scale.set(bodyW * 0.38, 0.38, bodyLen * 0.22);
-  rearFair.position.set(0, hoverY + 0.34, bodyLen * 0.38);
-  rearFair.rotation.x = -0.22;
+  rearFair.scale.set(bodyW * 0.32, 0.32, bodyLen * 0.26);
+  rearFair.position.set(0, hoverY + 0.3, bodyLen * 0.4);
+  rearFair.rotation.x = -0.28;
   rearFair.castShadow = true;
   g.add(rearFair);
 
@@ -204,6 +203,49 @@ export function buildCar(carId: string): THREE.Group {
   }
   for (const s of [-1, 1] as const) {
     rbox(g, '#ff4b6a', [s * bodyW * 0.26, hoverY + 0.3, bodyLen * 0.44], [0.34, 0.06, 0.04], undefined, 0.9);
+  }
+
+  // Panel crease lines (concept body sculpt)
+  for (const s of [-1, 1] as const) {
+    const crease = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, bodyLen * 0.55), darkMat);
+    crease.position.set(s * (bodyW * 0.36), hoverY + 0.55, -0.05);
+    g.add(crease);
+    const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.04, bodyLen * 0.4), darkMat);
+    shoulder.position.set(s * (bodyW * 0.44), hoverY + 0.28, -0.1);
+    g.add(shoulder);
+  }
+  // Hood / deck seams
+  const hoodSeam = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.35, 0.02, 0.02), darkMat);
+  hoodSeam.position.set(0, hoverY + 0.62, -bodyLen * 0.22);
+  g.add(hoodSeam);
+  const rearSeam = new THREE.Mesh(new THREE.BoxGeometry(bodyW * 0.28, 0.02, 0.02), darkMat);
+  rearSeam.position.set(0, hoverY + 0.48, bodyLen * 0.28);
+  g.add(rearSeam);
+
+  // Rear blue thruster discs (concept chase silhouette)
+  const rearZ = bodyLen * 0.46;
+  for (const [tx, ty, rr] of [
+    [-0.38, 0.08, 0.16],
+    [0.38, 0.08, 0.16],
+    [-0.18, -0.02, 0.12],
+    [0.18, -0.02, 0.12],
+  ] as const) {
+    const disc = new THREE.Mesh(
+      new THREE.CylinderGeometry(rr, rr * 1.05, 0.05, 20),
+      new THREE.MeshStandardMaterial({ color: '#2a3344', metalness: 0.85, roughness: 0.22 }),
+    );
+    disc.rotation.x = Math.PI / 2;
+    disc.position.set(tx, hoverY + 0.28 + ty, rearZ);
+    g.add(disc);
+    const core = new THREE.Mesh(new THREE.CircleGeometry(rr * 0.72, 20), glowMat('#3ecbff', 2.4));
+    core.position.set(tx, hoverY + 0.28 + ty, rearZ + 0.03);
+    g.add(core);
+    const halo = new THREE.Mesh(
+      new THREE.CircleGeometry(rr * 1.25, 18),
+      new THREE.MeshBasicMaterial({ color: '#5ccfff', transparent: true, opacity: 0.28, depthWrite: false }),
+    );
+    halo.position.set(tx, hoverY + 0.28 + ty, rearZ + 0.02);
+    g.add(halo);
   }
 
   const under = new THREE.Mesh(

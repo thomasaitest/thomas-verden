@@ -259,9 +259,38 @@ export function createInterior(): Interior {
           );
           holoFrame.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.25);
           fg.add(holoFrame);
-          const holo = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.4), glowMat('#3a7cff', 0.65));
-          holo.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.28);
-          fg.add(holo);
+          {
+            const hc = document.createElement('canvas');
+            hc.width = 512; hc.height = 288;
+            const hx = hc.getContext('2d')!;
+            hx.fillStyle = '#0a1830'; hx.fillRect(0, 0, 512, 288);
+            hx.strokeStyle = '#3ecbff'; hx.lineWidth = 2;
+            hx.strokeRect(16, 16, 480, 256);
+            hx.fillStyle = '#3ecbff'; hx.font = '600 22px Inter, system-ui, sans-serif';
+            hx.fillText('NORDIC HOME OS', 28, 48);
+            hx.strokeStyle = '#5a8cff88';
+            for (let i = 0; i < 8; i++) {
+              hx.beginPath();
+              hx.moveTo(40 + i * 55, 220);
+              hx.lineTo(60 + i * 50, 80 + (i * 17) % 90);
+              hx.stroke();
+            }
+            hx.fillStyle = '#7ef0ff';
+            for (let i = 0; i < 12; i++) hx.fillRect(36 + i * 38, 240, 24, 8 + (i * 13) % 20);
+            hx.strokeStyle = '#c88bff'; hx.strokeRect(320, 70, 150, 120);
+            hx.fillStyle = '#c88bffaa'; hx.fillText('PLAN', 360, 100);
+            const htex = new THREE.CanvasTexture(hc);
+            htex.colorSpace = THREE.SRGBColorSpace;
+            const holo = new THREE.Mesh(
+              new THREE.PlaneGeometry(4.2, 2.4),
+              new THREE.MeshBasicMaterial({ map: htex, transparent: true, opacity: 0.95 }),
+            );
+            holo.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.28);
+            fg.add(holo);
+            const holoGlow = new THREE.Mesh(new THREE.PlaneGeometry(4.35, 2.55), glowMat('#3a7cff', 0.45));
+            holoGlow.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.26);
+            fg.add(holoGlow);
+          }
           // shelves flanking holo
           for (const sx of [-1, 1]) {
             const shelf = new THREE.Mesh(
