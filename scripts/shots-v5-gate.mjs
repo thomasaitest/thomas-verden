@@ -196,7 +196,7 @@ await page.evaluate(() => {
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
   // yaw 0 faces -Z (plaza); yaw PI faces +Z (was hitting Dørspillet)
-  g.player.pos.set(0, 0, 32);
+  g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   g.toggleDrive();
 });
@@ -206,18 +206,18 @@ await page.evaluate(() => {
   g.editingAvatar = false;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 32);
+  g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   g.cam.yaw = 0;
   g.cam.pitch = 0.18;
   g.cam.dist = 10.5;
   g.camShown = 10.5;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 32);
+    g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;
   }
-  // Rear 3/4: ~10.5 m back, ~2.6 m up, slight X offset, look at car body
-  const fc = { x: 3.2, y: 2.65, z: 32 + 10.5, lx: 0.15, ly: 0.75, lz: 32 };
+  // Rear 3/4 on clear asphalt (no parked cars between cam and player)
+  const fc = { x: 2.8, y: 2.55, z: 30 + 10.5, lx: 0.1, ly: 0.8, lz: 30 - 0.5 };
   g.freezeCam = fc;
   g.camera.position.set(fc.x, fc.y, fc.z);
   g.camera.lookAt(fc.lx, fc.ly, fc.lz);

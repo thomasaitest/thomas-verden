@@ -722,8 +722,9 @@ export function buildTown(): Town {
       // north road — before chase spawn (z=28)
       { id: 'bil-rosa', x: 1.7, z: 16.5, yaw: 0 },
       { id: 'bil-gronn', x: -1.7, z: 19.5, yaw: Math.PI },
-      { id: 'bil-gul', x: 1.7, z: 35.0, yaw: 0 },
-      { id: 'bil-bla', x: -1.7, z: 38.0, yaw: Math.PI },
+      // Keep +Z approach clear for chase cam (player ~z=28–32, cam ~10 m behind)
+      { id: 'bil-gul', x: 1.7, z: 52.0, yaw: 0 },
+      { id: 'bil-bla', x: -1.7, z: 55.0, yaw: Math.PI },
     ];
     for (const c of parked) {
       // asphalt bay pad under each car
