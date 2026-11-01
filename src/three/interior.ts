@@ -193,9 +193,9 @@ export function createInterior(): Interior {
           const sill = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.6, 0.2, 0.45), darkMat);
           sill.position.set(0, y0 + 1.05, zBack + 0.05);
           back.add(sill);
-          // mullions
-          for (const mx of [-panW * 0.28, 0, panW * 0.28]) {
-            const mull = new THREE.Mesh(new THREE.BoxGeometry(0.08, panH, 0.1), frameMat);
+          // Side mullions only — no centre post (read as black pillar in window)
+          for (const mx of [-panW * 0.32, panW * 0.32]) {
+            const mull = new THREE.Mesh(new THREE.BoxGeometry(0.06, panH, 0.08), frameMat);
             mull.position.set(mx, y0 + 3.15, zBack + 0.08);
             back.add(mull);
           }
@@ -338,206 +338,237 @@ export function createInterior(): Interior {
             wall.add(card);
           }
         }
-        // LED cove around ceiling perimeter (emissive strip + rect area light)
+        // LED cove around ceiling — moderne gets curved warm strips that bloom
         {
           ensureRectArea();
           const coveY = y0 + WALL_H - 0.14;
-          // MeshBasic cove so UnrealBloom picks it up clearly
-          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffd9a0' });
-          const mkCove = (sx: number, sz: number, px: number, pz: number) => {
-            const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.09, sz), coveMat);
-            c.position.set(px, coveY, pz);
-            fg.add(c);
-          };
-          mkCove(w * 0.92, 0.09, 0, -d / 2 + 0.35);
-          mkCove(w * 0.92, 0.09, 0, d / 2 - 0.35);
-          mkCove(0.09, d * 0.85, -w / 2 + 0.35, 0);
-          mkCove(0.09, d * 0.85, w / 2 - 0.35, 0);
-          if (f === 0) {
-            const area = new THREE.RectAreaLight('#ffe8d0', house.style === 'moderne' ? 3.2 : 11, w * 0.7, d * 0.45);
-            area.position.set(0, coveY - 0.05, -d * 0.08);
+          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffe2b0' });
+          if (house.style === 'moderne' && f === 0) {
+            // Curved oval cove ring (Tube) — concept ceiling glow
+            const oval = new THREE.EllipseCurve(0, 0, w * 0.38, d * 0.32, 0, Math.PI * 2, false, 0);
+            const pts = oval.getPoints(64).map((p) => new THREE.Vector3(p.x, 0, p.y));
+            const curve = new THREE.CatmullRomCurve3(pts, true);
+            const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.055, 8, true), coveMat);
+            tube.position.y = coveY;
+            fg.add(tube);
+            const area = new THREE.RectAreaLight('#ffe8d0', 5.5, w * 0.55, d * 0.4);
+            area.position.set(0, coveY - 0.08, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
             fg.add(area);
-            const soft = new THREE.PointLight('#ffe0b0', house.style === 'moderne' ? 0.2 : 0.85, 22, 2);
-            soft.position.set(0, coveY - 0.4, 0);
+            const soft = new THREE.PointLight('#ffe0b0', 0.35, 24, 2);
+            soft.position.set(0, coveY - 0.5, 0);
             fg.add(soft);
+          } else {
+            const mkCove = (sx: number, sz: number, px: number, pz: number) => {
+              const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.09, sz), coveMat);
+              c.position.set(px, coveY, pz);
+              fg.add(c);
+            };
+            mkCove(w * 0.92, 0.09, 0, -d / 2 + 0.35);
+            mkCove(w * 0.92, 0.09, 0, d / 2 - 0.35);
+            mkCove(0.09, d * 0.85, -w / 2 + 0.35, 0);
+            mkCove(0.09, d * 0.85, w / 2 - 0.35, 0);
+            if (f === 0) {
+              const area = new THREE.RectAreaLight('#ffe8d0', 11, w * 0.7, d * 0.45);
+              area.position.set(0, coveY - 0.05, -d * 0.08);
+              area.rotation.x = -Math.PI / 2;
+              fg.add(area);
+              const soft = new THREE.PointLight('#ffe0b0', 0.85, 22, 2);
+              soft.position.set(0, coveY - 0.4, 0);
+              fg.add(soft);
+            }
           }
         }
-        // Living-room composition facing the panoramic window (concept 2-hus-inne)
+        // Living-room composition (concept 2-hus-inne): sofa/table/rug, left holo+shelves, right island, pod via right doorway
         if (f === 0) {
           const living = new THREE.Group();
-          // One smooth extruded crescent sofa (not modular cushions)
+          const whiteFabric = new THREE.MeshStandardMaterial({ color: '#f2f4f8', roughness: 0.55, metalness: 0.04, envMapIntensity: 0.45 });
+          const pillowMat = new THREE.MeshStandardMaterial({ color: '#e8eef6', roughness: 0.7, metalness: 0.02 });
+          const accentPillow = new THREE.MeshStandardMaterial({ color: '#9aa8b8', roughness: 0.65, metalness: 0.04 });
+          // Large curved white sofa with back + pillows (center, facing window)
           {
             const sofa = new THREE.Group();
-            const fabric = new THREE.MeshStandardMaterial({ color: '#8a96a4', roughness: 0.55, metalness: 0.05, envMapIntensity: 0.4 });
             const shape = new THREE.Shape();
-            shape.moveTo(-2.05, 0.55);
-            shape.quadraticCurveTo(-2.15, -0.15, -1.15, -0.55);
-            shape.quadraticCurveTo(0, -0.85, 1.15, -0.55);
-            shape.quadraticCurveTo(2.15, -0.15, 2.05, 0.55);
-            shape.lineTo(1.55, 0.55);
-            shape.quadraticCurveTo(1.45, 0.05, 0.85, -0.15);
-            shape.quadraticCurveTo(0, -0.35, -0.85, -0.15);
-            shape.quadraticCurveTo(-1.45, 0.05, -1.55, 0.55);
-            shape.lineTo(-2.05, 0.55);
-            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.42, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3, curveSegments: 48 });
+            shape.moveTo(-2.35, 0.65);
+            shape.quadraticCurveTo(-2.45, -0.2, -1.3, -0.7);
+            shape.quadraticCurveTo(0, -1.0, 1.3, -0.7);
+            shape.quadraticCurveTo(2.45, -0.2, 2.35, 0.65);
+            shape.lineTo(1.75, 0.65);
+            shape.quadraticCurveTo(1.65, 0.05, 0.95, -0.2);
+            shape.quadraticCurveTo(0, -0.4, -0.95, -0.2);
+            shape.quadraticCurveTo(-1.65, 0.05, -1.75, 0.65);
+            shape.lineTo(-2.35, 0.65);
+            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.45, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
             seatGeo.rotateX(-Math.PI / 2);
-            const seat = new THREE.Mesh(seatGeo, fabric);
-            seat.position.y = 0.18;
+            const seat = new THREE.Mesh(seatGeo, whiteFabric);
+            seat.position.y = 0.2;
             seat.castShadow = true;
             sofa.add(seat);
             const backShape = new THREE.Shape();
-            backShape.moveTo(-2.0, 0.08);
-            backShape.quadraticCurveTo(-2.1, -0.35, -1.1, -0.7);
-            backShape.quadraticCurveTo(0, -0.95, 1.1, -0.7);
-            backShape.quadraticCurveTo(2.1, -0.35, 2.0, 0.08);
-            backShape.lineTo(1.72, 0.08);
-            backShape.quadraticCurveTo(1.78, -0.22, 1.0, -0.48);
-            backShape.quadraticCurveTo(0, -0.68, -1.0, -0.48);
-            backShape.quadraticCurveTo(-1.78, -0.22, -1.72, 0.08);
-            backShape.lineTo(-2.0, 0.08);
-            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.72, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2, curveSegments: 48 });
+            backShape.moveTo(-2.3, 0.15);
+            backShape.quadraticCurveTo(-2.4, -0.4, -1.25, -0.82);
+            backShape.quadraticCurveTo(0, -1.1, 1.25, -0.82);
+            backShape.quadraticCurveTo(2.4, -0.4, 2.3, 0.15);
+            backShape.lineTo(1.95, 0.15);
+            backShape.quadraticCurveTo(2.0, -0.25, 1.15, -0.55);
+            backShape.quadraticCurveTo(0, -0.75, -1.15, -0.55);
+            backShape.quadraticCurveTo(-2.0, -0.25, -1.95, 0.15);
+            backShape.lineTo(-2.3, 0.15);
+            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.85, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2, curveSegments: 56 });
             backGeo.rotateX(-Math.PI / 2);
-            const backRest = new THREE.Mesh(backGeo, fabric);
-            backRest.position.y = 0.55;
+            const backRest = new THREE.Mesh(backGeo, whiteFabric);
+            backRest.position.y = 0.58;
             backRest.castShadow = true;
             sofa.add(backRest);
-            sofa.position.set(-1.2, y0, 1.05);
+            for (const [u, mat] of [[0.2, pillowMat], [0.5, accentPillow], [0.8, pillowMat]] as const) {
+              const ang = -Math.PI * 0.15 + u * Math.PI * 0.3;
+              const px = Math.sin(ang) * 1.5;
+              const pz = -0.35 - Math.cos(ang) * 0.15;
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), mat);
+              pillow.scale.set(1.15, 0.4, 0.9);
+              pillow.position.set(px, 0.72, pz);
+              sofa.add(pillow);
+            }
+            sofa.position.set(0.2, y0, 1.15);
             living.add(sofa);
-            // Round rug (calm grey — not orange/red)
-            const rugOuter = new THREE.Mesh(
-              new THREE.CylinderGeometry(1.65, 1.65, 0.03, 48),
-              new THREE.MeshStandardMaterial({ color: '#8a96a4', roughness: 0.85, metalness: 0.02 }),
+            const rug = new THREE.Mesh(
+              new THREE.CylinderGeometry(1.85, 1.85, 0.03, 48),
+              new THREE.MeshStandardMaterial({ color: '#7a8694', roughness: 0.88, metalness: 0.02 }),
             );
-            rugOuter.position.set(-1.2, y0 + 0.02, -0.05);
-            living.add(rugOuter);
+            rug.position.set(0.2, y0 + 0.02, -0.15);
+            living.add(rug);
             const rugIn = new THREE.Mesh(
-              new THREE.CylinderGeometry(1.1, 1.1, 0.032, 48),
-              new THREE.MeshStandardMaterial({ color: '#d8dee6', roughness: 0.88, metalness: 0.02 }),
+              new THREE.CylinderGeometry(1.2, 1.2, 0.032, 48),
+              new THREE.MeshStandardMaterial({ color: '#dce2ea', roughness: 0.9, metalness: 0.02 }),
             );
-            rugIn.position.set(-1.2, y0 + 0.025, -0.05);
+            rugIn.position.set(0.2, y0 + 0.025, -0.15);
             living.add(rugIn);
           }
-          // Coffee table on the rug
+          // Round coffee table on rug
           {
             const table = new THREE.Group();
             const top = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.55, 0.58, 0.05, 32),
-              new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.22, metalness: 0.6, envMapIntensity: 1.2 }),
+              new THREE.CylinderGeometry(0.62, 0.65, 0.05, 32),
+              new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.2, metalness: 0.65, envMapIntensity: 1.2 }),
             );
-            top.position.y = 0.4;
+            top.position.y = 0.42;
             table.add(top);
             const stem = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.06, 0.1, 0.36, 12),
-              new THREE.MeshStandardMaterial({ color: '#8aa0b8', metalness: 0.75, roughness: 0.28 }),
+              new THREE.CylinderGeometry(0.07, 0.12, 0.38, 12),
+              new THREE.MeshStandardMaterial({ color: '#8aa0b8', metalness: 0.8, roughness: 0.25 }),
             );
             stem.position.y = 0.2;
             table.add(stem);
-            table.position.set(-1.2, y0, -0.15);
+            table.position.set(0.2, y0, -0.2);
             living.add(table);
           }
-          // Big holo-TV wall with glowing UI (living only — no pod eggs here)
-          {
-            const tw = 4.6;
-            const th = 2.4;
-            const tz = -d / 2 + 0.5;
+          // Holo-screen on LEFT wall with lit shelves + plants (not blocking window)
+          if (house.style === 'moderne') {
+            const tw = 3.4;
+            const th = 2.2;
+            const hx = -w / 2 + 1.1;
+            const hz = 0.2;
             const holoFrame = new THREE.Mesh(
-              new THREE.BoxGeometry(tw + 0.2, th + 0.2, 0.1),
+              new THREE.BoxGeometry(0.12, th + 0.2, tw + 0.2),
               new THREE.MeshStandardMaterial({ color: '#121820', metalness: 0.7, roughness: 0.25 }),
             );
-            holoFrame.position.set(-1.0, y0 + 2.35, tz);
+            holoFrame.position.set(hx, y0 + 2.2, hz);
             living.add(holoFrame);
             const hc = document.createElement('canvas');
             hc.width = 1024; hc.height = 576;
-            const hx = hc.getContext('2d')!;
-            hx.fillStyle = '#071428'; hx.fillRect(0, 0, 1024, 576);
-            hx.strokeStyle = '#3ecbff'; hx.lineWidth = 4; hx.strokeRect(18, 18, 988, 540);
-            hx.fillStyle = '#7ef0ff'; hx.font = '700 36px Inter, system-ui, sans-serif';
-            hx.fillText('NORDIC HOME OS', 48, 70);
-            hx.fillStyle = '#5a8cff'; hx.font = '500 22px Inter, system-ui, sans-serif';
-            hx.fillText('Living · Climate 21° · Air good', 48, 108);
-            hx.strokeStyle = '#3ecbffaa';
+            const hx2 = hc.getContext('2d')!;
+            hx2.fillStyle = '#071428'; hx2.fillRect(0, 0, 1024, 576);
+            hx2.strokeStyle = '#3ecbff'; hx2.lineWidth = 4; hx2.strokeRect(18, 18, 988, 540);
+            hx2.fillStyle = '#7ef0ff'; hx2.font = '700 36px Inter, system-ui, sans-serif';
+            hx2.fillText('NORDIC HOME OS', 48, 70);
+            hx2.fillStyle = '#5a8cff'; hx2.font = '500 22px Inter, system-ui, sans-serif';
+            hx2.fillText('Living · Climate 21° · Air good', 48, 108);
+            hx2.strokeStyle = '#3ecbffaa';
             for (let i = 0; i < 14; i++) {
-              hx.beginPath();
-              hx.moveTo(60 + i * 65, 480);
-              hx.lineTo(90 + i * 60, 160 + (i * 37) % 220);
-              hx.stroke();
+              hx2.beginPath();
+              hx2.moveTo(60 + i * 65, 480);
+              hx2.lineTo(90 + i * 60, 160 + (i * 37) % 220);
+              hx2.stroke();
             }
-            hx.fillStyle = '#3ecbff';
-            for (let i = 0; i < 16; i++) hx.fillRect(48 + i * 58, 500, 36, 10 + (i * 17) % 40);
-            hx.fillStyle = '#ffe8d0'; hx.font = '600 18px Inter, system-ui, sans-serif';
-            hx.fillText('Cove LEDs · On', 780, 70);
+            hx2.fillStyle = '#3ecbff';
+            for (let i = 0; i < 16; i++) hx2.fillRect(48 + i * 58, 500, 36, 10 + (i * 17) % 40);
             const htex = new THREE.CanvasTexture(hc);
             htex.colorSpace = THREE.SRGBColorSpace;
             const holo = new THREE.Mesh(
               new THREE.PlaneGeometry(tw, th),
               new THREE.MeshBasicMaterial({ map: htex }),
             );
-            holo.position.set(-1.0, y0 + 2.35, tz + 0.08);
+            holo.rotation.y = Math.PI / 2;
+            holo.position.set(hx + 0.08, y0 + 2.2, hz);
             living.add(holo);
-            const holoGlow = new THREE.PointLight('#3a7cff', 1.35, 10, 2);
-            holoGlow.position.set(-1.0, y0 + 2.35, tz + 1.6);
-            living.add(holoGlow);
-            // Shelf units with blooming cove LEDs flanking the TV
-            for (const sx of [-1, 1] as const) {
+            living.add(new THREE.PointLight('#3a7cff', 1.1, 9, 2).translateX(hx + 1.2).translateY(y0 + 2.2).translateZ(hz));
+            // Lit shelves + plants flanking holo on left wall
+            for (const [sz, sy] of [[-2.2, 1.6], [2.2, 1.6]] as const) {
               const shelf = new THREE.Mesh(
-                new THREE.BoxGeometry(0.75, 2.2, 0.34),
+                new THREE.BoxGeometry(0.4, 2.0, 0.9),
                 SharedMats.wood.clone(),
               );
-              shelf.position.set(-1.0 + sx * (tw / 2 + 0.55), y0 + 1.9, tz + 0.15);
+              shelf.position.set(hx + 0.35, y0 + sy, hz + sz);
               living.add(shelf);
-              for (const ly of [1.0, 1.55, 2.1] as const) {
+              for (const ly of [0.9, 1.4, 1.9] as const) {
                 const led = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.65, 0.04, 0.06),
+                  new THREE.BoxGeometry(0.08, 0.04, 0.75),
                   new THREE.MeshBasicMaterial({ color: '#ffe6c4' }),
                 );
-                led.position.set(-1.0 + sx * (tw / 2 + 0.55), y0 + ly, tz + 0.3);
+                led.position.set(hx + 0.55, y0 + ly, hz + sz);
                 living.add(led);
               }
+              // Simple plant pot + foliage
+              const pot = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.12, 0.1, 0.2, 10),
+                new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.5 }),
+              );
+              pot.position.set(hx + 0.45, y0 + 2.15, hz + sz);
+              living.add(pot);
+              const leaf = new THREE.Mesh(
+                new THREE.SphereGeometry(0.22, 10, 8),
+                new THREE.MeshStandardMaterial({ color: '#5a8f5a', roughness: 0.8 }),
+              );
+              leaf.position.set(hx + 0.45, y0 + 2.4, hz + sz);
+              living.add(leaf);
             }
           }
-          // Kitchen island to the right
+          // Kitchen island right with warm under-glow + bar stools
           if (house.style === 'moderne') {
             const island = new THREE.Group();
             const base = new THREE.Mesh(
-              new THREE.BoxGeometry(2.8, 0.95, 1.2),
-              new THREE.MeshStandardMaterial({ color: '#d8dde4', roughness: 0.4, metalness: 0.1 }),
+              new THREE.BoxGeometry(2.6, 0.95, 1.15),
+              new THREE.MeshStandardMaterial({ color: '#e4e8ee', roughness: 0.4, metalness: 0.08 }),
             );
             base.position.y = 0.48;
             island.add(base);
             const top = new THREE.Mesh(
-              new THREE.BoxGeometry(2.95, 0.08, 1.3),
+              new THREE.BoxGeometry(2.75, 0.08, 1.25),
               new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.25, metalness: 0.4 }),
             );
             top.position.y = 1.0;
             island.add(top);
             const glow = new THREE.Mesh(
-              new THREE.BoxGeometry(2.7, 0.04, 1.1),
-              glowMat('#ffe0b0', 1.8),
+              new THREE.BoxGeometry(2.5, 0.05, 1.0),
+              glowMat('#ffe0b0', 2.0),
             );
-            glow.position.y = 0.06;
+            glow.position.y = 0.05;
             island.add(glow);
-            const faucet = new THREE.Mesh(
-              new THREE.TorusGeometry(0.12, 0.025, 8, 16, Math.PI),
-              new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.9, roughness: 0.2 }),
-            );
-            faucet.position.set(0.6, 1.2, 0);
-            faucet.rotation.y = Math.PI / 2;
-            island.add(faucet);
-            island.position.set(4.6, y0, 0.4);
+            island.position.set(5.2, y0, 0.6);
             living.add(island);
+            living.add(new THREE.PointLight('#ffcc88', 0.55, 8, 2).translateX(5.2).translateY(y0 + 0.3).translateZ(0.6));
             for (const sx of [-0.55, 0.55]) {
               const stool = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.22, 0.25, 0.7, 16),
+                new THREE.CylinderGeometry(0.2, 0.24, 0.7, 14),
                 new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.35, metalness: 0.5 }),
               );
-              stool.position.set(4.6 + sx, y0 + 0.35, 1.5);
+              stool.position.set(5.2 + sx, y0 + 0.35, 1.7);
               living.add(stool);
               const seat = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16),
+                new THREE.CylinderGeometry(0.24, 0.24, 0.06, 14),
                 SharedMats.wood.clone(),
               );
-              seat.position.set(4.6 + sx, y0 + 0.72, 1.5);
+              seat.position.set(5.2 + sx, y0 + 0.72, 1.7);
               living.add(seat);
             }
           }
@@ -549,6 +580,9 @@ export function createInterior(): Interior {
           // Moderne open living: skip thin glass partitions on ground floor (read as floating white slabs)
           const isGlassWall = house.style === 'moderne' && r.hw < 0.35 && r.hd > 1.5;
           if (isGlassWall && f === 0) continue;
+          // Moderne: skip tall side partitions visually (collider still active via layout) — only short doorway walls draw
+          const isTallSide = house.style === 'moderne' && f === 0 && r.hw <= 0.25 && r.hd > 1.0;
+          if (isTallSide) continue;
           const g = new THREE.Group();
           const partMat = house.style === 'moderne' && !isGlassWall
             ? new THREE.MeshStandardMaterial({ color: '#3e444c', roughness: 0.92, metalness: 0.02, envMapIntensity: 0.1 })

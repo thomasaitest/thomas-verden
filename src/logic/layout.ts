@@ -178,30 +178,28 @@ function planGard(w: number, d: number): Built {
   return { stairs, rooms, walls: [f0, f1], door: { x: (eX + w / 2) / 2, z: d / 2 - 1.4 } };
 }
 
-/** Moderne: open stue + kitchen glass; bedroom alcove back-left with doorway (pod peek). */
+/** Moderne: open stue + kitchen glass; bedroom alcove back-RIGHT with doorway (pod peek). */
 function planModerne(w: number, d: number): Built {
   const glassX = w / 2 - 7;
-  // Alcove pocket on back-left so panoramic window center stays clear (no mid-room pillars)
-  const nookX = -w / 2 + 6.4;
+  // Alcove pocket on back-right of living (left of kitchen glass) — concept doorway on the right
+  const nookX = glassX - 6.0;
   const nookZ = -d / 2 + 5.2;
-  // Stair on left of open stue, clear of alcove
+  // Stair on far left of open stue
   const stairs = mkStairs(-w / 2 + 2.0, 1.05, nookZ + 1.2, 7.5);
   const f0: RectCollider[] = [];
   const f1: RectCollider[] = [];
   // Glass wall to kitchen (many gaps) — thin, skipped visually on ground floor
   wallX(f0, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, 0, d / 3]);
-  // Bedroom alcove LEFT of nookX: solid side wall (no mid-room pillar into panoramic bay)
+  // Bedroom alcove: side wall + living-facing doorway (no left-side pillars)
   wallX(f0, nookX, -d / 2, nookZ, []);
-  // Short cross wall faces living (+Z) with doorway — pod peeks from default cam looking −Z/left
-  wallZ(f0, nookZ, -w / 2, nookX, [(-w / 2 + nookX) / 2]);
+  wallZ(f0, nookZ, nookX, glassX, [(nookX + glassX) / 2]);
   wallX(f1, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, d / 3]);
   wallZ(f1, d / 2 - 6.5, -w / 2 + 5, glassX, [-w / 6]);
   wallX(f1, 0, d / 2 - 6.5, d / 2, [d / 2 - 3.0]);
   const rooms: Room[] = [
-    // True alcove pocket (left-back) — bed/pod lives here, visible through doorway from stue
-    { id: 'f0-sove', name: 'Soverom', floor: 0, x0: -w / 2, x1: nookX, z0: -d / 2, z1: nookZ },
+    { id: 'f0-sove', name: 'Soverom', floor: 0, x0: nookX, x1: glassX, z0: -d / 2, z1: nookZ },
     { id: 'f0-stue', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: glassX, z0: nookZ, z1: d / 2 },
-    { id: 'f0-stueb', name: 'Åpen stue', floor: 0, x0: nookX, x1: glassX, z0: -d / 2, z1: nookZ },
+    { id: 'f0-stueb', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: nookX, z0: -d / 2, z1: nookZ },
     { id: 'f0-kjokken', name: 'Kjøkken', floor: 0, x0: glassX, x1: w / 2, z0: -d / 2, z1: d / 2 },
     { id: 'f1-kontor', name: 'Kontor', floor: 1, x0: -w / 2, x1: 0, z0: d / 2 - 6.5, z1: d / 2 },
     { id: 'f1-media', name: 'Mediarom', floor: 1, x0: 0, x1: glassX, z0: d / 2 - 6.5, z1: d / 2 },
