@@ -53,7 +53,7 @@ describe('starter furniture', () => {
     const bedRoom = roomAt(L, 0, bed.x, bed.z);
     const tableRoom = roomAt(L, 0, table.x, table.z);
     expect(bedRoom?.name).toMatch(/Soverom|Master|Lugar|Kongesuite|Prinsesse/i);
-    expect(tableRoom?.name).toMatch(/Stue|Salon|Festsal|Salong|Dekk/i);
+    expect(tableRoom?.name).toMatch(style === 'moderne' ? /Kjøkken|Kjokken/i : /Stue|Salon|Festsal|Salong|Dekk/i);
     const spots = starterSpots(style);
     expect(Math.hypot(spots.bed.x - spots.table.x, spots.bed.z - spots.table.z)).toBeGreaterThan(2);
   });
