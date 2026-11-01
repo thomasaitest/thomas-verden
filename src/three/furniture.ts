@@ -1,7 +1,46 @@
 import * as THREE from 'three';
 import { box, cone, cyl, G, glassMat, part, rbox, sph } from './kit.ts';
+import { loadModel } from './assets.ts';
 
 type B = (g: THREE.Group, c: string) => void;
+
+const FURN_GLB: Record<string, string> = {
+  sofa: 'furniture2/sofa.glb',
+  sofalong: 'furniture2/sofa3.glb',
+  armchair: 'furniture2/sofa2.glb',
+  bed: 'furniture/bed-single.glb',
+  bedwide: 'furniture/bed-king.glb',
+  coffeetable: 'furniture/table-roundsmall.glb',
+  table: 'furniture2/table.glb',
+  chair: 'furniture2/chair.glb',
+  bookshelf: 'furniture/bookshelf.glb',
+  fridge: 'furniture/kitchen-fridge.glb',
+  stove: 'furniture/kitchen-oven.glb',
+  counter: 'furniture/kitchen-2drawers.glb',
+  dresser: 'furniture2/closet.glb',
+};
+
+const glbReady = new Map<string, THREE.Group>();
+
+/** Prefetch furniture GLBs used indoors. */
+export async function preloadFurnitureModels(): Promise<void> {
+  await Promise.all(
+    Object.values(FURN_GLB).map(async (path) => {
+      if (glbReady.has(path)) return;
+      try {
+        const m = await loadModel(path);
+        glbReady.set(path, m);
+      } catch {
+        /* keep procedural */
+      }
+    }),
+  );
+}
+
+
+
+
+
 const WOOD = '#c98a55';
 const DARK = '#555a75';
 const WHITE = '#ffffff';
@@ -460,6 +499,20 @@ export const MODELS: Record<string, B> = {
 const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
 export function buildFurniture(model: string, color: string): THREE.Group {
+  const path = FURN_GLB[model];
+  if (path && glbReady.has(path)) {
+    const g = glbReady.get(path)!.clone(true);
+    // Quaternius furniture is roughly metre-scale; bump slightly
+    g.scale.setScalar(model === 'sofalong' ? 1.35 : 1.2);
+    g.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+    return g;
+  }
   const key = `${model}|${color}`;
   let tpl = furnCache.get(key);
   if (!tpl) {

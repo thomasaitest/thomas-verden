@@ -1,247 +1,181 @@
-// Screenshots of the v3 features in headless Chrome. Usage: node scripts/shots-v3.mjs [url] [outDir] [only,names]
 import { chromium } from 'playwright-core';
+import fs from 'node:fs';
 
-const url = process.argv[2] ?? 'http://127.0.0.1:4740/';
-const out = process.argv[3] ?? '/workspace/heddas-mockups/v3';
-const only = (process.argv[4] ?? '').split(',').filter(Boolean);
-const want = (n) => only.length === 0 || only.includes(n);
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const url = process.argv[2] ?? 'http://127.0.0.1:4743/';
+const out = process.argv[3] ?? '/workspace/thomas-verden-shots/v3';
+fs.mkdirSync(out, { recursive: true });
 
-async function start(opts = {}) {
-  const ctx = await browser.newContext({ viewport: opts.viewport ?? { width: 1180, height: 820 }, deviceScaleFactor: 1 });
-  const page = await ctx.newPage();
-  page.on('pageerror', (e) => console.log('PAGEERROR', e.message));
-  page.on('console', (m) => m.type() === 'error' && console.log('CONSOLE', m.text()));
-  await page.goto(url, { waitUntil: 'networkidle' });
-  await page.waitForFunction(() => !!window.__hv, null, { timeout: 30000 });
-  await page.waitForTimeout(1200);
-  if (opts.avatar) return { page, ctx };
-  await page.getByRole('button', { name: 'Ferdig ✓' }).click();
-  await page.waitForTimeout(400);
-  await page.getByRole('button', { name: 'Klekk egget! 🐣' }).click();
-  await page.waitForTimeout(2600);
-  await page.getByRole('button', { name: 'Hurra! 🎉' }).click();
-  await page.waitForTimeout(600);
-  return { page, ctx };
+const browser = await chromium.launch({
+  executablePath: '/usr/bin/google-chrome',
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
+
+async function prep(page) {
+  await page.addInitScript(() => {
+    const save = {
+      version: 1,
+      playerId: 'player-shot',
+      bucks: 2480,
+      avatar: {
+        skin: '#f0c7a0', hair: '#3b2a1e', shirt: '#3a6fd8', pants: '#2b2b38', shoes: '#1a1a22',
+        hairStyle: 'kort', face: 'smil', top: 'hettegenser', bottom: 'bukse', shoe: 'sneakers', accessory: 'ryggsekk',
+      },
+      avatarDone: true,
+      pets: [{
+        uid: 'pet1', speciesId: 'katt', name: 'Mjaur', bornAt: Date.now() - 60000,
+        needs: { mat: 0.8, drikke: 0.8, soving: 0.8, hygiene: 0.8, kos: 0.8, lek: 0.8, helse: 1 },
+        traits: {}, eggId: null, color: '#c98a55',
+      }],
+      equipped: ['pet1'],
+      inventory: { sofa: 1, ball: 1, seng: 1, salongbord: 1 },
+      bag: { eple: 2, vann: 2, 'bil-lilla': 1, 'leke-ball': 1 },
+      houses: [],
+      activeHouseId: '',
+      stats: { tasks: 0, hatched: 1, doorWins: 0 },
+      sound: false,
+      starterClaimed: true,
+      toysGiven: true,
+    };
+    // house filled by parseSave if empty — leave empty to get fresh house
+    localStorage.setItem('thomasverden-save-v1', JSON.stringify(save));
+  });
+  await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
+  await page.waitForFunction(() => !!window.__hv, null, { timeout: 120000 });
+  await page.waitForTimeout(1800);
+  await page.evaluate(async () => {
+    const g = window.__hv;
+    g.rebuildAvatar();
+    await new Promise((r) => setTimeout(r, 2500));
+  });
+  await page.evaluate(() => {
+    const g = window.__hv;
+    g.weatherT0 = performance.now() / 1000 - 120;
+    document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+    g.paused = false;
+    // keep LQ for readable SwiftShader shots (no bloom wash)
+    // seed robot dog equipped for plaza vibes
+    if (g.save.pets && !g.save.pets.some(p => p.speciesId === 'robothund')) {
+      const robot = {
+        uid: 'robo1', speciesId: 'robothund', name: 'Byte', bornAt: Date.now() - 60000,
+        needs: { mat: 0.9, drikke: 0.9, soving: 0.9, hygiene: 0.9, kos: 0.9, lek: 0.9, helse: 1 },
+        traits: {}, eggId: null, color: '#d8e0e8',
+      };
+      g.commit({ ...g.save, pets: [...g.save.pets, robot], equipped: [...(g.save.equipped || []), 'robo1'] }, { pets: true });
+    }
+  });
 }
-const shot = async (page, name, wait = 700) => {
+
+const shot = async (page, name, wait = 850) => {
   await page.waitForTimeout(wait);
   await page.screenshot({ path: `${out}/${name}.png` });
-  console.log('saved', `${out}/${name}.png`);
+  console.log('saved', name);
 };
 
-// ---- shop interior
-if (want('shop') || want('hospital')) {
-  const { page, ctx } = await start();
-  if (want('shop')) {
-    await page.evaluate(() => {
-      const g = window.__hv;
-      const z = g.town.zones.find((q) => q.kind === 'shop');
-      const yaw = g.town.entrances.shop.yaw;
-      g.player.pos.set(z.x - Math.sin(yaw) * 2.2, 0, z.z - Math.cos(yaw) * 2.2);
-      g.player.yaw = yaw + Math.PI;
-      g.cam.yaw = yaw + 0.5;
-      g.cam.pitch = 0.5;
-      g.cam.dist = 11;
-    });
-    await shot(page, 'shop-interior-1', 1500);
-    await page.evaluate(() => { const g = window.__hv; const yaw = g.town.entrances.shop.yaw; g.cam.yaw = yaw + 0.25; g.cam.pitch = 1.05; g.cam.dist = 11; });
-    await shot(page, 'shop-interior-2-items', 900);
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page = await ctx.newPage();
+page.on('pageerror', (e) => console.log('PAGEERROR', e.message));
+await prep(page);
+
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.freezeCam = null;
+  if (g.mode === 'house') g.exitHouse();
+  // look toward shop row from plaza edge (concept: fountain + shops + cars)
+  g.player.pos.set(8, 0, 6);
+  g.player.yaw = -0.6;
+  g.freezeCam = { x: -6, y: 4.2, z: 16, lx: 20, ly: 3.0, lz: -20 };
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+});
+await shot(page, '01-gate-plaza', 2200);
+
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.player.pos.set(30, 0, 2);
+  g.player.yaw = -Math.PI / 2;
+  g.freezeCam = { x: 28, y: 5.5, z: 12, lx: 10, ly: 2.0, lz: -2 };
+});
+await shot(page, '02-street-roads', 1000);
+
+await page.evaluate(() => {
+  const g = window.__hv;
+  const e = g.town.entrances.home;
+  g.player.pos.set(e.x, 0, e.z);
+  g.player.yaw = e.yaw + Math.PI;
+  g.freezeCam = { x: e.x + 8, y: 5.0, z: e.z + 14, lx: e.x, ly: 3.0, lz: e.z - 2 };
+});
+await shot(page, '03-house-exterior', 1000);
+
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.freezeCam = null;
+  // ensure some furniture for the shot
+  const h = g.save.houses.find((x) => x.id === g.save.activeHouseId) || g.save.houses[0];
+  if (h && (!h.items || h.items.length < 2)) {
+    const items = [
+      { uid: 'sofa1', id: 'sofa', x: 0, z: -1.5, yaw: 0, floor: 0 },
+      { uid: 'table1', id: 'salongbord', x: 0, z: 0.4, yaw: 0, floor: 0 },
+      { uid: 'tv1', id: 'tv', x: 0, z: -3.2, yaw: 0, floor: 0 },
+      { uid: 'bed1', id: 'seng', x: 4.5, z: -2.5, yaw: 0, floor: 0 },
+      { uid: 'cnt1', id: 'benk', x: -4.2, z: 1.5, yaw: 0, floor: 0 },
+    ];
+    g.commit({ ...g.save, houses: g.save.houses.map((hh) => hh.id === h.id ? { ...hh, items } : hh) });
   }
-  if (want('hospital')) {
-    await page.evaluate(() => {
-      const g = window.__hv;
-      const z = g.town.zones.find((q) => q.kind === 'vet');
-      const yaw = g.town.entrances.vet.yaw + Math.PI;
-      g.player.pos.set(z.x + Math.sin(yaw) * 0.5, 0, z.z + Math.cos(yaw) * 0.5);
-      g.player.yaw = yaw + Math.PI;
-      g.cam.yaw = yaw + 0.35;
-      g.cam.pitch = 0.62;
-      g.cam.dist = 12;
-    });
-    await shot(page, 'hospital-beds-1', 1500);
-    // a sick pet lies down in a bed
-    await page.evaluate(() => {
-      const g = window.__hv;
-      const pet = g.save.pets[0];
-      const next = { ...g.save, pets: g.save.pets.map((p) => (p.uid === pet.uid ? { ...p, need: { kind: 'syk', since: Date.now(), progress: 0.3 } } : p)) };
-      g.commit(next);
-    });
-    await page.waitForTimeout(3500);
-    await shot(page, 'hospital-beds-2-sick-pet', 500);
-  }
-  await ctx.close();
-}
+  g.enterHouse();
+  g.interior.syncItems?.(g.save.houses.find((x) => x.id === g.save.activeHouseId) || g.save.houses[0]);
+  const door = g.interior.door;
+  g.player.pos.set(0, 0, door.z - 4);
+  g.player.yaw = Math.PI;
+  g.freezeCam = { x: 0.5, y: 2.2, z: 3.8, lx: 0, ly: 1.0, lz: -1.5 };
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+});
+await shot(page, '04-house-interior', 2200);
 
-// ---- house: two floors, stairs, furnishing while walking
-if (want('house')) {
-  const { page, ctx } = await start();
-  await page.evaluate(() => { const g = window.__hv; g.debugFurnish(); g.enterHouse(); });
-  await page.waitForTimeout(500);
-  // walk to the middle of the ground floor, high view
-  await page.evaluate(() => { const g = window.__hv; g.player.pos.set(0, 0, 3); g.cam.yaw = 0.35; g.cam.pitch = 0.95; g.cam.dist = 19; });
-  await shot(page, 'house-floor0-overview', 900);
-  // walk up the stairs with the game loop: hold "forward" by stepping manually
-  await page.evaluate(() => { const g = window.__hv; const s = g.interior.layout.stairs; g.player.pos.set((s.x0 + s.x1) / 2, 0, s.zBottom + 1.5); g.cam.yaw = 0.9; g.cam.pitch = 0.5; g.cam.dist = 13; });
-  await shot(page, 'house-stairs-bottom', 700);
-  const walked = await page.evaluate(async () => {
-    const g = window.__hv; const s = g.interior.layout.stairs;
-    const trace = [];
-    for (let i = 0; i < 400; i++) {
-      g.input.poll = () => ({ move: { x: 0, y: -1 }, camDX: 0, camDY: 0, zoom: 0, jump: false, jumpPressed: false });
-      g.cam.yaw = 0;
-      g.step(1 / 30);
-      if (i % 50 === 0) trace.push([+g.player.pos.x.toFixed(2), +g.player.pos.y.toFixed(2), +g.player.pos.z.toFixed(2)]);
-    }
-    return { trace, floor: g.playerFloor() };
-  });
-  console.log('walk up', JSON.stringify(walked));
-  await page.evaluate(() => { const g = window.__hv; g.input.poll = () => ({ move: { x: 0, y: 0 }, camDX: 0, camDY: 0, zoom: 0, jump: false, jumpPressed: false }); g.cam.yaw = 0.35; g.cam.pitch = 0.95; g.cam.dist = 17; });
-  await shot(page, 'house-floor1-upstairs', 900);
-  await ctx.close();
-}
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.freezeCam = null;
+  if (g.mode === 'house') g.exitHouse();
+  document.querySelectorAll('.sheet,.sheet-wrap').forEach((el) => el.remove());
+  g.panels.openAvatar();
+});
+await page.waitForTimeout(500);
+await shot(page, '05-avatar-editor', 700);
+await page.evaluate(() => document.querySelectorAll('.sheet,.sheet-wrap').forEach((el) => el.remove()));
 
-// ---- furnishing while walking
-if (want('build')) {
-  const { page, ctx } = await start({ viewport: { width: 1180, height: 820 } });
-  await page.evaluate(() => { const g = window.__hv; g.debugFurnish(); g.enterHouse(); g.player.pos.set(-3, 0, 4.5); g.player.yaw = Math.PI * 0.9; g.cam.yaw = 0.3; });
-  await page.waitForTimeout(400);
-  await page.getByRole('button', { name: /Bygg/ }).last().click();
-  await page.waitForTimeout(500);
-  // walk around in build mode
-  const before = await page.evaluate(() => { const p = window.__hv.player.pos; return [p.x, p.z]; });
-  const after = await page.evaluate(() => {
-    const g = window.__hv;
-    g.input.poll = () => ({ move: { x: 1, y: 0 }, camDX: 0, camDY: 0, zoom: 0, jump: false, jumpPressed: false });
-    for (let i = 0; i < 40; i++) g.step(1 / 30);
-    g.input.poll = () => ({ move: { x: 0, y: 0 }, camDX: 0, camDY: 0, zoom: 0, jump: false, jumpPressed: false });
-    return [g.player.pos.x, g.player.pos.z, g.building];
-  });
-  console.log('build walk', before, after);
-  // walk to the left part of the room, then place a bed right in front of the player
-  await page.evaluate(() => { const g = window.__hv; g.player.pos.set(-7, 0, 3.5); g.player.yaw = Math.PI / 2; g.cam.yaw = 0.5; g.cam.pitch = 0.9; g.cam.dist = 17; });
-  await page.getByText('Seng', { exact: true }).first().click();
-  await page.waitForTimeout(500);
-  await shot(page, 'house-furnish-walking', 800);
-  await ctx.close();
-}
+await page.evaluate(() => {
+  const g = window.__hv;
+  const bag = { ...g.save.bag };
+  for (const k of Object.keys(bag)) if (k.startsWith('bil-')) delete bag[k];
+  bag['bil-bla'] = 1;
+  g.commit({ ...g.save, bag });
+  if (g.driving) g.toggleDrive();
+  g.player.pos.set(0, 0, 28);
+  g.player.yaw = Math.PI;
+  g.toggleDrive();
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+});
+await page.waitForTimeout(2000); // wait gltf car mesh
+await page.evaluate(() => {
+  const g = window.__hv;
+  g.freezeCam = { x: 0, y: 3.8, z: 38, lx: 0, ly: 1.1, lz: 22 };
+});
+await shot(page, '06-car-driving', 2000);
 
-// ---- playground equipment in use
-if (want('play')) {
-  const { page, ctx } = await start();
-  const sets = [
-    ['swing1', 'playground-swing', 1.0, 0.45, 9, 1.4],
-    ['slide', 'playground-slide', 0.8, 0.4, 11, 1.6],
-    ['seesaw', 'playground-seesaw', -0.9, 0.4, 10, 2.4],
-    ['merry', 'playground-merry-go-round', 0.7, 0.45, 10, 2.2],
-  ];
-  for (const [id, name, camYaw, pitch, dist, wait] of sets) {
-    await page.evaluate(([id]) => {
-      const g = window.__hv;
-      if (g.using) g.stopUse();
-      const e = g.town.equipment.find((q) => q.id === id);
-      g.player.pos.set(e.exitX, 0, e.exitZ);
-      g.player.yaw = e.exitYaw;
-    }, [id]);
-    await page.waitForTimeout(300);
-    const prompt = await page.evaluate(() => document.querySelector('.prompt')?.textContent ?? null);
-    console.log(id, 'prompt:', prompt);
-    await page.evaluate(([id, camYaw, pitch, dist]) => {
-      const g = window.__hv;
-      g.startUse(id);
-      const e = g.town.equipment.find((q) => q.id === id);
-      g.cam.yaw = Math.atan2(g.player.pos.x - e.wx, g.player.pos.z - e.wz) + camYaw; g.cam.pitch = pitch; g.cam.dist = dist;
-    }, [id, camYaw, pitch, dist]);
-    await shot(page, name, wait * 1000);
-    const prompt2 = await page.evaluate(() => document.querySelector('.prompt')?.textContent ?? null);
-    console.log(id, 'while on:', prompt2, await page.evaluate(() => !!window.__hv.using));
-  }
-  await ctx.close();
-}
-
-// ---- avatar creator, tasks panel, one follower
-if (want('ui')) {
-  const { page, ctx } = await start();
-  // tasks panel: a closer shot and proof that the card is patched in place (same DOM node, no new pop animation)
-  await page.evaluate(() => {
-    const g = window.__hv;
-    const pet = g.save.pets[0];
-    g.commit({ ...g.save, pets: g.save.pets.map((p) => (p.uid === pet.uid ? { ...p, need: { kind: 'sulten', since: Date.now(), progress: 0.1 } } : p)) });
-  });
-  await page.waitForTimeout(600);
-  const same = await page.evaluate(async () => {
-    const card = document.querySelector('.tasks .task');
-    const g = window.__hv;
-    const before = card;
-    let animRestarts = 0;
-    card?.addEventListener('animationstart', () => animRestarts++);
-    for (let i = 1; i <= 8; i++) {
-      const pet = g.save.pets[0];
-      g.commit({ ...g.save, pets: g.save.pets.map((p) => (p.uid === pet.uid ? { ...p, need: { ...p.need, progress: 0.1 + i * 0.1 } } : p)) });
-      await new Promise((r) => setTimeout(r, 120));
-    }
-    return { sameNode: document.querySelector('.tasks .task') === before, animRestarts };
-  });
-  console.log('tasks card kept between 8 progress updates:', JSON.stringify(same));
-  await page.screenshot({ path: `${out}/tasks-panel.png`, clip: { x: 0, y: 0, width: 420, height: 230 } });
-  console.log('saved tasks-panel');
-  // one follower at a time: hatch-like second pet, then press "Følg meg" on it
-  await page.evaluate(() => {
-    const g = window.__hv;
-    const first = g.save.pets[0];
-    const species = ['kanin', 'hund', 'katt', 'hest', 'ugle'].find((x) => x !== first.speciesId);
-    const second = { ...first, uid: 'pet-second', name: 'Nina', speciesId: species, need: null };
-    g.commit({ ...g.save, pets: [...g.save.pets, second] }, { pets: true });
-  });
-  await page.getByRole('button', { name: /Dyr/ }).last().click();
-  await page.waitForTimeout(500);
-  console.log('equipped before', JSON.stringify(await page.evaluate(() => window.__hv.save.equipped)));
-  await shot(page, 'one-follower-1-before', 300);
-  await page.getByRole('button', { name: 'Følg meg' }).first().click();
-  await page.waitForTimeout(600);
-  console.log('equipped after', JSON.stringify(await page.evaluate(() => window.__hv.save.equipped)), 'followers shown:', await page.evaluate(() => document.querySelectorAll('.pet-card.eq').length));
-  await shot(page, 'one-follower-2-after', 300);
-  await ctx.close();
-}
-
-if (want('avatar')) {
-  const { page, ctx } = await start({ avatar: true });
-  await shot(page, 'avatar-creator-1', 800);
-  const tabs = await page.$$eval('.tabs .tab', (els) => els.map((e) => e.textContent));
-  console.log('tabs', JSON.stringify(tabs));
-  for (const [i, name] of [[1, 'avatar-creator-2'], [3, 'avatar-creator-3']]) {
-    const btns = await page.$$('.tabs .tab');
-    if (btns[i]) { await btns[i].click(); await shot(page, name, 800); }
-  }
-  await ctx.close();
-}
-
-// ---- toys
-if (want('toys')) {
-  const { page, ctx } = await start();
-  await page.evaluate(() => { const g = window.__hv; g.commit({ ...g.save, bucks: 300, pets: g.save.pets.map((p) => ({ ...p, need: null, nextNeedAt: Date.now() + 1e9 })) }); g.player.pos.set(g.town.spawn.x, 0, g.town.spawn.z); });
-  await page.getByRole('button', { name: /Sekk/ }).last().click();
-  await page.waitForTimeout(600);
-  await shot(page, 'toys-backpack', 300);
-  await page.getByRole('button', { name: '✕' }).first().click().catch(() => {});
-  await page.evaluate(() => window.__hv.panels.openShop());
-  await page.waitForTimeout(500);
-  await page.evaluate(() => { const b = document.querySelector('.sheet-body'); const h = [...b.querySelectorAll('h3')].find((x) => x.textContent.includes('Leker')); h?.scrollIntoView(); });
-  await shot(page, 'toys-shop', 400);
-  await page.evaluate(() => document.querySelectorAll('.sheet-wrap').forEach((e) => e.remove()));
-  await page.evaluate(() => { window.__hv.paused = false; });
-  const cam = (g, yaw) => { g.cam.yaw = yaw; g.cam.pitch = 0.5; g.cam.dist = 13; };
-  for (const [id, name, wait] of [['leke-ball', 'toys-fetch-ball', 2000], ['leke-garn', 'toys-chase-yarn', 2600], ['leke-bamse', 'toys-cuddle-teddy', 3800]]) {
-    await page.evaluate(() => { const g = window.__hv; const b = { ...g.save.bag, 'leke-bamse': 1, 'leke-pinne': 1 }; g.commit({ ...g.save, bag: b }); g.player.yaw = 0.6; });
-    const ok = await page.evaluate(([id]) => { const g = window.__hv; g.cam.yaw = g.player.yaw + 1.35; g.cam.pitch = 0.45; g.cam.dist = 12; return g.playWithToy(id); }, [id]);
-    console.log(id, 'started:', ok, 'joy bar:', await page.evaluate(() => Math.round((window.__hv.save.pets[0].joy ?? 0) * 100)) + '%');
-    await shot(page, name, wait);
-    // let it finish
-    await page.waitForFunction(() => !window.__hv.playing(), null, { timeout: 25000 }).catch(() => console.log('still playing after 25s'));
-  }
-  // happiness in the pet panel
-  await page.evaluate(() => window.__hv.panels.openPets());
-  await shot(page, 'toys-happiness-bar', 500);
-  await ctx.close();
-}
 await browser.close();
+
+const browser2 = await chromium.launch({
+  executablePath: '/usr/bin/google-chrome',
+  args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+});
+const iphone = await browser2.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const p2 = await iphone.newPage();
+await prep(p2);
+await p2.evaluate(() => {
+  const g = window.__hv;
+  g.player.pos.set(0, 0, 16);
+  g.player.yaw = Math.PI;
+  g.freezeCam = { x: 3.5, y: 2.8, z: 12, lx: 0, ly: 1.4, lz: 1 };
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+});
+await shot(p2, '07-iphone-plaza', 1000);
+await browser2.close();
+console.log('done →', out);

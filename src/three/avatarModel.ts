@@ -789,6 +789,7 @@ export function buildAvatar(a: Avatar): AvatarRig {
 export type AvatarPose = 'idle' | 'walk' | 'jump' | 'sit' | 'sleep' | 'hold' | 'wave' | 'fly' | 'swing' | 'slide' | 'seesaw' | 'spin' | 'dance' | 'drive';
 
 export function animateAvatar(rig: AvatarRig, t: number, pose: AvatarPose, speed = 0, holding = false): void {
+  if ((rig as { gltf?: boolean }).gltf || !rig.legs?.length || !rig.arms?.length) return;
   const s = pose === 'walk' ? Math.sin(t * 11) * 0.8 * Math.min(1, speed) : 0;
   const [l, r] = rig.legs;
   const [la, ra] = rig.arms;

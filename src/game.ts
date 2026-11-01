@@ -28,7 +28,12 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Input } from './input.ts';
 import { animateAvatar, buildAvatar, type AvatarPose, type AvatarRig } from './three/avatarModel.ts';
+import { attachGltfAvatar, tickGltfAvatar, AVATAR_PREFETCH } from './three/avatarGltf.ts';
+import { buildGltfCar } from './three/vehicleGltf.ts';
+import { prefetch } from './three/assets.ts';
+import { collideCamera, fadeOccluders } from './three/cameraCollision.ts';
 import { createInterior, type Interior } from './three/interior.ts';
+import { preloadFurnitureModels } from './three/furniture.ts';
 import { FLOOR_H, floorOfY, groundHeight, onStairs, roomAt } from './logic/layout.ts';
 import { blobShadow } from './three/kit.ts';
 import { animatePet, buildPet, type PetPose, type PetRig } from './three/petModel.ts';
@@ -180,9 +185,9 @@ export class Game {
     this.save = loadSave(localStorage);
     setSoundEnabled(this.save.sound);
 
-    this.hemi = new THREE.HemisphereLight('#cfe6ff', '#6a8a6a', 0.85);
+    this.hemi = new THREE.HemisphereLight('#ffe8d2', '#4a6a48', 0.75);
     this.scene.add(this.hemi);
-    this.sun = new THREE.DirectionalLight('#fff6e8', 1.85);
+    this.sun = new THREE.DirectionalLight('#ffd9a8', 1.55);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const sc = this.sun.shadow.camera;
@@ -226,6 +231,8 @@ export class Game {
       quality: () => this.toggleQuality(),
     });
     this.setupPost();
+    void preloadFurnitureModels();
+    prefetch([...AVATAR_PREFETCH, 'cars/race-future.glb', 'cars/suv-luxury.glb', 'cars/hatchback-sports.glb', 'buildings/building-e.glb', 'nature/tree_oak.glb']);
     this.hud.setQualityLabel(this.highQuality);
     this.hud.soundBtn.textContent = this.save.sound ? '🔊' : '🔇';
     this.input = new Input(this.renderer.domElement, this.hud.joyBase, this.hud.joyKnob, this.hud.jump);
@@ -378,6 +385,8 @@ export class Game {
     this.avatarHolder.clear();
     this.avatar = buildAvatar(this.save.avatar);
     this.avatarHolder.add(this.avatar.root);
+    this.avatarHolder.userData.camIgnore = true;
+    void attachGltfAvatar(this.avatar, this.save.avatar);
   }
 
   // ---------- pets ----------
@@ -1161,6 +1170,7 @@ export class Game {
       this.avatarHolder.position.y += hip * (1 - Math.cos(seat.tilt));
     }
     animateAvatar(this.avatar, t, pose, seat ? 1 : mlen, !!this.holding);
+    tickGltfAvatar(this.avatar, dt, pose, this.driving ? 10 : mlen * 10);
     if (this.sleeping) {
       this.ensureSleepZzz();
       const zzz = this.sleepZzz!;
@@ -1274,9 +1284,18 @@ export class Game {
         this.camShown = room < this.camShown ? room : this.camShown + (Math.min(room, this.cam.dist) - this.camShown) * Math.min(1, dt * 6);
         dist = Math.min(this.camShown, this.cam.dist);
       }
-      this.camera.position.set(target.x + Math.sin(this.cam.yaw) * cp * dist, target.y + Math.sin(this.cam.pitch) * dist, target.z + Math.cos(this.cam.yaw) * cp * dist);
-      if (this.camera.position.y < 0.6) this.camera.position.y = 0.6;
+      const desired = new THREE.Vector3(
+        target.x + Math.sin(this.cam.yaw) * cp * dist,
+        target.y + Math.sin(this.cam.pitch) * dist,
+        target.z + Math.cos(this.cam.yaw) * cp * dist,
+      );
+      if (desired.y < 0.6) desired.y = 0.6;
+      const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
+      if (this.vehicleMesh) ignore.add(this.vehicleMesh);
+      const coll = collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.mode === 'house' ? 1.0 : 2.0 });
+      this.camera.position.copy(coll);
       this.camera.lookAt(target);
+      fadeOccluders(this.scene, this.camera.position, target, ignore);
     }
     } // end !freezeCam
     if (this.mode === 'house') {
@@ -1938,8 +1957,16 @@ export class Game {
       this.vehicleMesh = null;
     }
     if (this.driving) {
-      this.vehicleMesh = buildCar(this.driving);
+      const id = this.driving;
+      this.vehicleMesh = buildCar(id); // immediate fallback
       this.scene.add(this.vehicleMesh);
+      void buildGltfCar(id).then((mesh) => {
+        if (this.driving !== id) return;
+        if (this.vehicleMesh) this.scene.remove(this.vehicleMesh);
+        this.vehicleMesh = mesh;
+        this.scene.add(mesh);
+        this.updateVehicleMesh();
+      });
     } else if (this.pramming) {
       this.vehicleMesh = buildPram(this.pramming);
       this.scene.add(this.vehicleMesh);

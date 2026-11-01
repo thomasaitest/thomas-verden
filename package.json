@@ -13,6 +13,10 @@
     "mp:e2e": "node scripts/mp-e2e.mjs"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/three": "^0.186.0",
     "playwright-core": "^1.64.1",
     "typescript": "~6.0.3",
@@ -23,5 +27,8 @@
   "dependencies": {
     "@fontsource/fredoka": "^5.2.8",
     "three": "^0.186.1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }

@@ -18,6 +18,7 @@ import { collectColliders, solid } from './colliders.ts';
 import { fillCarShop, fillHospital, fillPetShop, fillShop } from './buildings.ts';
 import { EQUIPMENT, MERRY, SEESAW, SLIDE, SWING_PIVOT_Y, SWING_ROPE, SWING_XS, SWING_Z, TRAMP, merryAngle, seatAt, seesawAngle, swingAngle, type EquipDef, type Seat } from '../logic/playground.ts';
 import { asphaltTexture, box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, noiseTexture, part, rbox, shadowAll, sph, textTexture, tileTexture } from './kit.ts';
+import { loadModel } from './assets.ts';
 
 export type ZoneKind = 'home' | 'shop' | 'vet' | 'eggs' | 'doors' | 'play' | 'cars' | 'pets';
 export interface Zone {
@@ -311,6 +312,44 @@ function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, col
   }
 }
 
+
+async function placeGltfScenery(group: THREE.Group, P: Record<string, { x: number; z: number }>) {
+  const add = async (path: string, x: number, z: number, s = 1, yaw = 0, y = 0) => {
+    try {
+      const m = await loadModel(path);
+      m.position.set(x, y, z);
+      m.scale.setScalar(s);
+      m.rotation.y = yaw;
+      m.userData.noFade = false;
+      group.add(m);
+    } catch {
+      /* optional */
+    }
+  };
+  // Commercial buildings near shops
+  await Promise.all([
+    add('buildings/building-e.glb', P.shop.x + 14, P.shop.z + 6, 1.8, 0.4),
+    add('buildings/building-f.glb', P.shop.x - 12, P.shop.z - 8, 1.7, -0.5),
+    add('buildings/building-h.glb', P.pets.x + 10, P.pets.z + 4, 1.6, 0.2),
+    add('buildings/building-c.glb', P.cars.x - 10, P.cars.z + 8, 1.7, 1.2),
+    add('buildings/building-skyscraper-a.glb', 55, -55, 2.2, 0.3),
+    add('buildings/building-skyscraper-c.glb', -60, 40, 2.0, -0.4),
+    add('buildings/building-skyscraper-e.glb', 70, 30, 2.4, 0.8),
+    // home-like suburban near home
+    add('buildings/building-type-a.glb', P.home.x + 16, P.home.z + 10, 1.4, 0.1),
+    add('buildings/building-type-c.glb', P.home.x - 18, P.home.z + 8, 1.35, -0.3),
+    // trees around plaza
+    add('nature/tree_oak.glb', 12, 10, 2.2),
+    add('nature/tree_oak.glb', -14, 8, 2.0),
+    add('nature/tree_pineTallA.glb', 18, -6, 2.4),
+    add('nature/tree_detailed.glb', -10, -14, 2.1),
+    add('nature/tree_default.glb', 8, 16, 1.9),
+    add('street/streetlight-single.glb', 6, 4, 1.3),
+    add('street/streetlight-double.glb', -8, 2, 1.3),
+    add('street/streetlight-single.glb', 4, -10, 1.3),
+  ]);
+}
+
 export function buildTown(): Town {
   const group = new THREE.Group();
   const stat = new THREE.Group();
@@ -346,9 +385,9 @@ export function buildTown(): Town {
 
   // plaza + fountain (outer wall jumpable; rim and upper bowl are landable)
   {
-    const plazaTex = tileTexture(256, { tile: '#c8ced6', mortar: '#9aa3ae', tiles: 8 });
+    const plazaTex = tileTexture(256, { tile: '#8a929c', mortar: '#5a6270', tiles: 8 });
     plazaTex.repeat.set(4, 4);
-    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.1, 48), new THREE.MeshStandardMaterial({ map: plazaTex, metalness: 0.08, roughness: 0.7 }));
+    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.1, 48), new THREE.MeshStandardMaterial({ map: plazaTex, metalness: 0.12, roughness: 0.82, color: '#9aa3ae' }));
     plaza.position.y = 0.05;
     plaza.receiveShadow = true;
     plaza.userData.noCast = true;
@@ -871,6 +910,10 @@ export function buildTown(): Town {
   group.add(mergedClouds);
 
   // delivery drones in the sky
+
+  // CC0 Kenney / Quaternius scenery (lazy) — upgrades the skyline/plaza without blocking boot
+  void placeGltfScenery(group, P);
+
   const drones: THREE.Group[] = [];
   for (let i = 0; i < 8; i++) {
     const dr = new THREE.Group();
