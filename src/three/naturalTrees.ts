@@ -163,22 +163,37 @@ function forceGreenCanopies(root: THREE.Object3D, kind: number) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
-    const geo = m.geometry as THREE.BufferGeometry;
-    const type = geo?.type || '';
     const mats = Array.isArray(m.material) ? m.material : [m.material];
-    for (const mat of mats) {
-      const std = mat as THREE.MeshStandardMaterial;
+    for (let i = 0; i < mats.length; i++) {
+      const std = mats[i] as THREE.MeshStandardMaterial;
       if (!std?.color) continue;
-      const bright = (std.color.r + std.color.g + std.color.b) / 3;
-      if (type.includes('Sphere') || bright > 0.55) {
-        std.color.set(hex);
-        std.map = null;
-        std.envMapIntensity = 0.35;
-        std.roughness = 0.82;
-        std.metalness = 0.02;
-        std.transparent = false;
-        std.needsUpdate = true;
-      }
+      const name = `${std.name || ''} ${m.name || ''}`.toLowerCase();
+      const c = std.color;
+      const bright = (c.r + c.g + c.b) / 3;
+      const isTrunk =
+        name.includes('bark') ||
+        name.includes('trunk') ||
+        name.includes('wood') ||
+        (c.r > c.g * 1.15 && c.b < 0.35 && bright < 0.5);
+      if (isTrunk) continue;
+      // Clone material so we don't mutate the shared GLB cache oddly mid-frame
+      const leaf = std.clone();
+      leaf.color.set(hex);
+      leaf.map = null;
+      leaf.normalMap = null;
+      leaf.roughnessMap = null;
+      leaf.aoMap = null;
+      leaf.emissive?.set?.('#0a2008');
+      if (leaf.emissive) leaf.emissiveIntensity = 0.04;
+      leaf.envMapIntensity = 0.3;
+      leaf.roughness = 0.85;
+      leaf.metalness = 0.02;
+      leaf.transparent = false;
+      leaf.opacity = 1;
+      leaf.side = THREE.DoubleSide;
+      leaf.needsUpdate = true;
+      if (Array.isArray(m.material)) (m.material as THREE.Material[])[i] = leaf;
+      else m.material = leaf;
     }
   });
 }
