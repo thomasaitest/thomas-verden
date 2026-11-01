@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
-const LEAF_HEX = ['#5fa84a', '#6bb854', '#4e9a40', '#7ac45c', '#58a048', '#69b060'];
+const LEAF_HEX = ['#3d8a32', '#4a9a3a', '#2f7a28', '#55a844', '#3a8530', '#4b9440'];
 
 /** Baked ez-tree presets (Draco GLB). */
 const TREE_PATHS = [
@@ -44,22 +44,18 @@ function prepareTree(root: THREE.Object3D, kind = 0) {
         (c.g > c.r * 1.05 && c.g > 0.25);
       const isTrunk = name.includes('bark') || name.includes('trunk') || name.includes('wood') || (c.r > c.g && c.b < 0.35 && bright < 0.45);
       if (isLeaf || (!isTrunk && bright > 0.65)) {
-        // Never allow white/cloud canopies — force healthy green
+        // Never allow white/cloud canopies — solid green (drop maps that wash white under ACES)
         const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
         std.color.set(hex);
-        std.roughness = Math.max(std.roughness ?? 0.8, 0.75);
+        std.map = null;
+        std.emissive?.set?.('#000000');
+        if (std.emissive) std.emissiveIntensity = 0;
+        std.roughness = 0.82;
         std.metalness = 0.02;
-        std.envMapIntensity = 0.55;
-        if (std.map) {
-          std.transparent = true;
-          std.alphaTest = Math.max(std.alphaTest || 0, 0.35);
-          std.depthWrite = true;
-          std.side = THREE.DoubleSide;
-        } else {
-          // missing leaf texture → solid green, not a white blob
-          std.map = null;
-          std.transparent = false;
-        }
+        std.envMapIntensity = 0.35;
+        std.transparent = false;
+        std.opacity = 1;
+        std.side = THREE.DoubleSide;
       } else if (isTrunk || bright < 0.35) {
         std.color.set('#6a4a32');
         std.roughness = 0.92;
@@ -154,9 +150,37 @@ export function buildNaturalTree(kind = 0): THREE.Group {
     model.scale.setScalar(s);
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
     g.add(model);
+    forceGreenCanopies(g, kind);
     return g;
   }
-  return proceduralTree(kind);
+  const proc = proceduralTree(kind);
+  forceGreenCanopies(proc, kind);
+  return proc;
+}
+
+function forceGreenCanopies(root: THREE.Object3D, kind: number) {
+  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const geo = m.geometry as THREE.BufferGeometry;
+    const type = geo?.type || '';
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    for (const mat of mats) {
+      const std = mat as THREE.MeshStandardMaterial;
+      if (!std?.color) continue;
+      const bright = (std.color.r + std.color.g + std.color.b) / 3;
+      if (type.includes('Sphere') || bright > 0.55) {
+        std.color.set(hex);
+        std.map = null;
+        std.envMapIntensity = 0.35;
+        std.roughness = 0.82;
+        std.metalness = 0.02;
+        std.transparent = false;
+        std.needsUpdate = true;
+      }
+    }
+  });
 }
 
 function grassClump(color: string, h: number): THREE.Group {
