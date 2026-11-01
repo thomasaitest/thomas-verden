@@ -1274,8 +1274,8 @@ export class Game {
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
         // sin(0.18)*10 ≈ 1.8 → cam y ≈ 0.95+1.8 ≈ 2.75 (rear 3/4)
-        this.cam.pitch += (0.18 - this.cam.pitch) * Math.min(1, dt * 4);
-        this.cam.dist += (10.5 - this.cam.dist) * Math.min(1, dt * 4);
+        this.cam.pitch += (0.16 - this.cam.pitch) * Math.min(1, dt * 4);
+        this.cam.dist += (12 - this.cam.dist) * Math.min(1, dt * 4);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1912,8 +1912,8 @@ export class Game {
     this.syncVehicleMesh();
     // Default chase cam: ~10.5 m back so full car fits (FOV 55)
     this.cam.yaw = this.player.yaw;
-    this.cam.pitch = 0.18;
-    this.cam.dist = 10.5;
+    this.cam.pitch = 0.16;
+    this.cam.dist = 12;
     this.camShown = this.cam.dist;
     this.editingAvatar = false;
     sfx.whoosh();

@@ -209,21 +209,33 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 30);
   g.player.yaw = 0;
   g.cam.yaw = 0;
-  g.cam.pitch = 0.18;
-  g.cam.dist = 10.5;
-  g.camShown = 10.5;
+  g.cam.pitch = 0.16;
+  g.cam.dist = 12;
+  g.camShown = 12;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 30);
     g.vehicleMesh.rotation.y = 0;
   }
-  // Rear 3/4 on clear asphalt (no parked cars between cam and player)
-  const fc = { x: 2.8, y: 2.55, z: 30 + 10.5, lx: 0.1, ly: 0.8, lz: 30 - 0.5 };
+  // Rear 3/4 — look a bit high so full car sits above HUD dock
+  const fc = { x: 3.4, y: 3.0, z: 30 + 12, lx: 0.2, ly: 1.15, lz: 30 };
   g.freezeCam = fc;
   g.camera.position.set(fc.x, fc.y, fc.z);
   g.camera.lookAt(fc.lx, fc.ly, fc.lz);
   g.hud?.setWhere?.('Dag · Sol');
 });
-await shot(page, '02-car-street', 2500);
+// Keep re-asserting freezeCam while settling (RAF may lag one frame after evaluate)
+for (let i = 0; i < 8; i++) {
+  await page.evaluate(() => {
+    const g = window.__hv;
+    const fc = g.freezeCam;
+    if (!fc) return;
+    g.camera.position.set(fc.x, fc.y, fc.z);
+    g.camera.lookAt(fc.lx, fc.ly, fc.lz);
+    g.editingAvatar = false;
+  });
+  await page.waitForTimeout(120);
+}
+await shot(page, '02-car-street', 1800);
 
 // Interior — eye-level dollhouse-ish but concept-like living view
 await page.evaluate(async () => {
@@ -234,15 +246,21 @@ await page.evaluate(async () => {
   g.syncPets?.();
   g.enterHouse(); // sets default interior cam
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  // Living cam faces panoramic window wall (−Z): sofa/table mid, island right, skyline ahead
-  g.player.pos.set(0.2, 0, 3.6);
+  // Living: face panoramic window (−Z). Slight OTS so sofa/island/skyline read
+  g.editingAvatar = false;
+  g.player.pos.set(-0.4, 0, 2.8);
   g.player.yaw = 0.0;
-  g.cam.yaw = 0.0;
-  g.cam.pitch = 0.06;
-  g.cam.dist = 4.6;
-  g.camShown = 4.6;
+  g.cam.yaw = 0.05;
+  g.cam.pitch = 0.04;
+  g.cam.dist = 5.2;
+  g.camShown = 5.2;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  await new Promise((r) => setTimeout(r, 800));
+  // Eye-level look into the window wall (skyline + holo + island)
+  const fc = { x: 1.2, y: 1.55, z: 6.2, lx: -0.5, ly: 2.4, lz: -6.5 };
+  g.freezeCam = fc;
+  g.camera.position.set(fc.x, fc.y, fc.z);
+  g.camera.lookAt(fc.lx, fc.ly, fc.lz);
+  await new Promise((r) => setTimeout(r, 500));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
 await shot(page, '03-house-interior', 2200);
