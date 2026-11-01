@@ -154,6 +154,10 @@ export const DEFAULT_AVATAR: Avatar = {
 
 /** Ready-made outfits with thumbnails in the avatar editor. */
 export const OUTFIT_PRESETS: { id: string; name: string; patch: Partial<Avatar> }[] = [
+  { id: 'neontech', name: 'Neon Tech', patch: { hat: 'ingen', shirt: '#2a6fd8', print: 'lyn', pants: '#1a2230', bottom: 'bukse', shoes: '#c8d0d8', shoeStyle: 'sneakers', accessory: 'sekk-stjerne', hair: 'kort', hairColor: '#2b2118' } },
+  { id: 'glowskjort', name: 'Glow-skjørt', patch: { hat: 'ingen', shirt: '#1a2230', print: 'ingen', pants: '#c88bff', bottom: 'miniskjort', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'halskjede', hair: 'hestehale', hairColor: '#3b2a1e' } },
+  { id: 'fevinger', name: 'Lysvinger', patch: { hat: 'ingen', shirt: '#e8eef6', print: 'stjerne', pants: '#7ef0ff', bottom: 'kjole', shoes: '#ffffff', shoeStyle: 'sko', accessory: 'vinger', hair: 'fletter', hairColor: '#c88bff' } },
+  { id: 'gullsmykke', name: 'Gullsmykke', patch: { hat: 'bandeau', shirt: '#2a3344', print: 'ingen', pants: '#1a2230', bottom: 'bukse', shoes: '#e8d090', shoeStyle: 'sko', accessory: 'oreringer', hair: 'bob', hairColor: '#e0a64f' } },
   { id: 'prinsesse', name: 'Prinsesse', patch: { hat: 'prinsesse', shirt: '#ffa6d5', print: 'hjerte', pants: '#c88bff', bottom: 'kjole', shoes: '#ffe066', shoeStyle: 'sko', accessory: 'glorie', hair: 'lang', hairColor: '#e0a64f' } },
   { id: 'ridder', name: 'Ridder', patch: { hat: 'hjelm', shirt: '#555a75', print: 'ingen', pants: '#2b2b38', bottom: 'bukse', shoes: '#2b2b38', shoeStyle: 'stovler', accessory: 'kappe', hair: 'kort', hairColor: '#2b2118' } },
   { id: 'pirat', name: 'Pirat', patch: { hat: 'pirat', shirt: '#ff6f6f', print: 'ingen', pants: '#2b2b38', bottom: 'bukse', shoes: '#8a5a3c', shoeStyle: 'stovler', accessory: 'ingen', hair: 'piggete', hairColor: '#2b2118' } },

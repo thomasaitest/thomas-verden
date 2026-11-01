@@ -110,7 +110,7 @@ export class Game {
   /** Lying in a house bed (does not change time of day). */
   sleeping: SleepSpot | null = null;
   private sleepZzz: THREE.Sprite | null = null;
-  cam = { yaw: 0, pitch: 0.38, dist: 15 };
+  cam = { yaw: 0, pitch: 0.42, dist: 17 };
   /** Camera distance actually used this frame (shorter than cam.dist while a building is in the way). */
   private camShown = 15;
   avatar!: AvatarRig;
@@ -536,9 +536,10 @@ export class Game {
     this.player.pos.set(this.interior.door.x, 0, this.interior.door.z - 1.5);
     this.player.vy = 0;
     this.player.yaw = Math.PI;
-    this.cam.yaw = 0;
-    this.cam.pitch = 0.55;
-    this.cam.dist = 12;
+    // Default interior cam: OTS living — sky/sofa/island readable while walking
+    this.cam.yaw = this.player.yaw; // behind player looking into the house
+    this.cam.pitch = 0.4;
+    this.cam.dist = 9.5;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#d8dde4');
     this.scene.fog = null;
@@ -570,9 +571,9 @@ export class Game {
     this.player.pos.set(p.x, 0, p.z);
     this.player.vy = 0;
     this.player.yaw = p.yaw;
-    this.cam.yaw = p.yaw + Math.PI;
-    this.cam.pitch = 0.38;
-    this.cam.dist = 15;
+    this.cam.yaw = p.yaw; // behind player
+    this.cam.pitch = 0.42;
+    this.cam.dist = 17;
     this.actors.forEach((a, uid) => {
       const i = this.save.equipped.indexOf(uid);
       a.pos.set(p.x + Math.sin(p.yaw + Math.PI + i) * 2.5, 0, p.z + Math.cos(p.yaw + Math.PI + i) * 2.5);
@@ -854,8 +855,8 @@ export class Game {
       this.cam.pitch = Math.max(this.cam.pitch, 0.85);
       this.cam.dist = Math.max(this.cam.dist, 20);
     } else {
-      this.cam.pitch = 0.6;
-      this.cam.dist = 14;
+      this.cam.pitch = 0.4;
+      this.cam.dist = 9.5;
     }
     this.updateHud();
   }
@@ -1258,9 +1259,21 @@ export class Game {
       this.camera.position.set(f.x, f.y, f.z);
       this.camera.lookAt(f.lx, f.ly, f.lz);
     } else {
-    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : 2.4), p.pos.z);
+    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 1.35 : 2.15), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
+    // Driving chase: look ahead along facing so road/façades/trees fill the frame
+    if (this.driving && !seat) {
+      const ahead = 5.5;
+      target.x -= Math.sin(p.yaw) * ahead;
+      target.z -= Math.cos(p.yaw) * ahead;
+      // keep chase defaults sticky unless player is actively orbiting
+      if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
+        this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
+        this.cam.pitch += (0.26 - this.cam.pitch) * Math.min(1, dt * 2);
+        this.cam.dist += (11.5 - this.cam.dist) * Math.min(1, dt * 2);
+      }
+    }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
     const vw = this.renderer.domElement.clientWidth;
     const vh = this.renderer.domElement.clientHeight;
@@ -1292,9 +1305,8 @@ export class Game {
         const baseY = this.playerFloor() * 6.6;
         desired.x = Math.max(-halfW, Math.min(halfW, desired.x));
         desired.z = Math.max(-halfD, Math.min(halfD, desired.z));
-        desired.y = Math.max(baseY + 1.6, Math.min(baseY + 5.4, desired.y));
-        // prefer elevated corner-ish view
-        if (this.cam.dist > 12) dist = 12;
+        desired.y = Math.max(baseY + 1.45, Math.min(baseY + 4.6, desired.y));
+        if (this.cam.dist > 11) dist = Math.min(dist, 11);
       }
       const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
@@ -1891,6 +1903,11 @@ export class Game {
     this.sleeping = null;
     this.driving = id;
     this.syncVehicleMesh();
+    // Default chase cam (gameplay): low, behind car, looks ahead
+    this.cam.yaw = this.player.yaw;
+    this.cam.pitch = 0.26;
+    this.cam.dist = 11.5;
+    this.camShown = this.cam.dist;
     sfx.whoosh();
     toast(`Kjører ${CAR_BY_ID[id]?.name ?? 'bil'}! Bruk styrespaken 🚗`, 'ok');
     this.updateHud();

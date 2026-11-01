@@ -42,19 +42,17 @@ async function prep(page) {
       bucks: 2480,
       avatar: {
         skin: '#f0c7a0',
-        hair: '#3b2a1e',
-        hairColor: '#3b2a1e',
-        shirt: '#2a6fd8',
-        pants: '#4a5568',
-        shoes: '#1a1a22',
-        hairStyle: 'kort',
+        hair: 'kort',
+        hairColor: '#2b2118',
         face: 'smil',
-        top: 'hettegenser',
+        shirt: '#2a6fd8',
+        print: 'lyn',
+        pants: '#1a2230',
         bottom: 'bukse',
-        shoe: 'sneakers',
-        accessory: 'ryggsekk',
+        shoes: '#c8d0d8',
+        shoeStyle: 'sneakers',
         hat: 'ingen',
-        print: 'hjerte',
+        accessory: 'sekk-stjerne',
       },
       avatarDone: true,
       pets: [{ uid: 'pet1', speciesId: 'hund', name: 'Byte', flyable: false, rideable: false, obtainedAt: now - 60000, xp: 80 }],
@@ -154,22 +152,24 @@ await page.evaluate(async () => {
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
   if (g.driving) g.toggleDrive();
-  g.player.pos.set(0.5, 0, -7);
-  g.player.yaw = 0.05;
-  g.rebuildAvatar?.();
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
-  await new Promise((r) => setTimeout(r, 2500));
+  // Stand on south approach facing fountain — DEFAULT third-person cam
+  g.player.pos.set(0.4, 0, -8);
+  g.player.yaw = 0;
+  g.cam.yaw = 0;
+  g.cam.pitch = 0.42;
+  g.cam.dist = 17;
+  g.camShown = 17;
+  g.rebuildAvatar?.();
+  await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   g.editingAvatar = false;
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  // pull back + look slightly up so sky / trees / parked cars read
-  g.freezeCam = { x: 1.0, y: 2.55, z: -15.5, lx: 0.8, ly: 2.35, lz: 6 };
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
-await shot(page, '01-gate-plaza', 2800);
+await shot(page, '01-gate-plaza', 2200);
 
 // Car chase framing — on approach road looking toward plaza, car in lower center
 await page.evaluate(() => {
@@ -180,64 +180,87 @@ await page.evaluate(() => {
   bag['bil-bla'] = 1;
   g.commit({ ...g.save, bag });
   if (g.driving) g.toggleDrive();
-  // North street belt looking back toward plaza
-  g.player.pos.set(0, 0, 32);
-  g.player.yaw = Math.PI;
-  g.toggleDrive();
+  g.player.pos.set(0, 0, 34);
+  g.player.yaw = Math.PI; // toward plaza (-Z)
+  g.toggleDrive(); // sets default chase cam
 });
-await page.waitForTimeout(2500);
+await page.waitForTimeout(2200);
 await page.evaluate(() => {
   const g = window.__hv;
   if (!g.driving) g.toggleDrive();
-  g.player.pos.set(0, 0, 33);
+  g.player.pos.set(0, 0, 34);
   g.player.yaw = Math.PI;
+  g.cam.yaw = Math.PI;
+  g.cam.pitch = 0.26;
+  g.cam.dist = 11.5;
+  g.camShown = 11.5;
   if (g.vehicleMesh) {
-    g.vehicleMesh.position.set(0, 0, 33);
+    g.vehicleMesh.position.set(0, 0, 34);
     g.vehicleMesh.rotation.y = Math.PI;
   }
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  // chase: car lower-center, road ahead, side façades + trees
-  g.freezeCam = { x: 1.2, y: 1.95, z: 39.5, lx: 0, ly: 1.25, lz: 22 };
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
-await shot(page, '02-car-street', 2400);
+await shot(page, '02-car-street', 2200);
 
 // Interior — eye-level dollhouse-ish but concept-like living view
-await page.evaluate(() => {
+await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.driving) g.toggleDrive();
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
-  g.enterHouse();
-  // hide any remaining pet actors
+  g.enterHouse(); // sets default interior cam
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  g.player.pos.set(2.5, 0, 4.2);
-  g.player.yaw = Math.PI + 0.55;
+  // Walk into living — sofa left, island mid, holo+skyline ahead
+  g.player.pos.set(2.2, 0, 3.8);
+  g.player.yaw = Math.PI + 0.45;
+  g.cam.yaw = g.player.yaw;
+  g.cam.pitch = 0.4;
+  g.cam.dist = 9.5;
   if (g.avatarHolder) g.avatarHolder.visible = true;
-  // OTS: sofa left, island center, holo + skyline window on back wall
-  g.freezeCam = { x: 4.8, y: 1.72, z: 5.5, lx: -1.5, ly: 1.55, lz: -3.2 };
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
+  await new Promise((r) => setTimeout(r, 800));
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
-await shot(page, '03-house-interior', 2800);
+await shot(page, '03-house-interior', 2200);
 
 // Avatar framing outdoors — human in foreground, plaza behind
 await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
-  g.player.pos.set(0, 0, -4);
-  g.player.yaw = 0;
+  // Neon Tech look for avatar compare
+  g.commit?.({
+    ...g.save,
+    equipped: [],
+    avatar: {
+      ...g.save.avatar,
+      shirt: '#2a6fd8',
+      print: 'lyn',
+      pants: '#1a2230',
+      bottom: 'bukse',
+      shoes: '#c8d0d8',
+      shoeStyle: 'sneakers',
+      accessory: 'sekk-stjerne',
+      hat: 'ingen',
+      hair: 'kort',
+      hairColor: '#2b2118',
+    },
+  });
   g.rebuildAvatar?.();
-  await new Promise((r) => setTimeout(r, 4000));
+  g.player.pos.set(0.3, 0, -6);
+  g.player.yaw = 0;
+  g.cam.yaw = 0.15;
+  g.cam.pitch = 0.35;
+  g.cam.dist = 10;
+  g.camShown = 10;
+  await new Promise((r) => setTimeout(r, 3500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   g.editingAvatar = false;
-  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   g.hud?.setWhere?.('Dag · Sol');
-  g.freezeCam = { x: 1.0, y: 1.9, z: -7.8, lx: 0, ly: 1.4, lz: -2.2 };
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
 });
-await shot(page, '04-avatar', 2200);
+await shot(page, '04-avatar', 2000);
 
 await browser.close();
 
@@ -256,8 +279,13 @@ await prep(p2);
 await p2.evaluate(() => {
   const g = window.__hv;
   if (g.highQuality) g.toggleQuality(); // LQ for iPhone
-  g.player.pos.set(0, 0, -10);
-  g.freezeCam = { x: -2, y: 2.2, z: -14, lx: 1, ly: 2.2, lz: 6 };
+  g.freezeCam = null;
+  g.player.pos.set(0.4, 0, -9);
+  g.player.yaw = 0;
+  g.cam.yaw = 0;
+  g.cam.pitch = 0.42;
+  g.cam.dist = 16;
+  g.camShown = 16;
   document.querySelectorAll('.sheet,.sheet-wrap,.toast').forEach((el) => el.remove());
 });
 await shot(p2, '05-iphone-plaza', 1600);

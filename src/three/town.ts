@@ -605,11 +605,12 @@ export function buildTown(): Town {
   {
     // Open plaza: shops farther out with sky gaps (concept has breathing room)
     const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
-      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -1.15, dist: 23, w: 13 },
-      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.05, dist: 24.5, w: 12 },
-      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.2, dist: 23, w: 12 },
-      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.45, dist: 26, w: 11 },
-      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.4, dist: 26, w: 11 },
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -1.35, dist: 26, w: 12 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.0, dist: 28, w: 12 },
+      { label: 'Havblomst Flora', logoColor: '#4a9a62', ang: 1.35, dist: 26, w: 12 },
+      // leave southern arc (-Z) open for sky / approach road
+      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 29, w: 11 },
+      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 29, w: 11 },
     ];
     for (const f of facades) {
       const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2, variant: Math.abs(Math.round(f.ang * 10)) });
@@ -649,12 +650,12 @@ export function buildTown(): Town {
   {
     // Side façades face the road (inward); endcaps face along the belt
     const streetLabels = [
-      { label: 'Aether Atelier', logoColor: '#7ef0ff', x: -14, z: 28, rot: Math.PI / 2 },
-      { label: 'Nordlys', logoColor: '#5a8cff', x: 14, z: 28, rot: -Math.PI / 2 },
-      { label: 'Pulse Gym', logoColor: '#ff6f6f', x: -14, z: 42, rot: Math.PI / 2 },
-      { label: 'Orbit Deli', logoColor: '#e8a040', x: 14, z: 42, rot: -Math.PI / 2 },
-      { label: 'Cloud Clinic', logoColor: '#54c45e', x: -14, z: 56, rot: Math.PI / 2 },
-      { label: 'Lumen Spa', logoColor: '#c88bff', x: 14, z: 56, rot: -Math.PI / 2 },
+      { label: 'Aether Atelier', logoColor: '#7ef0ff', x: -16, z: 26, rot: Math.PI / 2 },
+      { label: 'Nordlys', logoColor: '#5a8cff', x: 16, z: 26, rot: -Math.PI / 2 },
+      { label: 'Pulse Gym', logoColor: '#ff6f6f', x: -16, z: 40, rot: Math.PI / 2 },
+      { label: 'Orbit Deli', logoColor: '#e8a040', x: 16, z: 40, rot: -Math.PI / 2 },
+      { label: 'Cloud Clinic', logoColor: '#54c45e', x: -16, z: 54, rot: Math.PI / 2 },
+      { label: 'Lumen Spa', logoColor: '#c88bff', x: 16, z: 54, rot: -Math.PI / 2 },
     ];
     for (const s of streetLabels) {
       const shop = buildFuturisticShop({ label: s.label, logoColor: s.logoColor, w: 12, d: 8, storeys: 2 + (Math.abs(s.x) > 10 ? 1 : 0) });
@@ -698,11 +699,11 @@ export function buildTown(): Town {
   // parked plaza cars (sleek hover props)
   {
     const parked = [
-      { id: 'bil-bla', x: 7.5, z: 3.5, yaw: -0.55 },
-      { id: 'bil-lilla', x: -6.5, z: 5.5, yaw: 0.9 },
-      { id: 'bil-rosa', x: 9.5, z: -5.5, yaw: 2.2 },
-      { id: 'bil-gronn', x: -9.0, z: -3.5, yaw: 0.15 },
-      { id: 'bil-gul', x: 5.5, z: 9.5, yaw: -1.1 },
+      { id: 'bil-bla', x: 6.2, z: -2.5, yaw: -0.35 },
+      { id: 'bil-lilla', x: -5.8, z: -1.5, yaw: 0.55 },
+      { id: 'bil-rosa', x: 8.5, z: 4.0, yaw: -1.0 },
+      { id: 'bil-gronn', x: -8.0, z: 3.0, yaw: 1.1 },
+      { id: 'bil-gul', x: 4.0, z: 8.5, yaw: -0.2 },
     ];
     for (const c of parked) {
       const car = buildCar(c.id);
