@@ -23,6 +23,7 @@ export interface LightingRig {
   resize: (w: number, h: number) => void;
   render: (high: boolean) => void;
   setExposure: (e: number) => void;
+  setIndoor: (on: boolean) => void;
   dispose: () => void;
 }
 
@@ -119,6 +120,9 @@ export function createLighting(
     Math.max(1, renderer.domElement.clientHeight || 800),
   );
 
+  let hq = true;
+  let indoor = false;
+
   return {
     hemi,
     sun,
@@ -126,12 +130,24 @@ export function createLighting(
     setExposure(e) {
       renderer.toneMappingExposure = e;
     },
+    setIndoor(on) {
+      indoor = on;
+      sun.intensity = on ? 0.12 : (hq ? 2.2 : 1.7);
+      hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
+      if (bloom) {
+        bloom.strength = on ? 0.22 : (hq ? 0.32 : 0.0);
+        bloom.threshold = on ? 0.78 : (hq ? 0.72 : 1.0);
+      }
+    },
     applyQuality(high) {
+      hq = high;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, high ? 1.5 : 1.15));
       renderer.shadowMap.enabled = high;
       sun.castShadow = high;
-      sun.intensity = high ? 2.2 : 1.7;
-      hemi.intensity = high ? 0.25 : 0.35;
+      if (!indoor) {
+        sun.intensity = high ? 2.2 : 1.7;
+        hemi.intensity = high ? 0.25 : 0.35;
+      }
       renderer.toneMappingExposure = high ? 0.62 : 0.72;
       if (bloom) {
         // Mild bloom ONLY for bright lights/holograms

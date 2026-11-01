@@ -21,8 +21,8 @@ async function prep(page) {
       ownerId: 'player-shot',
       editors: [],
       editRequests: [],
-      wallColor: '#6a7078',
-      floorColor: '#7a828c',
+      wallColor: '#4e555e',
+      floorColor: '#5a626c',
       locked: false,
       createdAt: now,
       items: [
@@ -210,8 +210,8 @@ await page.evaluate(() => {
   g.player.yaw = 0;
   g.cam.yaw = 0.12;
   g.cam.pitch = 0.15;
-  g.cam.dist = 13.2;
-  g.camShown = 13.2;
+  g.cam.dist = 14.5;
+  g.camShown = 14.5;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 36);
     g.vehicleMesh.rotation.y = 0;
@@ -230,7 +230,9 @@ await page.evaluate(async () => {
   g.commit?.({ ...g.save, equipped: [] });
   g.syncPets?.();
   g.enterHouse(); // gameplay default interior cam facing window
-  g.lighting?.setExposure?.(0.32);
+  g.lighting?.setExposure?.(0.28);
+  g.lighting?.setIndoor?.(true);
+  if (g.sun) g.sun.intensity = 0.12;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Living looking −Z; slight left so bedroom doorway + pod read
   g.player.pos.set(-2.4, 0, 2.0);

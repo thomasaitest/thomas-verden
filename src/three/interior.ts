@@ -99,13 +99,13 @@ export function createInterior(): Interior {
       partitions = [];
       const wallMat = SharedMats.interiorWall.clone();
       // Concept living: warm light walls (not grey concrete)
-      const warmWall = house.style === 'moderne' ? '#6a7078' : (house.wallColor || '#efeae3');
+      const warmWall = house.style === 'moderne' ? '#4e555e' : (house.wallColor || '#efeae3');
       wallMat.color.set(house.style === 'moderne' ? warmWall : (house.wallColor || warmWall));
       wallMat.roughness = house.style === 'moderne' ? 0.88 : 0.72;
       wallMat.metalness = 0.02;
       wallMat.map = null; // drop concrete albedo
       wallMat.envMapIntensity = house.style === 'moderne' ? 0.18 : 0.55;
-      const trim = house.style === 'moderne' ? '#4a5058' : '#e8e2d8';
+      const trim = house.style === 'moderne' ? '#3a4048' : '#e8e2d8';
       const st = L.stairs;
       for (let f = 0; f < FLOORS; f++) {
         const fg = floorGroups[f];
@@ -119,7 +119,7 @@ export function createInterior(): Interior {
             matFloor.map = null;
             matFloor.normalMap = SharedMats.interiorFloor.normalMap;
             if (matFloor.normalMap) matFloor.normalScale = new THREE.Vector2(0.18, 0.18);
-            matFloor.color.set(house.floorColor || '#7a828c');
+            matFloor.color.set(house.floorColor || '#5a626c');
             matFloor.roughness = 0.45;
             matFloor.metalness = 0.06;
             matFloor.envMapIntensity = 0.45;
@@ -551,7 +551,7 @@ export function createInterior(): Interior {
           if (isGlassWall && f === 0) continue;
           const g = new THREE.Group();
           const partMat = house.style === 'moderne' && !isGlassWall
-            ? new THREE.MeshStandardMaterial({ color: '#5a6068', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.15 })
+            ? new THREE.MeshStandardMaterial({ color: '#3e444c', roughness: 0.92, metalness: 0.02, envMapIntensity: 0.1 })
             : wallMat;
           const m = new THREE.Mesh(
             G.box(),
@@ -583,7 +583,7 @@ export function createInterior(): Interior {
       // closed ceiling / roof over the top floor (fixes open sky bug)
       {
         const y0 = (FLOORS - 1) * FLOOR_H + WALL_H;
-        const ceilCol = house.style === 'moderne' ? '#4e545c' : shade(house.wallColor || '#efeae3', -0.05);
+        const ceilCol = house.style === 'moderne' ? '#3a4048' : shade(house.wallColor || '#efeae3', -0.05);
         const ceil = new THREE.Mesh(new THREE.BoxGeometry(w + 1.2, 0.35, d + 1.2), mat(ceilCol));
         ceil.position.set(0, y0 + 0.1, 0);
         ceil.receiveShadow = true;

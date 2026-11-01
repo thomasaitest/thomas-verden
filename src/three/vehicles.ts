@@ -26,22 +26,22 @@ function carKind(carId: string): CarKind {
   return 'sedan';
 }
 
-/** Compact rear thruster — small rim + cyan core (not giant rings). */
+/** Compact rear thruster — tiny rim + cyan core (bloom-safe, not giant rings). */
 function compactThruster(g: THREE.Group, x: number, y: number, z: number) {
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.11, 0.022, 10, 24),
-    new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.92, roughness: 0.22, envMapIntensity: 1.2 }),
+    new THREE.TorusGeometry(0.07, 0.014, 8, 20),
+    new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.92, roughness: 0.22, envMapIntensity: 1.0 }),
   );
   rim.position.set(x, y, z);
   g.add(rim);
-  const core = new THREE.Mesh(new THREE.CircleGeometry(0.085, 20), glowMat('#3ecbff', 2.8));
+  const core = new THREE.Mesh(new THREE.CircleGeometry(0.055, 16), glowMat('#3ecbff', 1.4));
   core.position.set(x, y, z + 0.01);
   g.add(core);
   const jet = new THREE.Mesh(
-    new THREE.ConeGeometry(0.07, 0.28, 12, 1, true),
-    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide }),
+    new THREE.ConeGeometry(0.045, 0.18, 10, 1, true),
+    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }),
   );
-  jet.position.set(x, y, z + 0.16);
+  jet.position.set(x, y, z + 0.11);
   jet.rotation.x = Math.PI / 2;
   g.add(jet);
 }
@@ -56,10 +56,10 @@ export function buildCar(carId: string): THREE.Group {
   const g = new THREE.Group();
 
   // Target real-world-ish scale (lane ~3.5–3.6 m)
-  const bodyLen = kind === 'van' ? 4.6 : kind === 'sport' ? 4.2 : 4.3;
-  const bodyW = kind === 'sport' ? 1.72 : 1.78;
-  const hoverY = 0.18;
-  const bodyH = 0.68; // hull; + canopy ≈ 1.2–1.3 m
+  const bodyLen = kind === 'van' ? 4.4 : kind === 'sport' ? 4.0 : 4.15;
+  const bodyW = kind === 'sport' ? 1.65 : 1.7;
+  const hoverY = 0.16;
+  const bodyH = 0.62; // hull; + canopy ≈ 1.15–1.25 m
 
   const silver = new THREE.MeshStandardMaterial({
     color,
@@ -161,7 +161,7 @@ export function buildCar(carId: string): THREE.Group {
   g.add(canopy);
 
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.5, 0.015, 8, 32),
+    new THREE.TorusGeometry(0.32, 0.012, 8, 28),
     new THREE.MeshStandardMaterial({ color: dark, metalness: 0.9, roughness: 0.2 }),
   );
   rim.rotation.x = Math.PI / 2;

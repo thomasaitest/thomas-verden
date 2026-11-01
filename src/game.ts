@@ -542,9 +542,12 @@ export class Game {
     this.cam.dist = 5.6;
     this.camShown = 5.6;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
-    this.scene.background = new THREE.Color('#9aa3ae');
+    this.scene.background = new THREE.Color('#7a828c');
     this.scene.fog = null;
-    this.lighting?.setExposure?.(0.32);
+    this.lighting?.setExposure?.(0.28);
+    // Kill outdoor sun wash indoors (keeps walls readable warm-grey)
+    if (this.sun) this.sun.intensity = 0.15;
+    this.lighting?.setIndoor?.(true);
     this.actors.forEach((a) => a.pos.set(this.player.pos.x + (this.rng() - 0.5) * 3, 0, this.player.pos.z - 2.5));
     this.syncPets();
     sfx.door();
@@ -569,6 +572,8 @@ export class Game {
       this.outdoorBgBackup = null;
     }
     this.lighting?.setExposure?.(0.58);
+    this.lighting?.setIndoor?.(false);
+    if (this.sun) this.sun.intensity = 2.2;
     this.setSky();
     const p = this.town.entrances.home;
     this.player.pos.set(p.x, 0, p.z);
@@ -1279,7 +1284,7 @@ export class Game {
         this.cam.yaw += (wantYaw - this.cam.yaw) * Math.min(1, dt * 5);
         // sin(0.18)*10.5 ≈ 1.88 → cam y ≈ 0.55+1.88 ≈ 2.43; pitch 0.15 → ~2.1
         this.cam.pitch += (0.15 - this.cam.pitch) * Math.min(1, dt * 5);
-        this.cam.dist += (13.2 - this.cam.dist) * Math.min(1, dt * 5);
+        this.cam.dist += (14.5 - this.cam.dist) * Math.min(1, dt * 5);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
