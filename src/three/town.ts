@@ -17,8 +17,19 @@ import {
 import { collectColliders, solid } from './colliders.ts';
 import { fillCarShop, fillHospital, fillPetShop, fillShop } from './buildings.ts';
 import { EQUIPMENT, MERRY, SEESAW, SLIDE, SWING_PIVOT_Y, SWING_ROPE, SWING_XS, SWING_Z, TRAMP, merryAngle, seatAt, seesawAngle, swingAngle, type EquipDef, type Seat } from '../logic/playground.ts';
-import { asphaltTexture, box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, noiseTexture, part, rbox, shadowAll, sph, textTexture, tileTexture } from './kit.ts';
-import { loadModel } from './assets.ts';
+import { asphaltTexture, box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, part, rbox, shadowAll, sph, textTexture } from './kit.ts';
+import {
+  buildFuturisticShop,
+  buildSleekFountain,
+  buildNaturalTree,
+  buildPlanter,
+  buildModernBench,
+  buildSkylineTower,
+  grassTexture,
+  pavingTexture,
+  pavingNormal,
+} from './futuristicArch.ts';
+import { buildCar } from './vehicles.ts';
 
 export type ZoneKind = 'home' | 'shop' | 'vet' | 'eggs' | 'doors' | 'play' | 'cars' | 'pets';
 export interface Zone {
@@ -278,77 +289,18 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
 }
 
 function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, collide = false) {
-  const trunk = cyl(g, '#5a3d28', [x, 1.7 * s, z], [0.28 * s, 3.4 * s, 0.28 * s]);
-  if (collide) solid(trunk, 'circle', 0.7 * s, 8 * s);
-  // angled branches
-  for (const [bx, by, bz, brx, brz] of [
-    [0.35, 2.4, 0.1, 0.6, 0.2], [-0.3, 2.8, -0.15, -0.55, -0.25], [0.1, 3.2, 0.35, 0.2, 0.55],
-  ] as const) {
-    const b = cyl(g, '#5a3d28', [x + bx * s, by * s, z + bz * s], [0.1 * s, 1.1 * s, 0.1 * s], [brz * 0.7, 0, -brx * 0.7]);
-    b.userData.noCast = true;
-  }
-  const puff = (col: string, ox: number, oy: number, oz: number, sx: number, sy: number, sz: number) =>
-    sph(g, col, [x + ox * s, oy * s, z + oz * s], [sx * s, sy * s, sz * s]);
-  if (kind === 0) {
-    puff('#2f6e38', 0, 4.0, 0, 2.6, 2.2, 2.4);
-    puff('#3d8248', 0.85, 4.5, 0.35, 1.8, 1.5, 1.7);
-    puff('#255a30', -0.75, 4.3, -0.4, 1.7, 1.4, 1.6);
-    puff('#4a9054', 0.2, 5.3, -0.2, 1.4, 1.2, 1.3);
-    puff('#356e3e', -0.2, 4.8, 0.7, 1.3, 1.1, 1.2);
-  } else if (kind === 1) {
-    cone(g, '#245830', [x, 3.5 * s, z], [2.4 * s, 3.6 * s, 2.4 * s]);
-    cone(g, '#2f6e38', [x, 5.0 * s, z], [1.8 * s, 2.8 * s, 1.8 * s]);
-    cone(g, '#3a8248', [x, 6.2 * s, z], [1.15 * s, 2.1 * s, 1.15 * s]);
-  } else if (kind === 2) {
-    puff('#3a6e42', 0, 3.9, 0, 2.5, 2.2, 2.5);
-    puff('#b8909a', -0.55, 4.5, 0.2, 1.3, 1.1, 1.3);
-    puff('#a88090', 0.5, 4.3, -0.3, 1.2, 1.0, 1.2);
-    puff('#4a7e52', 0.15, 5.1, 0.1, 1.35, 1.15, 1.3);
-  } else {
-    puff('#2e5e36', 0, 4.0, 0, 2.55, 2.3, 2.5);
-    puff('#3a7244', 0.7, 4.6, 0.35, 1.7, 1.4, 1.6);
-    puff('#255030', -0.65, 4.4, -0.3, 1.6, 1.35, 1.5);
-    puff('#45804e', -0.1, 5.2, 0.15, 1.3, 1.1, 1.25);
+  const t0 = buildNaturalTree(kind % 3);
+  t0.position.set(x, 0, z);
+  t0.scale.setScalar(s);
+  g.add(t0);
+  if (collide) {
+    const hit = cyl(g, '#5a3d28', [x, 1.2 * s, z], [0.2 * s, 2.4 * s, 0.2 * s]);
+    hit.visible = false;
+    solid(hit, 'circle', 0.5 * s, 6 * s);
   }
 }
 
 
-async function placeGltfScenery(group: THREE.Group, P: Record<string, { x: number; z: number }>) {
-  const add = async (path: string, x: number, z: number, s = 1, yaw = 0, y = 0) => {
-    try {
-      const m = await loadModel(path);
-      m.position.set(x, y, z);
-      m.scale.setScalar(s);
-      m.rotation.y = yaw;
-      m.userData.noFade = false;
-      group.add(m);
-    } catch {
-      /* optional */
-    }
-  };
-  // Commercial buildings near shops
-  await Promise.all([
-    add('buildings/building-e.glb', P.shop.x + 14, P.shop.z + 6, 1.8, 0.4),
-    add('buildings/building-f.glb', P.shop.x - 12, P.shop.z - 8, 1.7, -0.5),
-    add('buildings/building-h.glb', P.pets.x + 10, P.pets.z + 4, 1.6, 0.2),
-    add('buildings/building-c.glb', P.cars.x - 10, P.cars.z + 8, 1.7, 1.2),
-    add('buildings/building-skyscraper-a.glb', 55, -55, 2.2, 0.3),
-    add('buildings/building-skyscraper-c.glb', -60, 40, 2.0, -0.4),
-    add('buildings/building-skyscraper-e.glb', 70, 30, 2.4, 0.8),
-    // home-like suburban near home
-    add('buildings/building-type-a.glb', P.home.x + 16, P.home.z + 10, 1.4, 0.1),
-    add('buildings/building-type-c.glb', P.home.x - 18, P.home.z + 8, 1.35, -0.3),
-    // trees around plaza
-    add('nature/tree_oak.glb', 12, 10, 2.2),
-    add('nature/tree_oak.glb', -14, 8, 2.0),
-    add('nature/tree_pineTallA.glb', 18, -6, 2.4),
-    add('nature/tree_detailed.glb', -10, -14, 2.1),
-    add('nature/tree_default.glb', 8, 16, 1.9),
-    add('street/streetlight-single.glb', 6, 4, 1.3),
-    add('street/streetlight-double.glb', -8, 2, 1.3),
-    add('street/streetlight-single.glb', 4, -10, 1.3),
-  ]);
-}
 
 export function buildTown(): Town {
   const group = new THREE.Group();
@@ -358,12 +310,14 @@ export function buildTown(): Town {
   const circles: CircleCollider[] = [];
 
   // ground – varied grass
+  const gtex = grassTexture(256);
+  gtex.repeat.set(SIZE / 6, SIZE / 6);
   const grassMat = new THREE.MeshStandardMaterial({
-    map: noiseTexture(128, { a: '#5f9a5a', b: '#4a8248', scale: 1.4 }),
+    map: gtex,
     metalness: 0.02,
     roughness: 0.92,
+    color: '#6a9a62',
   });
-  grassMat.map!.repeat.set(SIZE / 8, SIZE / 8);
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), grassMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
@@ -385,50 +339,37 @@ export function buildTown(): Town {
 
   // plaza + fountain (outer wall jumpable; rim and upper bowl are landable)
   {
-    const plazaTex = tileTexture(256, { tile: '#8a929c', mortar: '#5a6270', tiles: 8 });
-    plazaTex.repeat.set(4, 4);
-    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.1, 48), new THREE.MeshStandardMaterial({ map: plazaTex, metalness: 0.12, roughness: 0.82, color: '#9aa3ae' }));
+    const plazaTex = pavingTexture(512);
+    plazaTex.repeat.set(6, 6);
+    const plazaN = pavingNormal(256);
+    plazaN.repeat.set(6, 6);
+    const plaza = new THREE.Mesh(
+      new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.12, 64),
+      new THREE.MeshStandardMaterial({ map: plazaTex, normalMap: plazaN, metalness: 0.1, roughness: 0.75, color: '#a0a8b0' }),
+    );
     plaza.position.y = 0.05;
     plaza.receiveShadow = true;
     plaza.userData.noCast = true;
     stat.add(plaza);
   }
-  solid(cyl(stat, '#c8d0da', [0, 0.55, 0], [9, 1.1, 9]), 'circle', 0, 1.15);
-  cyl(stat, '#7fd8ff', [0, 1.1, 0], [8, 0.2, 8]);
-  solid(cyl(stat, '#b8c2ce', [0, 2.2, 0], [1.2, 3, 1.2]), 'circle', 0.1, 4.5);
-  solid(cyl(stat, '#c0c8d2', [0, 3.6, 0], [4, 0.5, 4]), 'circle', 0, 3.9);
-  surfaces.push({ x: 0, z: 0, r: 4.2, top: 1.15 }); // rim
-  surfaces.push({ x: 0, z: 0, r: 1.9, top: 3.85 }); // upper bowl
-  const water = sph(group, '#8ec8e0', [0, 4.2, 0], [1.6, 1.6, 1.6], undefined, 0.08);
-  // Water jets: tall bright arcs (~2–2.5 m) that pulse on/off — readable on iPhone
-  const jets: THREE.Mesh[] = [];
-  for (let i = 0; i < 6; i++) {
-    const ang = (i / 6) * Math.PI * 2;
-    const j = cyl(group, '#9ad8ef', [Math.cos(ang) * 0.55, 5.9, Math.sin(ang) * 0.55], [0.28, 2.6, 0.28], undefined, 0.25);
-    j.userData.noCast = true;
-    jets.push(j as THREE.Mesh);
+  // sleek multi-tier fountain (concept match)
+  const fountainBuilt = buildSleekFountain();
+  group.add(fountainBuilt.group);
+  shadowAll(fountainBuilt.group);
+  {
+    const a = cyl(stat, '#c8d0da', [0, 0.28, 0], [10.4, 0.55, 10.4]); a.visible = false; solid(a, 'circle', 0, 0.6);
+    const b = cyl(stat, '#c8d0da', [0, 1.35, 0], [4.8, 0.35, 4.8]); b.visible = false; solid(b, 'circle', 0, 1.55);
+    const c = cyl(stat, '#c8d0da', [0, 2.4, 0], [0.8, 1.6, 0.8]); c.visible = false; solid(c, 'circle', 0.15, 3.4);
   }
-  const centerJet = cyl(group, '#b8e4f4', [0, 6.4, 0], [0.5, 3.0, 0.5], undefined, 0.3);
-  centerJet.userData.noCast = true;
-  jets.push(centerJet as THREE.Mesh);
-  for (let i = 0; i < 8; i++) {
-    const ang = (i / 8) * Math.PI * 2 + 0.2;
-    const d = sph(group, '#a8d8e8', [Math.cos(ang) * 1.5, 5.2, Math.sin(ang) * 1.5], [0.28, 0.28, 0.28], undefined, 0.2);
-    d.userData.noCast = true;
-    jets.push(d as THREE.Mesh);
-  }
-  // fountain light rings (pulse with jets)
-  const fountainRings: THREE.Mesh[] = [];
-  for (const [ry, rr] of [[1.25, 3.6], [2.0, 2.2], [3.7, 1.5]] as const) {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(rr, 0.07, 8, 40), glowMat('#5ccfff', 0.35));
-    ring.rotation.x = Math.PI / 2;
-    ring.position.set(0, ry, 0);
-    ring.userData.noCast = true;
-    group.add(ring);
-    fountainRings.push(ring);
-  }
-  // basin water glow
-  cyl(group, '#3ecbff', [0, 1.05, 0], [7.6, 0.08, 7.6], undefined, 0.2).userData.noCast = true;
+  surfaces.push({ x: 0, z: 0, r: 5.0, top: 0.6 });
+  surfaces.push({ x: 0, z: 0, r: 2.3, top: 1.55 });
+  const jets = fountainBuilt.jets;
+  const fountainRings = fountainBuilt.rings;
+  let waterSurf: THREE.Object3D | null = null;
+  fountainBuilt.group.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!waterSurf && m.isMesh && (m.geometry as THREE.BufferGeometry).type === 'CircleGeometry') waterSurf = m;
+  });
 
   // road network (ring + approaches + neighbourhood) – never through buildings
   for (const s of roads) {
@@ -669,6 +610,115 @@ export function buildTown(): Town {
     zones.push({ kind: 'doors', x: z.x, z: z.z, r: 3.5, label: 'Spill Dørspillet 🚪' });
     entrances.doors = { x: z.x, z: z.z, yaw: f.rot + Math.PI };
   }
+
+  // VERTICAL SLICE: futuristic plaza façades (visual shops facing the fountain)
+  {
+    const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
+      // angles picked to clear landmark footprints (shop/pets/cars/play/home)
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.95, dist: 20, w: 13 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.35, dist: 21, w: 12 },
+      { label: 'Havblomst', logoColor: '#4a9a62', ang: 1.35, dist: 20, w: 12 },
+      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 21, w: 11 },
+      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 21, w: 11 },
+    ];
+    for (const f of facades) {
+      const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2 });
+      const x = Math.sin(f.ang) * f.dist;
+      const z = Math.cos(f.ang) * f.dist;
+      shop.position.set(x, 0, z);
+      shop.rotation.y = f.ang + Math.PI; // face plaza center
+      shop.userData.noFade = false;
+      {
+        const hit = cyl(stat, '#f2f5f8', [x, 3.5, z], [f.w! * 0.55, 7, 4.5]);
+        hit.visible = false;
+        solid(hit, 'circle', 0.2, 8);
+      }
+      // keep unmerged so PBR glass/wood survive (mergeStatic washes façades)
+      group.add(shop);
+      shadowAll(shop);
+    }
+    // planters around plaza
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.3;
+      const pl = buildPlanter();
+      pl.position.set(Math.sin(a) * 11.5, 0, Math.cos(a) * 11.5);
+      pl.rotation.y = a;
+      stat.add(pl);
+    }
+  }
+
+  // VERTICAL SLICE street: façades + sidewalks from plaza toward home (+Z belt)
+  {
+    const streetLabels = [
+      { label: 'Aether Atelier', logoColor: '#7ef0ff', x: -16, z: 44, rot: Math.PI },
+      { label: 'Nordlys', logoColor: '#5a8cff', x: 0, z: 46, rot: Math.PI },
+      { label: 'Pulse Gym', logoColor: '#ff6f6f', x: 16, z: 44, rot: Math.PI },
+      { label: 'Orbit Deli', logoColor: '#e8a040', x: -16, z: 64, rot: 0 },
+      { label: 'Cloud Clinic', logoColor: '#54c45e', x: 16, z: 64, rot: 0 },
+    ];
+    for (const s of streetLabels) {
+      const shop = buildFuturisticShop({ label: s.label, logoColor: s.logoColor, w: 12, d: 8, storeys: 2 + (Math.abs(s.x) > 10 ? 1 : 0) });
+      shop.position.set(s.x, 0, s.z);
+      shop.rotation.y = s.rot;
+      {
+        const hit = cyl(stat, '#f2f5f8', [s.x, 3.5, s.z], [6, 8, 4.5]);
+        hit.visible = false;
+        solid(hit, 'circle', 0.2, 9);
+      }
+      group.add(shop);
+      shadowAll(shop);
+    }
+    // sidewalk strips along street
+    const walkTex = pavingTexture(256);
+    walkTex.repeat.set(8, 2);
+    const walkN = pavingNormal(128);
+    walkN.repeat.set(8, 2);
+    for (const [x, z, sx, sz] of [
+      [0, 48, 48, 3.2],
+      [-22, 48, 3.2, 28],
+      [22, 48, 3.2, 28],
+    ] as const) {
+      const walk = new THREE.Mesh(
+        new THREE.BoxGeometry(sx, 0.08, sz),
+        new THREE.MeshStandardMaterial({ map: walkTex, normalMap: walkN, color: '#b0b8c0', roughness: 0.8, metalness: 0.05 }),
+      );
+      walk.position.set(x, 0.06, z);
+      walk.receiveShadow = true;
+      walk.userData.noCast = true;
+      stat.add(walk);
+      // curb
+      box(stat, '#8a929c', [x, 0.12, z + (sz > sx ? 0 : sz / 2 + 0.15)], [sx > 10 ? sx : 0.25, 0.18, sz > 10 ? 0.25 : sz]);
+    }
+    // street trees
+    for (const [x, z] of [[-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48]] as const) {
+      tree(stat, x, z, 1.1, (x + z) % 3, true);
+    }
+  }
+
+
+  // parked plaza cars (sleek hover props)
+  {
+    const parked = [
+      { id: 'bil-bla', x: 10, z: 8, yaw: -0.4 },
+      { id: 'bil-lilla', x: -8, z: 12, yaw: 1.2 },
+      { id: 'bil-rosa', x: 14, z: -6, yaw: 2.5 },
+      { id: 'bil-gronn', x: -14, z: -4, yaw: 0.3 },
+    ];
+    for (const c of parked) {
+      const car = buildCar(c.id);
+      car.position.set(c.x, 0, c.z);
+      car.rotation.y = c.yaw;
+      car.userData.noFade = true;
+      {
+        const hit = cyl(stat, '#888', [c.x, 0.4, c.z], [1.0, 0.8, 1.8]);
+        hit.visible = false;
+        solid(hit, 'circle', 0.15, 1.2);
+      }
+      group.add(car);
+      shadowAll(car);
+    }
+  }
+
   // playground
   const equipTargets: THREE.Object3D[] = [];
   const swingGroups: THREE.Group[] = [];
@@ -836,38 +886,17 @@ export function buildTown(): Town {
     sph(stat, '#e8f4ff', [L.x, 5.15, L.z], [0.35, 0.12, 0.35], undefined, 0.7);
   }
   for (const b of benchSpots(roads)) {
-    // b.yaw = sit facing (away from the backrest). Avatar forward = (sin, cos).
     const sitYaw = b.yaw;
     const fx = Math.sin(sitYaw);
     const fz = Math.cos(sitYaw);
-    const rx = Math.cos(sitYaw);
-    const rz = -Math.sin(sitYaw);
-    // Seat centre in world; sitter sits toward the backrest so their back touches it.
-    const seatX = b.x;
-    const seatZ = b.z;
-    // Sit on the front half of the seat so collision never shoves the avatar behind the backrest.
-    // (Backrest/seat are visual-only — no solid() — so resting can't be pushed through them.)
-    const sitX = seatX + fx * 0.12;
-    const sitZ = seatZ + fz * 0.12;
-    for (const sx of [-1.15, 1.15]) for (const sz of [-0.32, 0.32]) {
-      const lx = seatX + rx * sx + fx * sz;
-      const lz = seatZ + rz * sx + fz * sz;
-      // short legs stay solid so you can't walk through the bench footprint
-      solid(cyl(stat, '#2a3344', [lx, 0.32, lz], [0.1, 0.64, 0.1]), 'circle', 0.05, 0.8);
-    }
-    // seat plank — visual only (no collider)
-    rbox(stat, '#c4a07a', [seatX, 0.72, seatZ], [2.6, 0.12, 0.85], [0, sitYaw, 0]);
-    box(stat, '#3ecbff', [seatX, 0.64, seatZ], [2.4, 0.03, 0.7], [0, sitYaw, 0], 0.2);
-    // backrest — visual only (collider was shoving sitters behind the bench)
-    box(
-      stat,
-      '#8aa0b8',
-      [seatX - fx * 0.5, 1.35, seatZ - fz * 0.5],
-      [2.8, 0.9, 0.14],
-      [0, sitYaw, 0],
-    );
-    box(stat, '#3ecbff', [seatX - fx * 0.5, 0.95, seatZ - fz * 0.5], [2.6, 0.05, 0.06], [0, sitYaw, 0], 0.2);
-    // Interaction / sit pose uses the centred sit point (not a corner of the bench).
+    const bench = buildModernBench();
+    bench.position.set(b.x, 0, b.z);
+    bench.rotation.y = sitYaw;
+    stat.add(bench);
+    // footprint collider
+    solid(cyl(stat, '#2a3344', [b.x, 0.3, b.z], [0.5, 0.6, 0.5]), 'circle', 0.05, 0.7);
+    const sitX = b.x + fx * 0.12;
+    const sitZ = b.z + fz * 0.12;
     benches.push({ x: sitX, z: sitZ, yaw: sitYaw });
   }
   // hills at the edge
@@ -875,19 +904,15 @@ export function buildTown(): Town {
     const a = (i / 10) * Math.PI * 2;
     sph(stat, '#3d7a48', [Math.cos(a) * (SIZE / 2 + 25), 0, Math.sin(a) * (SIZE / 2 + 25)], [50, 26, 50]);
   }
-  // distant skyline towers (visual only)
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2 + 0.2;
-    const rr = SIZE / 2 + 55 + (i % 4) * 8;
-    const th = 28 + (i * 7) % 55;
-    const tw = 4 + (i % 3) * 2.5;
-    rbox(stat, i % 2 ? '#e8eef4' : '#d4dde6', [Math.cos(a) * rr, th / 2, Math.sin(a) * rr], [tw, th, tw]).userData.noCast = true;
-    if (i % 3 === 0) {
-      const spire = cone(stat, '#c8d4e0', [Math.cos(a) * rr, th + 6, Math.sin(a) * rr], [tw * 0.6, 12, tw * 0.6]);
-      spire.userData.noCast = true;
-    }
-    // window band glow
-    box(stat, '#7ec8ff', [Math.cos(a) * rr, th * 0.55, Math.sin(a) * rr], [tw + 0.05, th * 0.08, tw + 0.05], undefined, 0.35).userData.noCast = true;
+  // distant skyline towers (detailed)
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + 0.4;
+    const dist = SIZE / 2 + 18 + (i % 5) * 8;
+    const th = 28 + (i * 17) % 55;
+    const tower = buildSkylineTower(th);
+    tower.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+    tower.rotation.y = a + Math.PI;
+    group.add(tower);
   }
 
   // colliders come from the real meshes that were marked solid()
@@ -910,10 +935,6 @@ export function buildTown(): Town {
   group.add(mergedClouds);
 
   // delivery drones in the sky
-
-  // CC0 Kenney / Quaternius scenery (lazy) — upgrades the skyline/plaza without blocking boot
-  void placeGltfScenery(group, P);
-
   const drones: THREE.Group[] = [];
   for (let i = 0; i < 8; i++) {
     const dr = new THREE.Group();
@@ -1091,19 +1112,19 @@ export function buildTown(): Town {
         b.shell.left.visible = !inside || lx > -b.hw + 0.5;
         b.shell.right.visible = !inside || lx < b.hw - 0.5;
       }
+      mergedClouds.position.x = Math.sin(t * 0.02) * 20;
       if (equipUse) {
         const u = equipUse.u;
         if (equipUse.id.startsWith('swing')) swingGroups[Number(equipUse.id.slice(5)) - 1].rotation.x = -swingAngle(u);
         else if (equipUse.id === 'seesaw') seesawGroup.rotation.z = seesawAngle(u);
         else if (equipUse.id === 'merry') merryGroup.rotation.y = -merryAngle(u);
       }
-      mergedClouds.position.x = Math.sin(t * 0.02) * 20;
-      water.position.y = 4.2 + Math.sin(t * 3) * 0.15;
+      if (waterSurf) waterSurf.position.y = 0.42 + Math.sin(t * 2) * 0.02;
       // Jets on for ~2.2s, off for ~1.8s
-      const jetOn = (t % 4) < 2.2;
+      const jetOn = true; // always on for visual fidelity
       for (const ring of fountainRings) {
-        ring.visible = jetOn;
-        if (jetOn) ring.rotation.z = t * 0.6;
+        ring.visible = true;
+        ring.rotation.z = t * 0.6;
       }
       for (let di = 0; di < drones.length; di++) {
         const dr = drones[di]!;

@@ -119,7 +119,41 @@ export function createInterior(): Interior {
           walls.push({ mesh: g, axis, at, sign });
           return g;
         };
-        mk(0, -d / 2 - 0.2, w + 0.8, 0.4, 'z', -d / 2, -1);
+        const back = mk(0, -d / 2 - 0.2, w + 0.8, 0.4, 'z', -d / 2, -1);
+        // panoramic skyline window on back wall (concept 2-hus-inne)
+        {
+          const panW = Math.min(w * 0.72, 14);
+          const panH = 3.6;
+          box(back, '#8aa0b8', [0, y0 + 3.4, -d / 2 + 0.05], [panW + 0.3, panH + 0.3, 0.12]);
+          const glass = new THREE.Mesh(
+            new THREE.BoxGeometry(panW, panH, 0.06),
+            new THREE.MeshStandardMaterial({ color: '#9ad8ff', transparent: true, opacity: 0.22, metalness: 0.35, roughness: 0.08, envMapIntensity: 1.2, depthWrite: false }),
+          );
+          glass.position.set(0, y0 + 3.4, -d / 2 + 0.12);
+          back.add(glass);
+          const sky = document.createElement('canvas');
+          sky.width = 512; sky.height = 256;
+          const sctx = sky.getContext('2d')!;
+          const grd = sctx.createLinearGradient(0, 0, 0, 256);
+          grd.addColorStop(0, '#7eb0d8'); grd.addColorStop(0.55, '#c5d8e8'); grd.addColorStop(1, '#e8eef4');
+          sctx.fillStyle = grd; sctx.fillRect(0, 0, 512, 256);
+          sctx.fillStyle = '#5a6a78';
+          for (let k = 0; k < 22; k++) {
+            const bw = 10 + (k * 7) % 28;
+            const bh = 40 + (k * 19) % 140;
+            sctx.fillRect(8 + k * 23, 256 - bh, bw, bh);
+            sctx.fillStyle = '#3ecbff33';
+            for (let wy = 0; wy < bh; wy += 10) sctx.fillRect(10 + k * 23, 256 - bh + wy, bw - 4, 3);
+            sctx.fillStyle = '#5a6a78';
+          }
+          const stex = new THREE.CanvasTexture(sky);
+          stex.colorSpace = THREE.SRGBColorSpace;
+          const card = new THREE.Mesh(new THREE.PlaneGeometry(panW * 0.96, panH * 0.92), new THREE.MeshBasicMaterial({ map: stex }));
+          card.position.set(0, y0 + 3.4, -d / 2 + 0.02);
+          card.rotation.y = Math.PI;
+          back.add(card);
+        }
+
         const left = mk(-w / 2 - 0.2, 0, 0.4, d, 'x', -w / 2, -1);
         const right = mk(w / 2 + 0.2, 0, 0.4, d, 'x', w / 2, 1);
         if (f === 0) {
@@ -221,6 +255,8 @@ export function createInterior(): Interior {
         const z = st.zBottom - (i + 0.5) * run;
         const step = box(stairs, i % 2 ? '#d5dde8' : '#e8eef6', [smx, h / 2, z], [st.x1 - st.x0, h, run + 0.01]);
         step.receiveShadow = true;
+        // LED tread nosing
+        box(stairs, '#3ecbff', [smx, h + 0.02, z + run * 0.35], [st.x1 - st.x0 - 0.15, 0.03, 0.06], undefined, 0.75);
       }
       for (const x of [st.x0 - 0.05, st.x1 + 0.05]) {
         const mid = (st.zTop + st.zBottom) / 2;
@@ -296,11 +332,18 @@ export function createInterior(): Interior {
       furn.children.forEach((c) => (c.visible = (c.userData.floor ?? 0) <= floor));
       for (const wl of walls) {
         const v = wl.axis === 'x' ? cam.x : cam.z;
-        wl.mesh.visible = (v - wl.at) * wl.sign < 0.5;
+        // Hide exterior wall when camera is outside that wall OR the wall sits between cam and focus
+        let hide = (v - wl.at) * wl.sign >= 0.15;
+        if (focus) {
+          const fv = wl.axis === 'x' ? focus.x : focus.z;
+          // wall plane between camera and focus along axis
+          if ((v - wl.at) * (fv - wl.at) < 0) hide = true;
+        }
+        wl.mesh.visible = !hide;
       }
       for (const p of partitions) {
         if (!focus || p.floor > floor) {
-          p.mesh.visible = true;
+          p.mesh.visible = p.floor <= floor;
           continue;
         }
         // hide a partition wall that stands between the camera and the player

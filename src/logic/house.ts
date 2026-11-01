@@ -74,12 +74,24 @@ export function starterFurniture(style: HouseStyle): PlacedItem[] {
   const bathRoom = roomCenter(L, 0, /Bad|Ensuite|Vaskerom|Tronsal/i) ?? { x: L.w * 0.3, z: -L.d * 0.25 };
   const bathP = placeInLayout(L, 0, bathRoom.x, bathRoom.z, itemRadius(2.0, 1));
   const plantP = placeInLayout(L, 0, L.door.x + 3, L.door.z - 2, itemRadius(0.8, 1));
+  const sofaP = placeInLayout(L, 0, spots.table.x - 2.2, spots.table.z + 1.5, itemRadius(2.4, 1));
+  const tvP = placeInLayout(L, 0, spots.table.x + 2.4, spots.table.z + 0.2, itemRadius(1.6, 1));
+  const coffeeP = placeInLayout(L, 0, spots.table.x - 0.2, spots.table.z + 2.4, itemRadius(1.5, 1));
+  const shelfP = placeInLayout(L, 0, spots.table.x + 3.2, spots.table.z - 1.2, itemRadius(1.6, 1));
+  const counterP = placeInLayout(L, 0, spots.table.x + 1.2, spots.table.z - 2.4, itemRadius(1.4, 1));
+  const stoolP = placeInLayout(L, 0, counterP.x, counterP.z + 1.1, itemRadius(0.7, 1));
   return [
-    { uid: uid('it'), itemId: 'seng', x: bedP.x, z: bedP.z, rot: spots.bed.rot, scale: 1, color: '#8fb8ff', floor: 0 },
-    { uid: uid('it'), itemId: 'spisebord', x: tableP.x, z: tableP.z, rot: spots.table.rot, scale: 1, color: '#d9a066', floor: 0 },
-    { uid: uid('it'), itemId: 'dyreseng', x: petP.x, z: petP.z, rot: 0, scale: 1, color: '#ffb84d', floor: 0 },
+    { uid: uid('it'), itemId: 'seng', x: bedP.x, z: bedP.z, rot: spots.bed.rot, scale: 1, color: '#e8eef6', floor: 0 },
+    { uid: uid('it'), itemId: 'spisebord', x: tableP.x, z: tableP.z, rot: spots.table.rot, scale: 1, color: '#2a3344', floor: 0 },
+    { uid: uid('it'), itemId: 'langsofa', x: sofaP.x, z: sofaP.z, rot: Math.PI, scale: 1, color: '#e8eef4', floor: 0 },
+    { uid: uid('it'), itemId: 'tv', x: tvP.x, z: tvP.z, rot: -Math.PI / 2, scale: 1, color: '#15202c', floor: 0 },
+    { uid: uid('it'), itemId: 'kommode', x: coffeeP.x, z: coffeeP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+    { uid: uid('it'), itemId: 'bokhylle', x: shelfP.x, z: shelfP.z, rot: Math.PI / 2, scale: 1, color: '#c98a55', floor: 0 },
+    { uid: uid('it'), itemId: 'benk', x: counterP.x, z: counterP.z, rot: 0, scale: 1, color: '#2a3344', floor: 0 },
+    { uid: uid('it'), itemId: 'krakk', x: stoolP.x, z: stoolP.z, rot: 0, scale: 1, color: '#1a2230', floor: 0 },
+    { uid: uid('it'), itemId: 'dyreseng', x: petP.x, z: petP.z, rot: 0, scale: 1, color: '#8aa0b8', floor: 0 },
     { uid: uid('it'), itemId: 'badekar', x: bathP.x, z: bathP.z, rot: 0, scale: 1, color: '#ffffff', floor: 0 },
-    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1, color: '#ff9ccf', floor: 0 },
+    { uid: uid('it'), itemId: 'rundtteppe', x: rugP.x, z: rugP.z, rot: 0, scale: 1, color: '#4a5568', floor: 0 },
     { uid: uid('it'), itemId: 'potteplante', x: plantP.x, z: plantP.z, rot: 0, scale: 1, color: '#5cc36b', floor: 0 },
   ];
 }
@@ -105,8 +117,8 @@ export function ensureStarterFurniture(house: House): House {
 
 export function newHouse(style: HouseStyle, ownerId: string, now = Date.now()): House {
   const items = starterFurniture(style);
-  const info = HOUSE_BY_STYLE[style] ?? HOUSE_BY_STYLE.hytte;
-  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: info.wall, floorColor: '#d9a066', items, createdAt: now, locked: false };
+  void (HOUSE_BY_STYLE[style] ?? HOUSE_BY_STYLE.hytte);
+  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: '#e6eaef', floorColor: '#9aa3ae', items, createdAt: now, locked: false };
 }
 
 export function canEdit(house: House, playerId: string): boolean {

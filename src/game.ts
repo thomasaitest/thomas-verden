@@ -36,7 +36,8 @@ import { createInterior, type Interior } from './three/interior.ts';
 import { preloadFurnitureModels } from './three/furniture.ts';
 import { FLOOR_H, floorOfY, groundHeight, onStairs, roomAt } from './logic/layout.ts';
 import { blobShadow } from './three/kit.ts';
-import { animatePet, buildPet, type PetPose, type PetRig } from './three/petModel.ts';
+import { animatePet, type PetPose, type PetRig } from './three/petModel.ts';
+import { buildPetPreferGltf, preloadPetModels } from './three/petGltf.ts';
 import { buildTown, type Town, type Zone } from './three/town.ts';
 import { Thumbs } from './thumbs.ts';
 import { toast } from './ui/dom.ts';
@@ -185,9 +186,9 @@ export class Game {
     this.save = loadSave(localStorage);
     setSoundEnabled(this.save.sound);
 
-    this.hemi = new THREE.HemisphereLight('#ffe8d2', '#4a6a48', 0.75);
+    this.hemi = new THREE.HemisphereLight('#ffe8d2', '#3a5a40', 0.55);
     this.scene.add(this.hemi);
-    this.sun = new THREE.DirectionalLight('#ffd9a8', 1.55);
+    this.sun = new THREE.DirectionalLight('#ffd09a', 1.85);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
     const sc = this.sun.shadow.camera;
@@ -231,7 +232,7 @@ export class Game {
       quality: () => this.toggleQuality(),
     });
     this.setupPost();
-    void preloadFurnitureModels();
+    void Promise.all([preloadFurnitureModels(), preloadPetModels()]);
     prefetch([...AVATAR_PREFETCH, 'cars/race-future.glb', 'cars/suv-luxury.glb', 'cars/hatchback-sports.glb', 'buildings/building-e.glb', 'nature/tree_oak.glb']);
     this.hud.setQualityLabel(this.highQuality);
     this.hud.soundBtn.textContent = this.save.sound ? '🔊' : '🔇';
@@ -438,7 +439,7 @@ export class Game {
       const pet = this.save.pets.find((p) => p.uid === uid)!;
       let a = this.actors.get(uid);
       if (!a) {
-        const rig = buildPet(SPECIES_BY_ID[pet.speciesId]);
+        const rig = buildPetPreferGltf(SPECIES_BY_ID[pet.speciesId]);
         const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.needTexture('heart'), depthTest: false }));
         bubble.renderOrder = 10;
         bubble.visible = false;
@@ -961,14 +962,19 @@ export class Game {
     this.applyQuality(!this.highQuality);
   }
 
+  /** Shots/debug: set outdoor weather clock (seconds elapsed). */
+  setWeatherElapsed(sec: number) {
+    this.weatherT0 = performance.now() / 1000 - sec;
+  }
+
   private applyQuality(high: boolean) {
     this.highQuality = high;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, high ? 1.5 : 1.15));
     this.renderer.shadowMap.enabled = high;
     this.sun.castShadow = high;
-    this.renderer.toneMappingExposure = high ? 0.95 : 0.9;
+    this.renderer.toneMappingExposure = high ? 0.72 : 0.78;
     if (this.bloomPass) {
-      this.bloomPass.strength = high ? 0.12 : 0.0;
+      this.bloomPass.strength = high ? 0.06 : 0.0;
       this.bloomPass.threshold = high ? 0.9 : 1.0;
     }
     this.hud.setQualityLabel(high);
@@ -1034,7 +1040,7 @@ export class Game {
     }
 
     // camera input
-    const maxDist = this.building ? 30 : this.mode === 'house' ? 22 : 140;
+    const maxDist = this.building ? 30 : this.mode === 'house' ? 11 : 140;
     this.cam = orbit(this.cam, inp.camDX, inp.camDY, inp.zoom, maxDist);
 
     // movement
@@ -1290,12 +1296,25 @@ export class Game {
         target.z + Math.cos(this.cam.yaw) * cp * dist,
       );
       if (desired.y < 0.6) desired.y = 0.6;
+      // Dedicated interior camera: keep lens INSIDE the room (dollhouse cutaway), never outside blank walls
+      if (this.mode === 'house') {
+        const halfW = this.interior.w / 2 - 0.9;
+        const halfD = this.interior.d / 2 - 0.9;
+        const baseY = this.playerFloor() * 6.6;
+        desired.x = Math.max(-halfW, Math.min(halfW, desired.x));
+        desired.z = Math.max(-halfD, Math.min(halfD, desired.z));
+        desired.y = Math.max(baseY + 1.6, Math.min(baseY + 5.4, desired.y));
+        // prefer elevated corner-ish view
+        if (this.cam.dist > 12) dist = 12;
+      }
       const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
-      const coll = collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.mode === 'house' ? 1.0 : 2.0 });
+      const coll = this.mode === 'house'
+        ? desired // already clamped inside — skip exterior collision push-out
+        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: 2.0 });
       this.camera.position.copy(coll);
       this.camera.lookAt(target);
-      fadeOccluders(this.scene, this.camera.position, target, ignore);
+      if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
     }
     } // end !freezeCam
     if (this.mode === 'house') {
