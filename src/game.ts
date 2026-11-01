@@ -1283,7 +1283,9 @@ export class Game {
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
     const vw = this.renderer.domElement.clientWidth;
     const vh = this.renderer.domElement.clientHeight;
+    // Building: shift up for side panel. Driving: shift up so full car clears bottom HUD dock
     if (this.building && vw > 0) this.camera.setViewOffset(vw, vh, 0, vh * 0.16, vw, vh);
+    else if (this.driving && vw > 0) this.camera.setViewOffset(vw, vh, 0, vh * 0.11, vw, vh);
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       const fy = p.yaw;
