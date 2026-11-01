@@ -1127,17 +1127,9 @@ export function buildTown(): Town {
           if ((o as THREE.Mesh).isMesh && o.userData.spin) o.rotation.y = t * 18 + di;
         });
       }
-      // Sleek fountain jets stay in place — mild opacity pulse only (no position/scale rewrite)
+      // Jets share materials — never rewrite shared opacity (cascaded to ~0 before).
       for (let i = 0; i < jets.length; i++) {
-        const j = jets[i]!;
-        j.visible = jetOn;
-        if (!jetOn) continue;
-        const mat = (j as THREE.Mesh).material as THREE.MeshBasicMaterial | THREE.MeshPhysicalMaterial;
-        if (mat && 'opacity' in mat) {
-          const baseOp = (j.userData.baseOpacity as number) ?? (mat.opacity || 0.7);
-          j.userData.baseOpacity = baseOp;
-          mat.opacity = Math.min(1, baseOp * (0.88 + Math.sin(t * 7 + i * 0.55) * 0.12));
-        }
+        jets[i]!.visible = jetOn;
       }
     },
   };

@@ -481,6 +481,16 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
     group.add(foam);
   }
 
+  // Unique materials per jet (shared mat + opacity anim previously cascaded to ~0)
+  for (const j of jets) {
+    const m = j.material as THREE.MeshBasicMaterial;
+    const c = m.clone();
+    if (c.color.getHexString() === 'c8f0ff') c.opacity = 0.88;
+    else c.opacity = Math.max(0.4, c.opacity);
+    j.material = c;
+    j.userData.baseOpacity = c.opacity;
+  }
+
   return { group, jets, rings };
 }
 
