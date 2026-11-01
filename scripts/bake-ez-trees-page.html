@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>bake ez-trees</title></head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { Tree } from '@dgreenheck/ez-tree';
+
+const PRESETS = [
+  { name: 'oak-a', preset: 'Oak Small', seed: 1201, leaf: 0x5fa84a, scale: 0.22 },
+  { name: 'oak-b', preset: 'Oak Medium', seed: 3403, leaf: 0x6bb854, scale: 0.16 },
+  { name: 'aspen-a', preset: 'Aspen Small', seed: 5507, leaf: 0x7ac45c, scale: 0.2 },
+  { name: 'aspen-b', preset: 'Aspen Medium', seed: 7709, leaf: 0x58a048, scale: 0.15 },
+  { name: 'pine-a', preset: 'Pine Small', seed: 9911, leaf: 0x4e9a40, scale: 0.2 },
+  { name: 'pine-b', preset: 'Pine Medium', seed: 1313, leaf: 0x3d7a38, scale: 0.15 },
+];
+
+function yieldFrame() {
+  return new Promise((r) => requestAnimationFrame(() => r()));
+}
+
+async function exportGlb(root) {
+  const exporter = new GLTFExporter();
+  const ab = await new Promise((resolve, reject) => {
+    exporter.parse(
+      root,
+      (res) => resolve(res),
+      (err) => reject(err),
+      { binary: true, onlyVisible: true },
+    );
+  });
+  const bytes = new Uint8Array(ab);
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+window.__bake = async () => {
+  const out = {};
+  for (const spec of PRESETS) {
+    const tree = new Tree();
+    try {
+      tree.loadPreset(spec.preset);
+    } catch (e) {
+      console.warn('preset fail', spec.preset, e);
+    }
+    tree.options.seed = spec.seed;
+    tree.options.leaves.tint = spec.leaf;
+    tree.options.bark.textured = true;
+    tree.options.leaves.count = Math.min(56, tree.options.leaves.count || 56);
+    tree.generate();
+    const leafMat = tree.leavesMesh?.material;
+    if (leafMat?.color) {
+      leafMat.color.setHex(spec.leaf);
+      leafMat.needsUpdate = true;
+    }
+    tree.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+      }
+    });
+    const wrap = new THREE.Group();
+    wrap.add(tree);
+    wrap.scale.setScalar(spec.scale);
+    // bake transforms into geometry by updating matrix
+    wrap.updateMatrixWorld(true);
+    out[spec.name] = await exportGlb(wrap);
+    console.log('baked', spec.name, out[spec.name].length);
+    await yieldFrame();
+  }
+  window.__baked = out;
+  window.__bakeDone = true;
+  document.title = 'bake-done';
+};
+
+window.__bake().catch((e) => {
+  console.error(e);
+  window.__bakeError = String(e);
+  window.__bakeDone = true;
+});
+</script>
+</body>
+</html>

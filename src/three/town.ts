@@ -274,9 +274,13 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
     win2.position.set(s * (w / 2 - 2.6), 9.5, d / 2 + 0.14);
     win2.scale.set(2.1, 2.0, 0.08);
     g.add(win2);
-    // planter with greenery
-    rbox(g, '#9aa8b8', [s * (w / 2 - 2.6), 0.45, d / 2 + 0.7], [2.4, 0.5, 0.7]);
-    for (let i = 0; i < 3; i++) sph(g, '#4fbf65', [s * (w / 2 - 2.6) + (i - 1) * 0.65, 1.0, d / 2 + 0.7], [0.45, 0.55, 0.45]);
+    // slim dark/wood planter with grasses
+    rbox(g, '#3a342c', [s * (w / 2 - 2.6), 0.22, d / 2 + 0.7], [1.7, 0.4, 0.5]);
+    rbox(g, '#2a2e34', [s * (w / 2 - 2.6), 0.44, d / 2 + 0.7], [1.78, 0.05, 0.56]);
+    for (let i = 0; i < 5; i++) {
+      const gx = s * (w / 2 - 2.6) + (i - 2) * 0.28;
+      sph(g, i % 2 ? '#5fa84a' : '#4e9a40', [gx, 0.7, d / 2 + 0.7], [0.12, 0.35 + (i % 3) * 0.08, 0.12]);
+    }
   }
 
   // path with glowing edge
@@ -290,7 +294,7 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
 }
 
 function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, collide = false) {
-  const t0 = buildNaturalTree(kind % 3);
+  const t0 = buildNaturalTree(kind % 6);
   t0.position.set(x, 0, z);
   t0.scale.setScalar(s);
   g.add(t0);

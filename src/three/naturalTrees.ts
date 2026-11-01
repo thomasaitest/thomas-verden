@@ -1,66 +1,46 @@
 /**
- * Natural greenery — recolored Kenney CC0 trees + procedural canopy/bushes/flowers.
- * (ez-tree is available as a dep but too heavy for SwiftShader shot gates; Kenney+tint is the runtime path.)
+ * Natural greenery — offline-baked @dgreenheck/ez-tree (MIT) GLBs + procedural fallback.
+ * Runtime never generates ez-tree; see scripts/bake-ez-trees.mjs.
  */
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
 const LEAF_HEX = ['#5fa84a', '#6bb854', '#4e9a40', '#7ac45c', '#58a048', '#69b060'];
+
+/** Baked ez-tree presets (Draco GLB). */
 const TREE_PATHS = [
-  'nature/tree_oak.glb',
-  'nature/tree_detailed.glb',
-  'nature/tree_pineTallA.glb',
-  'nature/tree_pineTallD.glb',
-  'nature/tree_default.glb',
+  'nature/ez/oak-a.glb',
+  'nature/ez/oak-b.glb',
+  'nature/ez/aspen-a.glb',
+  'nature/ez/aspen-b.glb',
+  'nature/ez/pine-a.glb',
+  'nature/ez/pine-b.glb',
 ] as const;
+
 const BUSH_PATH = 'nature/plant_bushDetailed.glb';
 
 const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
 
-function isLeafyColor(c: THREE.Color): boolean {
-  // Kenney teals/cyans and greens
-  const max = Math.max(c.r, c.g, c.b);
-  const min = Math.min(c.r, c.g, c.b);
-  return c.g > 0.25 && (c.g >= c.r - 0.05) && (max - min > 0.05 || c.g > 0.4);
-}
-
-function tintNatural(root: THREE.Object3D, leafHex: string, barkHex = '#6a4a32') {
+function prepareTree(root: THREE.Object3D) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
-    const apply = (mat: THREE.Material) => {
-      const std = (mat as THREE.MeshStandardMaterial).clone();
-      if (!std?.color) return mat;
-      const name = `${std.name || ''} ${m.name || ''}`.toLowerCase();
-      const leafy = /leaf|leave|foliage|crown|canopy|pine|needle/.test(name) || isLeafyColor(std.color);
-      const barky = /bark|trunk|wood|stem|branch/.test(name);
-      if (leafy && !barky) {
-        std.map = null;
-        std.color = new THREE.Color(leafHex);
-        std.emissive = new THREE.Color('#1a3010');
-        std.emissiveIntensity = 0.05;
-        std.roughness = 0.82;
-        std.metalness = 0.02;
-        std.envMapIntensity = 0.6;
-      } else if (barky || (!leafy && std.color.r > std.color.g)) {
-        std.color = new THREE.Color(barkHex);
-        std.roughness = 0.92;
-        std.metalness = 0.02;
-      } else if (isLeafyColor(std.color)) {
-        std.map = null;
-        std.color = new THREE.Color(leafHex);
-        std.roughness = 0.82;
-        std.metalness = 0.02;
-      }
-      std.needsUpdate = true;
-      return std;
-    };
-    if (Array.isArray(m.material)) m.material = m.material.map(apply);
-    else m.material = apply(m.material);
     m.castShadow = true;
     m.receiveShadow = true;
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    for (const mat of mats) {
+      const std = mat as THREE.MeshStandardMaterial;
+      if (std.map) {
+        std.transparent = true;
+        std.alphaTest = Math.max(std.alphaTest || 0, 0.4);
+        std.depthWrite = true;
+        std.side = THREE.DoubleSide;
+      }
+      std.envMapIntensity = std.envMapIntensity ?? 0.7;
+      std.needsUpdate = true;
+    }
   });
 }
 
@@ -70,9 +50,11 @@ export async function preloadNaturalTrees(): Promise<void> {
     await Promise.all(
       TREE_PATHS.map(async (p) => {
         try {
-          treeCache.set(p, await loadModel(p));
+          const g = await loadModel(p);
+          prepareTree(g);
+          treeCache.set(p, g);
         } catch {
-          /* procedural */
+          /* procedural fallback */
         }
       }),
     );
@@ -96,7 +78,6 @@ function proceduralTree(kind: number): THREE.Group {
   trunk.position.y = h / 2;
   trunk.castShadow = true;
   g.add(trunk);
-  // secondary limbs
   for (const [ang, y, len] of [
     [0.6, h * 0.55, 0.7],
     [-0.9, h * 0.65, 0.55],
@@ -140,9 +121,8 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   const cached = treeCache.get(path);
   if (cached) {
     const model = cached.clone(true);
-    tintNatural(model, LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!, kind % 2 ? '#5a3d28' : '#6a4a32');
-    // Kenney trees are ~1–2 units tall
-    const s = 2.5 + (kind % 3) * 0.25;
+    // Baked presets already scaled; slight per-instance variation
+    const s = 0.95 + (kind % 3) * 0.08;
     model.scale.setScalar(s);
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
     g.add(model);
@@ -151,75 +131,90 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   return proceduralTree(kind);
 }
 
+function grassClump(color: string, h: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.88,
+    metalness: 0.02,
+    side: THREE.DoubleSide,
+  });
+  for (let i = 0; i < 7; i++) {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.035, h * (0.7 + (i % 3) * 0.15), 4), mat);
+    const a = (i / 7) * Math.PI * 2;
+    const r = 0.06 + (i % 3) * 0.03;
+    blade.position.set(Math.cos(a) * r, h * 0.35, Math.sin(a) * r);
+    blade.rotation.z = (i % 2 ? 0.15 : -0.12) + (i * 0.04);
+    blade.rotation.x = (i % 3) * 0.08;
+    blade.castShadow = true;
+    g.add(blade);
+  }
+  return g;
+}
+
 function flower(color: string): THREE.Mesh {
   return new THREE.Mesh(
-    new THREE.SphereGeometry(0.08, 8, 6),
+    new THREE.SphereGeometry(0.06, 8, 6),
     new THREE.MeshStandardMaterial({
       color,
       roughness: 0.55,
       metalness: 0.05,
       emissive: color,
-      emissiveIntensity: 0.15,
+      emissiveIntensity: 0.12,
     }),
   );
 }
 
+/** Slim dark-grey / wood planter with ornamental grasses (gate plaza). */
 export function buildPlanter(): THREE.Group {
   const g = new THREE.Group();
-  const pot = new THREE.Mesh(
-    new THREE.BoxGeometry(2.2, 0.55, 1.1),
-    new THREE.MeshStandardMaterial({ color: '#c5ccd4', roughness: 0.55, metalness: 0.08 }),
-  );
-  pot.position.y = 0.28;
+  const wood = new THREE.MeshStandardMaterial({
+    color: '#3a342c',
+    roughness: 0.72,
+    metalness: 0.06,
+    envMapIntensity: 0.5,
+  });
+  const rim = new THREE.MeshStandardMaterial({
+    color: '#2a2e34',
+    roughness: 0.45,
+    metalness: 0.25,
+  });
+  // Slim trough — not a white box
+  const pot = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.42, 0.55), wood);
+  pot.position.y = 0.21;
   pot.castShadow = true;
   pot.receiveShadow = true;
   g.add(pot);
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.05, 0.62), rim);
+  lip.position.y = 0.44;
+  g.add(lip);
   const soil = new THREE.Mesh(
-    new THREE.BoxGeometry(2.0, 0.08, 0.9),
-    new THREE.MeshStandardMaterial({ color: '#3a2a1c', roughness: 1 }),
+    new THREE.BoxGeometry(1.5, 0.06, 0.42),
+    new THREE.MeshStandardMaterial({ color: '#2a2218', roughness: 1 }),
   );
-  soil.position.y = 0.58;
+  soil.position.y = 0.4;
   g.add(soil);
 
-  if (bushCached) {
-    for (const [x, z, s, rot, leaf] of [
-      [-0.55, 0.05, 1.15, 0.4, '#5fa84a'],
-      [0.1, -0.05, 1.3, 1.2, '#6bb854'],
-      [0.55, 0.08, 1.1, 2.1, '#4e9a40'],
-    ] as const) {
-      const b = bushCached.clone(true);
-      tintNatural(b, leaf);
-      b.position.set(x, 0.55, z);
-      b.scale.setScalar(s);
-      b.rotation.y = rot;
-      g.add(b);
-    }
-  } else {
-    const bushMat = new THREE.MeshStandardMaterial({ color: '#5fa84a', roughness: 0.85, metalness: 0.02 });
-    for (const [x, z, s] of [
-      [-0.55, 0, 0.42],
-      [0, 0.08, 0.48],
-      [0.55, -0.05, 0.4],
-    ] as const) {
-      const b = new THREE.Mesh(new THREE.SphereGeometry(s, 12, 10), bushMat);
-      b.position.set(x, 0.85, z);
-      b.scale.set(1.1, 0.75, 1.0);
-      b.castShadow = true;
-      g.add(b);
-    }
+  const grassColors = ['#5fa84a', '#6bb854', '#4e9a40', '#7ac45c'];
+  for (let i = 0; i < 6; i++) {
+    const clump = grassClump(grassColors[i % grassColors.length]!, 0.55 + (i % 3) * 0.12);
+    clump.position.set(-0.55 + i * 0.22, 0.4, (i % 2 ? 0.06 : -0.05));
+    g.add(clump);
   }
 
-  const cols = ['#ff6f91', '#ffe066', '#c88bff', '#ff8f6f', '#ffb3d1'];
-  for (let i = 0; i < 5; i++) {
-    const f = flower(cols[i % cols.length]!);
-    f.position.set(-0.7 + i * 0.35, 0.72 + (i % 2) * 0.08, i % 2 ? 0.25 : -0.2);
+  if (bushCached) {
+    const b = bushCached.clone(true);
+    b.position.set(0.15, 0.38, 0);
+    b.scale.setScalar(0.55);
+    b.rotation.y = 0.8;
+    g.add(b);
+  }
+
+  const cols = ['#ff6f91', '#ffe066', '#c88bff'];
+  for (let i = 0; i < 3; i++) {
+    const f = flower(cols[i]!);
+    f.position.set(-0.4 + i * 0.35, 0.62 + (i % 2) * 0.06, i % 2 ? 0.12 : -0.1);
     g.add(f);
-    const stem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.015, 0.02, 0.25, 5),
-      new THREE.MeshStandardMaterial({ color: '#3d7a40', roughness: 0.9 }),
-    );
-    stem.position.set(f.position.x, 0.62, f.position.z);
-    g.add(stem);
   }
   return g;
 }

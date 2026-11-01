@@ -10,7 +10,8 @@
     "test": "vitest run",
     "mp:dev": "npm --prefix server run dev",
     "mp:test": "vitest run src/mp",
-    "mp:e2e": "node scripts/mp-e2e.mjs"
+    "mp:e2e": "node scripts/mp-e2e.mjs",
+    "bake:trees": "node scripts/bake-ez-trees.mjs"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.5.1",
@@ -25,6 +26,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@dgreenheck/ez-tree": "^1.1.0",
     "@fontsource/fredoka": "^5.2.8",
     "n8ao": "^2.0.1",
     "postprocessing": "^6.39.6",

@@ -7,6 +7,14 @@ import { footprintOf } from './colliders.ts';
 import { buildFurniture } from './furniture.ts';
 import { box, G, glowMat, mat, rbox, textTexture } from './kit.ts';
 import { SharedMats, physicalGlass } from './pbrTextures.ts';
+import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+
+let rectAreaReady = false;
+function ensureRectArea() {
+  if (rectAreaReady) return;
+  RectAreaLightUniformsLib.init();
+  rectAreaReady = true;
+}
 
 export const WALL_H = 6.2;
 
@@ -144,17 +152,88 @@ export function createInterior(): Interior {
         };
         const back = mk(0, -d / 2 - 0.2, w + 0.8, 0.4, 'z', -d / 2, -1);
         if (house.style === 'moderne' && f === 0) {
-          // Open center of back wall so panoramic skyline reads (no blank bunker wall)
-          back.traverse((o) => {
-            const m = o as THREE.Mesh;
-            if (m.isMesh && m.geometry) {
-              // shrink solid wall visually — keep thin side returns only via scale on root mesh
+          // Replace solid back wall with open panoramic window wall (no floating trim leftovers)
+          back.clear();
+          walls = walls.filter((wl) => wl.mesh !== back);
+          const panW = Math.min(w * 0.88, 16);
+          const panH = 4.1;
+          const zBack = -d / 2;
+          const frameMat = new THREE.MeshStandardMaterial({ color: '#e8eef4', metalness: 0.35, roughness: 0.32 });
+          const darkMat = new THREE.MeshStandardMaterial({ color: '#2a3340', metalness: 0.45, roughness: 0.35 });
+          // side returns
+          for (const sx of [-1, 1]) {
+            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.55, WALL_H, 0.4), wallMat);
+            ret.position.set(sx * (panW / 2 + 0.4), y0 + WALL_H / 2, zBack - 0.05);
+            ret.receiveShadow = true;
+            back.add(ret);
+          }
+          // header + sill
+          const header = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.8, 0.55, 0.35), frameMat);
+          header.position.set(0, y0 + 5.35, zBack);
+          back.add(header);
+          const sill = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.6, 0.2, 0.45), darkMat);
+          sill.position.set(0, y0 + 1.05, zBack + 0.05);
+          back.add(sill);
+          // mullions
+          for (const mx of [-panW * 0.28, 0, panW * 0.28]) {
+            const mull = new THREE.Mesh(new THREE.BoxGeometry(0.08, panH, 0.1), frameMat);
+            mull.position.set(mx, y0 + 3.15, zBack + 0.08);
+            back.add(mull);
+          }
+          // skyline backdrop (outside)
+          {
+            const sky = document.createElement('canvas');
+            sky.width = 1024; sky.height = 384;
+            const sctx = sky.getContext('2d')!;
+            const grd = sctx.createLinearGradient(0, 0, 0, 384);
+            grd.addColorStop(0, '#6aa0d0'); grd.addColorStop(0.45, '#b8d0e4'); grd.addColorStop(1, '#e4ecf2');
+            sctx.fillStyle = grd; sctx.fillRect(0, 0, 1024, 384);
+            for (let k = 0; k < 36; k++) {
+              const bw = 14 + (k * 9) % 36;
+              const bh = 60 + (k * 23) % 220;
+              sctx.fillStyle = k % 3 === 0 ? '#4a5a68' : '#5a6a78';
+              sctx.fillRect(8 + k * 28, 384 - bh, bw, bh);
+              sctx.fillStyle = '#9ad8ffcc';
+              for (let wy = 0; wy < 10; wy++) sctx.fillRect(12 + k * 28, 384 - bh + 12 + wy * 18, bw - 8, 8);
             }
-          });
-          back.children.forEach((ch, i) => {
-            if (i === 0) ch.visible = false; // hide main wall slab
-          });
-        }
+            const stex = new THREE.CanvasTexture(sky);
+            stex.colorSpace = THREE.SRGBColorSpace;
+            const card = new THREE.Mesh(
+              new THREE.PlaneGeometry(panW * 1.08, panH * 1.1),
+              new THREE.MeshBasicMaterial({ map: stex, side: THREE.DoubleSide }),
+            );
+            // Just outside the glass so it reads through translucent pane
+            card.position.set(0, y0 + 3.15, zBack - 0.55);
+            back.add(card);
+            // distant tower meshes for parallax depth
+            for (const [tx, th] of [[-5.5, 6.5], [-2.2, 8.2], [1.8, 7.0], [4.8, 9.0], [7.2, 5.5]] as const) {
+              const tw = new THREE.Mesh(
+                new THREE.BoxGeometry(1.1 + (th % 2) * 0.3, th, 1.1),
+                new THREE.MeshStandardMaterial({ color: '#6a7a88', roughness: 0.55, metalness: 0.2 }),
+              );
+              tw.position.set(tx, y0 + th / 2 + 0.8, zBack - 1.1);
+              back.add(tw);
+            }
+          }
+          // SwiftShader-safe glass (transmission often draws as opaque white)
+          const glass = new THREE.Mesh(
+            new THREE.BoxGeometry(panW, panH, 0.05),
+            new THREE.MeshPhysicalMaterial({
+              color: '#c8dff0',
+              metalness: 0.05,
+              roughness: 0.05,
+              transparent: true,
+              opacity: 0.22,
+              transmission: 0,
+              depthWrite: false,
+              envMapIntensity: 1.1,
+            }),
+          );
+          glass.position.set(0, y0 + 3.15, zBack + 0.14);
+          back.add(glass);
+          walls.push({ mesh: back, axis: 'z', at: -d / 2, sign: -1 });
+        } else {
+        // panoramic skyline window on back wall (non-moderne styles)
         // panoramic skyline window on back wall (concept 2-hus-inne)
         {
           const panW = Math.min(w * 0.72, 14);
@@ -189,6 +268,7 @@ export function createInterior(): Interior {
           back.add(card);
         }
 
+        }
         const left = mk(-w / 2 - 0.2, 0, 0.4, d, 'x', -w / 2, -1);
         const right = mk(w / 2 + 0.2, 0, 0.4, d, 'x', w / 2, 1);
         if (f === 0) {
@@ -247,43 +327,89 @@ export function createInterior(): Interior {
             wall.add(card);
           }
         }
-        // LED cove around ceiling perimeter (concept 2-hus-inne)
+        // LED cove around ceiling perimeter (emissive strip + rect area light)
         {
-          const coveY = y0 + WALL_H - 0.12;
-          const coveMat = glowMat('#ffe8d0', 2.4);
+          ensureRectArea();
+          const coveY = y0 + WALL_H - 0.14;
+          const coveMat = glowMat('#ffe8d0', 3.2);
           const mkCove = (sx: number, sz: number, px: number, pz: number) => {
-            const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.04, sz), coveMat);
+            const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.045, sz), coveMat);
             c.position.set(px, coveY, pz);
             fg.add(c);
           };
-          mkCove(w * 0.92, 0.08, 0, -d / 2 + 0.35);
-          mkCove(w * 0.92, 0.08, 0, d / 2 - 0.35);
-          mkCove(0.08, d * 0.85, -w / 2 + 0.35, 0);
-          mkCove(0.08, d * 0.85, w / 2 - 0.35, 0);
-          // soft rect light feel
-          const soft = new THREE.Mesh(
-            new THREE.PlaneGeometry(w * 0.55, d * 0.4),
-            new THREE.MeshBasicMaterial({ color: '#fff6e8', transparent: true, opacity: 0.08, depthWrite: false }),
-          );
-          soft.rotation.x = Math.PI / 2;
-          soft.position.set(0, coveY - 0.02, -d * 0.05);
-          fg.add(soft);
+          mkCove(w * 0.9, 0.07, 0, -d / 2 + 0.4);
+          mkCove(w * 0.9, 0.07, 0, d / 2 - 0.4);
+          mkCove(0.07, d * 0.82, -w / 2 + 0.4, 0);
+          mkCove(0.07, d * 0.82, w / 2 - 0.4, 0);
+          if (f === 0) {
+            const area = new THREE.RectAreaLight('#fff1e0', 4.5, w * 0.55, d * 0.35);
+            area.position.set(0, coveY - 0.05, -d * 0.08);
+            area.rotation.x = -Math.PI / 2;
+            fg.add(area);
+          }
         }
-        // Holographic wall screen on back wall (living area)
+        // Living-room composition facing the panoramic window (concept 2-hus-inne)
         if (f === 0) {
-          const holoFrame = new THREE.Mesh(
-            new THREE.PlaneGeometry(4.4, 2.6),
-            new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.6, roughness: 0.3 }),
-          );
-          holoFrame.position.set(-3.2, y0 + 2.55, -d / 2 + 0.25);
-          fg.add(holoFrame);
+          const living = new THREE.Group();
+          // Sofa facing window (−Z)
           {
+            const sofa = new THREE.Group();
+            const base = new THREE.Mesh(
+              new THREE.BoxGeometry(3.4, 0.55, 1.15),
+              new THREE.MeshStandardMaterial({ color: '#e8eef4', roughness: 0.55, metalness: 0.05 }),
+            );
+            base.position.y = 0.4;
+            sofa.add(base);
+            const backrest = new THREE.Mesh(
+              new THREE.BoxGeometry(3.4, 0.85, 0.28),
+              new THREE.MeshStandardMaterial({ color: '#dfe6ee', roughness: 0.55, metalness: 0.05 }),
+            );
+            backrest.position.set(0, 0.95, 0.45);
+            sofa.add(backrest);
+            for (const sx of [-1.45, 1.45]) {
+              const arm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.28, 0.55, 1.05),
+                new THREE.MeshStandardMaterial({ color: '#d0d8e2', roughness: 0.5, metalness: 0.06 }),
+              );
+              arm.position.set(sx, 0.7, 0);
+              sofa.add(arm);
+            }
+            sofa.position.set(-1.6, y0, 1.1);
+            living.add(sofa);
+          }
+          // Coffee table
+          {
+            const table = new THREE.Group();
+            const top = new THREE.Mesh(
+              new THREE.BoxGeometry(1.5, 0.06, 0.8),
+              new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.25, metalness: 0.55 }),
+            );
+            top.position.y = 0.42;
+            table.add(top);
+            for (const [lx, lz] of [[-0.55, -0.28], [0.55, -0.28], [-0.55, 0.28], [0.55, 0.28]] as const) {
+              const leg = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8),
+                new THREE.MeshStandardMaterial({ color: '#8aa0b8', metalness: 0.7, roughness: 0.3 }),
+              );
+              leg.position.set(lx, 0.2, lz);
+              table.add(leg);
+            }
+            table.position.set(-1.6, y0, -0.35);
+            living.add(table);
+          }
+          // Holo screen + shelves clustered near window (left of center)
+          {
+            const holoFrame = new THREE.Mesh(
+              new THREE.BoxGeometry(2.8, 1.7, 0.08),
+              new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.65, roughness: 0.28 }),
+            );
+            holoFrame.position.set(-4.2, y0 + 2.2, -d / 2 + 0.55);
+            living.add(holoFrame);
             const hc = document.createElement('canvas');
             hc.width = 512; hc.height = 288;
             const hx = hc.getContext('2d')!;
             hx.fillStyle = '#0a1830'; hx.fillRect(0, 0, 512, 288);
-            hx.strokeStyle = '#3ecbff'; hx.lineWidth = 2;
-            hx.strokeRect(16, 16, 480, 256);
+            hx.strokeStyle = '#3ecbff'; hx.lineWidth = 2; hx.strokeRect(12, 12, 488, 264);
             hx.fillStyle = '#3ecbff'; hx.font = '600 22px Inter, system-ui, sans-serif';
             hx.fillText('NORDIC HOME OS', 28, 48);
             hx.strokeStyle = '#5a8cff88';
@@ -295,71 +421,27 @@ export function createInterior(): Interior {
             }
             hx.fillStyle = '#7ef0ff';
             for (let i = 0; i < 12; i++) hx.fillRect(36 + i * 38, 240, 24, 8 + (i * 13) % 20);
-            hx.strokeStyle = '#c88bff'; hx.strokeRect(320, 70, 150, 120);
-            hx.fillStyle = '#c88bffaa'; hx.fillText('PLAN', 360, 100);
             const htex = new THREE.CanvasTexture(hc);
             htex.colorSpace = THREE.SRGBColorSpace;
             const holo = new THREE.Mesh(
-              new THREE.PlaneGeometry(4.2, 2.4),
-              new THREE.MeshBasicMaterial({ map: htex, transparent: true, opacity: 0.95 }),
+              new THREE.PlaneGeometry(2.65, 1.55),
+              new THREE.MeshBasicMaterial({ map: htex }),
             );
-            holo.position.set(-3.2, y0 + 2.55, -d / 2 + 0.28);
-            fg.add(holo);
-            const holoGlow = new THREE.Mesh(new THREE.PlaneGeometry(4.35, 2.55), glowMat('#3a7cff', 0.45));
-            holoGlow.position.set(-3.2, y0 + 2.55, -d / 2 + 0.26);
-            fg.add(holoGlow);
-          }
-          // shelves flanking holo
-          for (const sx of [-1, 1]) {
-            const shelf = new THREE.Mesh(
-              new THREE.BoxGeometry(0.9, 2.2, 0.35),
-              SharedMats.wood.clone(),
-            );
-            shelf.position.set(-3.2 + sx * 2.55, y0 + 2.35, -d / 2 + 0.45);
-            fg.add(shelf);
-          }
-
-          // Large panoramic city window (concept 2-hus-inne) — dominates back wall
-          {
-            const panW = Math.min(w * 0.55, 12);
-            const panH = 3.8;
-            const sky = document.createElement('canvas');
-            sky.width = 768; sky.height = 320;
-            const sctx = sky.getContext('2d')!;
-            const grd = sctx.createLinearGradient(0, 0, 0, 320);
-            grd.addColorStop(0, '#7eb0d8'); grd.addColorStop(0.45, '#c5d8e8'); grd.addColorStop(1, '#e8eef4');
-            sctx.fillStyle = grd; sctx.fillRect(0, 0, 768, 320);
-            sctx.fillStyle = '#5a6a78';
-            for (let k = 0; k < 28; k++) {
-              const bw = 12 + (k * 7) % 32;
-              const bh = 50 + (k * 19) % 180;
-              sctx.fillRect(10 + k * 27, 320 - bh, bw, bh);
-              sctx.fillStyle = '#8ecbffaa';
-              for (let wy = 0; wy < 8; wy++) sctx.fillRect(14 + k * 27, 320 - bh + 10 + wy * 16, bw - 8, 7);
-              sctx.fillStyle = '#5a6a78';
+            holo.position.set(-4.2, y0 + 2.2, -d / 2 + 0.6);
+            living.add(holo);
+            const holoGlow = new THREE.PointLight('#3a7cff', 0.55, 6, 2);
+            holoGlow.position.set(-4.2, y0 + 2.2, -d / 2 + 1.2);
+            living.add(holoGlow);
+            for (const sx of [-1, 1]) {
+              const shelf = new THREE.Mesh(
+                new THREE.BoxGeometry(0.7, 1.9, 0.32),
+                SharedMats.wood.clone(),
+              );
+              shelf.position.set(-4.2 + sx * 1.85, y0 + 1.85, -d / 2 + 0.7);
+              living.add(shelf);
             }
-            const stex = new THREE.CanvasTexture(sky);
-            stex.colorSpace = THREE.SRGBColorSpace;
-            const livingSky = new THREE.Mesh(
-              new THREE.PlaneGeometry(panW * 0.98, panH * 0.95),
-              new THREE.MeshBasicMaterial({ map: stex }),
-            );
-            livingSky.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.12);
-            fg.add(livingSky);
-            const frame = new THREE.Mesh(
-              new THREE.BoxGeometry(panW, panH + 0.2, 0.1),
-              new THREE.MeshStandardMaterial({ color: '#e8eef4', metalness: 0.35, roughness: 0.35 }),
-            );
-            frame.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.08);
-            fg.add(frame);
-            const pane = new THREE.Mesh(
-              new THREE.PlaneGeometry(panW * 0.97, panH * 0.94),
-              physicalGlass('#b8d8ec', 0.5),
-            );
-            pane.position.set(w * 0.12, y0 + 3.0, -d / 2 + 0.18);
-            fg.add(pane);
           }
-          // Kitchen island with under-glow (concept)
+          // Kitchen island to the right
           if (house.style === 'moderne') {
             const island = new THREE.Group();
             const base = new THREE.Mesh(
@@ -387,34 +469,42 @@ export function createInterior(): Interior {
             faucet.position.set(0.6, 1.2, 0);
             faucet.rotation.y = Math.PI / 2;
             island.add(faucet);
-            island.position.set(4.2, y0, -1.2);
-            fg.add(island);
+            island.position.set(4.6, y0, 0.4);
+            living.add(island);
             for (const sx of [-0.55, 0.55]) {
               const stool = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.22, 0.25, 0.7, 16),
                 new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.35, metalness: 0.5 }),
               );
-              stool.position.set(4.2 + sx, y0 + 0.35, 0.2);
-              fg.add(stool);
+              stool.position.set(4.6 + sx, y0 + 0.35, 1.5);
+              living.add(stool);
               const seat = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16),
                 SharedMats.wood.clone(),
               );
-              seat.position.set(4.2 + sx, y0 + 0.72, 0.2);
-              fg.add(seat);
+              seat.position.set(4.6 + sx, y0 + 0.72, 1.5);
+              living.add(seat);
             }
           }
+          fg.add(living);
         }
+
         // inner walls between the rooms, with door gaps
         for (const r of L.walls[f]) {
-          const g = new THREE.Group();
-          // Moderne "glass wall" (tall thin partitions along x) — glass, not grey pillars
+          // Moderne open living: skip thin glass partitions on ground floor (read as floating white slabs)
           const isGlassWall = house.style === 'moderne' && r.hw < 0.35 && r.hd > 1.5;
+          if (isGlassWall && f === 0) continue;
+          const g = new THREE.Group();
           const m = new THREE.Mesh(
             G.box(),
-            isGlassWall ? physicalGlass('#b8d4e8', 0.55) : wallMat,
+            isGlassWall
+              ? new THREE.MeshPhysicalMaterial({
+                  color: '#c8dff0', metalness: 0.05, roughness: 0.08,
+                  transparent: true, opacity: 0.28, transmission: 0, depthWrite: false,
+                })
+              : wallMat,
           );
-          m.scale.set(isGlassWall ? 0.12 : r.hw * 2, WALL_H - 0.2, r.hd * 2);
+          m.scale.set(isGlassWall ? 0.1 : r.hw * 2, WALL_H - 0.2, r.hd * 2);
           m.position.set(r.x, y0 + (WALL_H - 0.2) / 2, r.z);
           m.receiveShadow = !isGlassWall;
           m.castShadow = !isGlassWall;

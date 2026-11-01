@@ -538,8 +538,8 @@ export class Game {
     // Face into the house (−Z from the door). yaw 0 = −Z in three.js.
     this.player.yaw = 0;
     this.cam.yaw = 0;
-    this.cam.pitch = 0.12;
-    this.cam.dist = 4.8;
+    this.cam.pitch = 0.08;
+    this.cam.dist = 5.2;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#d8dde4');
     this.scene.fog = null;
@@ -1262,18 +1262,20 @@ export class Game {
       this.camera.position.set(f.x, f.y, f.z);
       this.camera.lookAt(f.lx, f.ly, f.lz);
     } else {
-    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.85 : 1.55), p.pos.z);
+    const target = new THREE.Vector3(p.pos.x, p.pos.y + (ride ? 3.5 : this.driving ? 0.95 : 1.55), p.pos.z);
     // on a swing or the merry-go-round the camera watches the whole piece, not the (moving) rider
     if (seat) target.set(seat.focus.x, seat.focus.y, seat.focus.z);
-    // Driving chase: concept framing — ~6.5 m behind, ~2 m up, car in lower-middle third
+    // Driving chase: full car in lower-middle (concept 4-bil) — ~7 m back, ~2.2 m up
     if (this.driving && !seat) {
-      const ahead = 4.5;
+      // Slight look-ahead; keep cam ~7–8 m behind car centre (ahead eats into dist)
+      const ahead = 0.85;
       target.x -= Math.sin(p.yaw) * ahead;
       target.z -= Math.cos(p.yaw) * ahead;
       if (Math.abs(inp.camDX) < 0.5 && Math.abs(inp.camDY) < 0.5 && Math.abs(inp.zoom) < 0.05) {
         this.cam.yaw += (p.yaw - this.cam.yaw) * Math.min(1, dt * 4);
-        this.cam.pitch += (0.22 - this.cam.pitch) * Math.min(1, dt * 2);
-        this.cam.dist += (6.6 - this.cam.dist) * Math.min(1, dt * 2);
+        // sin(0.18)*7 ≈ 1.25 → camera y ≈ 0.95+1.25 ≈ 2.2
+        this.cam.pitch += (0.2 - this.cam.pitch) * Math.min(1, dt * 3);
+        this.cam.dist += (8.5 - this.cam.dist) * Math.min(1, dt * 3);
       }
     }
     // while furnishing, the panel covers the lower right: shift the picture up so you and the room stay in view
@@ -1288,11 +1290,14 @@ export class Game {
     } else {
       const cp = Math.cos(this.cam.pitch);
       let dist = this.cam.dist;
-      if (this.mode === 'town' && !this.building) {
+      if (this.mode === 'town' && !this.building && !this.driving) {
         // pulled in at once when a building is in the way, eased back out afterwards (no popping)
         const room = this.cameraRoom(target, cp);
         this.camShown = room < this.camShown ? room : this.camShown + (Math.min(room, this.cam.dist) - this.camShown) * Math.min(1, dt * 6);
         dist = Math.min(this.camShown, this.cam.dist);
+      } else if (this.driving) {
+        this.camShown = this.cam.dist;
+        dist = this.cam.dist;
       }
       const desired = new THREE.Vector3(
         target.x + Math.sin(this.cam.yaw) * cp * dist,
@@ -1312,12 +1317,12 @@ export class Game {
       }
       const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
-      const coll = this.mode === 'house'
-        ? desired // already clamped inside — skip exterior collision push-out
+      const coll = (this.mode === 'house' || this.driving)
+        ? desired // chase framing must not be crushed by collideCamera / interior clamp
         : collideCamera({ target, desired, scene: this.scene, ignore, minDist: 2.0 });
       this.camera.position.copy(coll);
       this.camera.lookAt(target);
-      if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
+      if (this.mode !== 'house' && !this.driving) fadeOccluders(this.scene, this.camera.position, target, ignore);
     }
     } // end !freezeCam
     if (this.mode === 'house') {
@@ -1905,10 +1910,10 @@ export class Game {
     this.sleeping = null;
     this.driving = id;
     this.syncVehicleMesh();
-    // Default chase cam (gameplay): low, behind car, looks ahead
+    // Default chase cam (gameplay): ~8 m back, ~2.2 m up, whole car in lower-middle
     this.cam.yaw = this.player.yaw;
-    this.cam.pitch = 0.26;
-    this.cam.dist = 11.5;
+    this.cam.pitch = 0.2;
+    this.cam.dist = 8.5;
     this.camShown = this.cam.dist;
     sfx.whoosh();
     toast(`Kjører ${CAR_BY_ID[id]?.name ?? 'bil'}! Bruk styrespaken 🚗`, 'ok');

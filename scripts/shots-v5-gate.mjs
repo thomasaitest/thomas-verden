@@ -26,14 +26,13 @@ async function prep(page) {
       locked: false,
       createdAt: now,
       items: [
-        // bedroom pod visible through doorway (back-left nook)
         { uid: 'it1', itemId: 'seng', x: -2.5, z: -7.5, rot: 0, scale: 1.1, color: '#e8eef6', floor: 0 },
-        // curved sofa on round rug — living, facing window (-Z) / holo wall
-        { uid: 'it3', itemId: 'langsofa', x: -3.0, z: 0.8, rot: 3.29159265, scale: 1.5, color: '#e8eef4', floor: 0 },
-        { uid: 'it9', itemId: 'rundtteppe', x: -2.6, z: 1.6, rot: 0, scale: 1.85, color: '#4a5560', floor: 0 },
-        { uid: 'it11', itemId: 'salongbord', x: -2.4, z: 2.4, rot: 0.1, scale: 1.2, color: '#1a2230', floor: 0 },
-        { uid: 'it10', itemId: 'potteplante', x: -5.0, z: -0.5, rot: 0, scale: 1.2, color: '#5cc36b', floor: 0 },
-        { uid: 'it10b', itemId: 'potteplante', x: 6.5, z: -6.0, rot: 0, scale: 1.1, color: '#5cc36b', floor: 0 },
+        // Living composition facing panoramic window (−Z)
+        { uid: 'it3', itemId: 'langsofa', x: -1.6, z: 1.4, rot: 0, scale: 1.35, color: '#e8eef4', floor: 0 },
+        { uid: 'it9', itemId: 'rundtteppe', x: -1.6, z: 0.2, rot: 0, scale: 1.6, color: '#4a5560', floor: 0 },
+        { uid: 'it11', itemId: 'salongbord', x: -1.6, z: -0.2, rot: 0.05, scale: 1.15, color: '#1a2230', floor: 0 },
+        { uid: 'it10', itemId: 'potteplante', x: -5.2, z: -0.8, rot: 0, scale: 1.15, color: '#5cc36b', floor: 0 },
+        { uid: 'it10b', itemId: 'potteplante', x: 5.8, z: -1.0, rot: 0, scale: 1.1, color: '#5cc36b', floor: 0 },
       ],
     };
     const save = {
@@ -67,6 +66,18 @@ async function prep(page) {
       toysGiven: true,
     };
     localStorage.setItem('thomasverden-save-v1', JSON.stringify(save));
+  });
+  // Bust PWA SW so preview always serves the just-built JS/assets
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
+  await page.evaluate(async () => {
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations?.() ?? [];
+      await Promise.all(regs.map((r) => r.unregister()));
+      if (window.caches?.keys) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {}
   });
   await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
   await page.waitForFunction(() => !!window.__hv, null, { timeout: 120000 });
@@ -195,15 +206,19 @@ await page.evaluate(() => {
   g.player.pos.set(0, 0, 32);
   g.player.yaw = 0;
   g.cam.yaw = 0;
-  g.cam.pitch = 0.22;
-  g.cam.dist = 6.6;
-  g.camShown = 6.6;
+  g.cam.pitch = 0.2;
+  g.cam.dist = 8.5;
+  g.camShown = 8.5;
   if (g.vehicleMesh) {
     g.vehicleMesh.position.set(0, 0, 32);
     g.vehicleMesh.rotation.y = 0;
   }
+  // Explicit rear 3/4 framing (~7.5 m back, ~2.2 m up, look slightly ahead of car)
+  // freezeCam bypasses any leftover collide/lerp so the gate shot matches gameplay intent
+  g.freezeCam = { x: 2.2, y: 2.35, z: 32 + 7.2, lx: 0, ly: 0.85, lz: 32 - 1.2 };
   g.hud?.setWhere?.('Dag · Sol');
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
+  console.log('CARCAM', g.driving, g.cam, g.camera.position.toArray(), g.freezeCam);
 });
 await shot(page, '02-car-street', 2200);
 
@@ -216,14 +231,13 @@ await page.evaluate(async () => {
   g.syncPets?.();
   g.enterHouse(); // sets default interior cam
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
-  // Walk into living — sofa left, island mid, holo+skyline ahead
-  // Door at +Z; back wall / holo / skyline at -Z — face yaw 0
-  g.player.pos.set(0.5, 0, 4.2);
+  // Living cam faces panoramic window wall (−Z): sofa/table mid, island right, skyline ahead
+  g.player.pos.set(0.2, 0, 3.6);
   g.player.yaw = 0.0;
   g.cam.yaw = 0.0;
-  g.cam.pitch = 0.08;
-  g.cam.dist = 3.8;
-  g.camShown = 3.8;
+  g.cam.pitch = 0.06;
+  g.cam.dist = 4.6;
+  g.camShown = 4.6;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 800));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
