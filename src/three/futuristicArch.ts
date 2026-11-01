@@ -171,37 +171,43 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     g.add(band);
   }
 
-  // window grid on front (opaque panes + frames — readable at distance)
+  // deep window recesses (dark cavities + glass) — reads at distance
   const cols = 4;
   const rows = storeys;
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const pw = (w * 0.72) / cols - 0.15;
-      const ph = 2.4;
+      const pw = (w * 0.72) / cols - 0.18;
+      const ph = 2.35;
       const px = -w * 0.36 + (col + 0.5) * ((w * 0.72) / cols);
       const py = 1.55 + row * 3.4;
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.12, ph + 0.12, 0.1), mat('#e8eef4', 0, { metalness: 0.25, roughness: 0.35 }));
-      frame.position.set(px, py, d / 2 + 0.06);
+      // recessed dark well
+      const well = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, 0.55), mat('#1a2230', 0, { metalness: 0.3, roughness: 0.55 }));
+      well.position.set(px, py, d / 2 - 0.15);
+      g.add(well);
+      // white frame lip
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.16, ph + 0.16, 0.08), mat('#f2f5f8', 0, { metalness: 0.2, roughness: 0.35 }));
+      frame.position.set(px, py, d / 2 + 0.12);
       g.add(frame);
+      // glass pane
       const pane = new THREE.Mesh(
-        new THREE.PlaneGeometry(pw, ph),
+        new THREE.PlaneGeometry(pw * 0.92, ph * 0.92),
         new THREE.MeshStandardMaterial({
-          color: row === 0 ? '#2a5a78' : '#3a6a88',
-          metalness: 0.55,
-          roughness: 0.12,
+          color: '#4a90b0',
+          metalness: 0.75,
+          roughness: 0.08,
           transparent: true,
-          opacity: 0.72,
-          envMapIntensity: 1.6,
+          opacity: 0.45,
+          envMapIntensity: 2.0,
         }),
       );
-      pane.position.set(px, py, d / 2 + 0.12);
+      pane.position.set(px, py, d / 2 + 0.17);
       g.add(pane);
-      // warm interior card
+      // warm interior glow deep in well
       const card = new THREE.Mesh(
-        new THREE.PlaneGeometry(pw * 0.9, ph * 0.85),
-        new THREE.MeshBasicMaterial({ color: row === 0 ? '#ffe4c0' : '#e8f0ff', transparent: true, opacity: 0.55 }),
+        new THREE.PlaneGeometry(pw * 0.85, ph * 0.8),
+        new THREE.MeshBasicMaterial({ color: row === 0 ? '#ffd9a8' : '#c8e0ff', transparent: true, opacity: 0.7 }),
       );
-      card.position.set(px, py, d / 2 - 0.35);
+      card.position.set(px, py, d / 2 - 0.4);
       g.add(card);
     }
   }
