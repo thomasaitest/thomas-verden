@@ -5,7 +5,8 @@ import { blocked, type CircleCollider, type Colliders, type RectCollider } from 
 import { FLOOR_H, FLOORS, floorColliders, houseLayout, type HouseLayout } from '../logic/layout.ts';
 import { footprintOf } from './colliders.ts';
 import { buildFurniture } from './furniture.ts';
-import { box, G, mat, rbox, textTexture, tileTexture } from './kit.ts';
+import { box, G, glowMat, mat, rbox, textTexture } from './kit.ts';
+import { SharedMats, physicalGlass } from './pbrTextures.ts';
 
 export const WALL_H = 6.2;
 
@@ -65,6 +66,17 @@ export function createInterior(): Interior {
       shell.clear();
       floorGroups.forEach((g) => g.clear());
       shell.add(...floorGroups);
+      // Warm cove-style fills — keep moderate so whites don't haze under ACES
+      const fill = new THREE.PointLight('#ffd7b0', 0.85, 30, 2);
+      fill.name = 'InteriorFillLight';
+      fill.position.set(0, 4.2, 0);
+      shell.add(fill);
+      const fill2 = new THREE.PointLight('#c8e4ff', 0.4, 24, 2);
+      fill2.position.set(-5, 3.2, -4);
+      shell.add(fill2);
+      const fill3 = new THREE.PointLight('#ffe2c0', 0.35, 18, 2);
+      fill3.position.set(4, 2.2, 2);
+      shell.add(fill3);
       const { w, d } = roomSize(house.style);
       const L = houseLayout(house.style);
       api.layout = L;
@@ -73,20 +85,21 @@ export function createInterior(): Interior {
       api.door = { ...L.door };
       walls = [];
       partitions = [];
-      const wallMat = mat(house.wallColor);
-      const trim = '#ffffff';
+      const wallMat = SharedMats.interiorWall.clone();
+      wallMat.color.set(house.wallColor || '#c5ccd4');
+      const trim = '#d8dee6';
       const st = L.stairs;
       for (let f = 0; f < FLOORS; f++) {
         const fg = floorGroups[f];
         const y0 = f * FLOOR_H;
         // floor slab (the upper one has a hole for the stairs)
-        const floorTex = tileTexture(256, { tile: house.floorColor, mortar: '#9aa3ae', tiles: 6 });
-        floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
         const slab = (x0: number, x1: number, z0: number, z1: number) => {
           if (x1 - x0 < 0.01 || z1 - z0 < 0.01) return;
-          const matFloor = new THREE.MeshStandardMaterial({ map: floorTex.clone(), color: '#ffffff', roughness: 0.55, metalness: 0.05 });
-          matFloor.map!.repeat.set(Math.max(1, (x1 - x0) / 3), Math.max(1, (z1 - z0) / 3));
-          matFloor.map!.needsUpdate = true;
+          const matFloor = SharedMats.interiorFloor.clone();
+          matFloor.color.set(house.floorColor || '#8a929c');
+          matFloor.roughness = 0.4;
+          matFloor.metalness = 0.12;
+          matFloor.envMapIntensity = 1.0;
           const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.4, z1 - z0), matFloor);
           m.position.set((x0 + x1) / 2, y0 - 0.2, (z0 + z1) / 2);
           m.receiveShadow = true;
@@ -127,7 +140,7 @@ export function createInterior(): Interior {
           box(back, '#8aa0b8', [0, y0 + 3.4, -d / 2 + 0.05], [panW + 0.3, panH + 0.3, 0.12]);
           const glass = new THREE.Mesh(
             new THREE.BoxGeometry(panW, panH, 0.06),
-            new THREE.MeshStandardMaterial({ color: '#9ad8ff', transparent: true, opacity: 0.22, metalness: 0.35, roughness: 0.08, envMapIntensity: 1.2, depthWrite: false }),
+            physicalGlass('#9ad8ff', 0.55),
           );
           glass.position.set(0, y0 + 3.4, -d / 2 + 0.12);
           back.add(glass);
@@ -212,8 +225,49 @@ export function createInterior(): Interior {
             wall.add(card);
           }
         }
-        // ceiling LED channel
-        box(fg, '#3ecbff', [0, y0 + WALL_H - 0.15, 0], [w * 0.65, 0.04, 0.08], undefined, 0.85);
+        // LED cove around ceiling perimeter (concept 2-hus-inne)
+        {
+          const coveY = y0 + WALL_H - 0.12;
+          const coveMat = glowMat('#ffe6c8', 0.9);
+          const mkCove = (sx: number, sz: number, px: number, pz: number) => {
+            const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.04, sz), coveMat);
+            c.position.set(px, coveY, pz);
+            fg.add(c);
+          };
+          mkCove(w * 0.92, 0.08, 0, -d / 2 + 0.35);
+          mkCove(w * 0.92, 0.08, 0, d / 2 - 0.35);
+          mkCove(0.08, d * 0.85, -w / 2 + 0.35, 0);
+          mkCove(0.08, d * 0.85, w / 2 - 0.35, 0);
+          // soft rect light feel
+          const soft = new THREE.Mesh(
+            new THREE.PlaneGeometry(w * 0.55, d * 0.4),
+            new THREE.MeshBasicMaterial({ color: '#fff6e8', transparent: true, opacity: 0.08, depthWrite: false }),
+          );
+          soft.rotation.x = Math.PI / 2;
+          soft.position.set(0, coveY - 0.02, -d * 0.05);
+          fg.add(soft);
+        }
+        // Holographic wall screen on back wall (living area)
+        if (f === 0) {
+          const holoFrame = new THREE.Mesh(
+            new THREE.PlaneGeometry(4.4, 2.6),
+            new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.6, roughness: 0.3 }),
+          );
+          holoFrame.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.25);
+          fg.add(holoFrame);
+          const holo = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.4), glowMat('#3a7cff', 0.65));
+          holo.position.set(-w * 0.18, y0 + 2.6, -d / 2 + 0.28);
+          fg.add(holo);
+          // shelves flanking holo
+          for (const sx of [-1, 1]) {
+            const shelf = new THREE.Mesh(
+              new THREE.BoxGeometry(0.9, 2.2, 0.35),
+              SharedMats.wood.clone(),
+            );
+            shelf.position.set(-w * 0.18 + sx * 2.6, y0 + 2.4, -d / 2 + 0.45);
+            fg.add(shelf);
+          }
+        }
         // inner walls between the rooms, with door gaps
         for (const r of L.walls[f]) {
           const g = new THREE.Group();

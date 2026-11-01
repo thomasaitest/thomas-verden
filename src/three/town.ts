@@ -17,7 +17,7 @@ import {
 import { collectColliders, solid } from './colliders.ts';
 import { fillCarShop, fillHospital, fillPetShop, fillShop } from './buildings.ts';
 import { EQUIPMENT, MERRY, SEESAW, SLIDE, SWING_PIVOT_Y, SWING_ROPE, SWING_XS, SWING_Z, TRAMP, merryAngle, seatAt, seesawAngle, swingAngle, type EquipDef, type Seat } from '../logic/playground.ts';
-import { asphaltTexture, box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, part, rbox, shadowAll, sph, textTexture } from './kit.ts';
+import { box, cone, cyl, G, glassMat, glowMat, mat, mergeStatic, part, rbox, shadowAll, sph, textTexture } from './kit.ts';
 import {
   buildFuturisticShop,
   buildSleekFountain,
@@ -25,9 +25,10 @@ import {
   buildPlanter,
   buildModernBench,
   buildSkylineTower,
-  grassTexture,
-  pavingTexture,
-  pavingNormal,
+  grassGroundMaterial,
+  pavingGroundMaterial,
+  asphaltGroundMaterial,
+  preloadArchMaterials,
 } from './futuristicArch.ts';
 import { buildCar } from './vehicles.ts';
 
@@ -303,22 +304,15 @@ function tree(g: THREE.Group, x: number, z: number, s: number, kind: number, col
 
 
 export function buildTown(): Town {
+  void preloadArchMaterials();
   const group = new THREE.Group();
   const stat = new THREE.Group();
   const zones: Zone[] = [];
   const rects: RectCollider[] = [];
   const circles: CircleCollider[] = [];
 
-  // ground – varied grass
-  const gtex = grassTexture(256);
-  gtex.repeat.set(SIZE / 6, SIZE / 6);
-  const grassMat = new THREE.MeshStandardMaterial({
-    map: gtex,
-    metalness: 0.02,
-    roughness: 0.92,
-    color: '#6a9a62',
-  });
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), grassMat);
+  // ground – PBR grass
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 2, SIZE * 2), grassGroundMaterial());
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   group.add(ground);
@@ -339,13 +333,9 @@ export function buildTown(): Town {
 
   // plaza + fountain (outer wall jumpable; rim and upper bowl are landable)
   {
-    const plazaTex = pavingTexture(512);
-    plazaTex.repeat.set(6, 6);
-    const plazaN = pavingNormal(256);
-    plazaN.repeat.set(6, 6);
     const plaza = new THREE.Mesh(
       new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.12, 64),
-      new THREE.MeshStandardMaterial({ map: plazaTex, normalMap: plazaN, metalness: 0.1, roughness: 0.75, color: '#a0a8b0' }),
+      pavingGroundMaterial(),
     );
     plaza.position.y = 0.05;
     plaza.receiveShadow = true;
@@ -381,7 +371,7 @@ export function buildTown(): Town {
     const mx = (s.x1 + s.x2) / 2;
     const mz = (s.z1 + s.z2) / 2;
     {
-      const roadMesh = new THREE.Mesh(G.box(), new THREE.MeshStandardMaterial({ map: asphaltTexture(128), metalness: 0.15, roughness: 0.85, color: '#6a7280' }));
+      const roadMesh = new THREE.Mesh(G.box(), asphaltGroundMaterial());
       roadMesh.position.set(mx, 0.05, mz);
       roadMesh.scale.set(s.width, 0.06, L);
       roadMesh.rotation.set(0, ang, 0);
@@ -615,14 +605,14 @@ export function buildTown(): Town {
   {
     const facades: { label: string; logoColor: string; ang: number; dist: number; w?: number }[] = [
       // angles picked to clear landmark footprints (shop/pets/cars/play/home)
-      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.95, dist: 20, w: 13 },
-      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.35, dist: 21, w: 12 },
-      { label: 'Havblomst', logoColor: '#4a9a62', ang: 1.35, dist: 20, w: 12 },
-      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 21, w: 11 },
-      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 21, w: 11 },
+      { label: 'Solvind Kaffi', logoColor: '#3ecbff', ang: -0.95, dist: 16, w: 13 },
+      { label: 'Nordic Tech', logoColor: '#5a8cff', ang: 0.35, dist: 17, w: 12 },
+      { label: 'Havblomst', logoColor: '#4a9a62', ang: 1.35, dist: 16, w: 12 },
+      { label: 'Solcelle', logoColor: '#e8a040', ang: 2.55, dist: 17, w: 11 },
+      { label: 'Byte Lab', logoColor: '#c88bff', ang: -2.55, dist: 17, w: 11 },
     ];
     for (const f of facades) {
-      const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2 });
+      const shop = buildFuturisticShop({ label: f.label, logoColor: f.logoColor, w: f.w, d: 9, storeys: 2, variant: Math.abs(Math.round(f.ang * 10)) });
       const x = Math.sin(f.ang) * f.dist;
       const z = Math.cos(f.ang) * f.dist;
       shop.position.set(x, 0, z);
@@ -669,10 +659,6 @@ export function buildTown(): Town {
       shadowAll(shop);
     }
     // sidewalk strips along street
-    const walkTex = pavingTexture(256);
-    walkTex.repeat.set(8, 2);
-    const walkN = pavingNormal(128);
-    walkN.repeat.set(8, 2);
     for (const [x, z, sx, sz] of [
       [0, 48, 48, 3.2],
       [-22, 48, 3.2, 28],
@@ -680,7 +666,7 @@ export function buildTown(): Town {
     ] as const) {
       const walk = new THREE.Mesh(
         new THREE.BoxGeometry(sx, 0.08, sz),
-        new THREE.MeshStandardMaterial({ map: walkTex, normalMap: walkN, color: '#b0b8c0', roughness: 0.8, metalness: 0.05 }),
+        pavingGroundMaterial(),
       );
       walk.position.set(x, 0.06, z);
       walk.receiveShadow = true;

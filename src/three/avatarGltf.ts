@@ -25,21 +25,42 @@ function pickPath(a: Avatar): string {
 }
 
 function tintMeshes(root: THREE.Object3D, a: Avatar) {
+  // Quaternius modular packs often name meshes CubeNNN — tint by world-height bands + name hints.
+  root.updateWorldMatrix(true, true);
+  const meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (!m.isMesh) return;
-    const mats = Array.isArray(m.material) ? m.material : [m.material];
-    for (const mat of mats) {
-      const std = mat as THREE.MeshStandardMaterial;
-      if (!std?.color) continue;
-      const name = (std.name || m.name || '').toLowerCase();
-      if (/shirt|torso|top|hoodie|jacket|suit|body/.test(name)) std.color = new THREE.Color(a.shirt);
-      else if (/pant|leg|bottom|jean|trouser/.test(name)) std.color = new THREE.Color(a.pants);
-      else if (/shoe|boot|sneaker/.test(name)) std.color = new THREE.Color(a.shoes);
-      else if (/skin|face|arm|hand|head|neck/.test(name)) std.color = new THREE.Color(a.skin);
-      else if (/hair/.test(name)) std.color = new THREE.Color(a.hairColor);
-    }
+    if (m.isMesh) meshes.push(m);
   });
+  for (const m of meshes) {
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    m.geometry.computeBoundingBox();
+    const bb = m.geometry.boundingBox;
+    const midY = bb ? (bb.min.y + bb.max.y) * 0.5 * (m.scale?.y || 1) + m.position.y : 0.8;
+    const name = `${(m.material as THREE.Material)?.name || ''} ${m.name || ''}`.toLowerCase();
+    let hex = a.shirt;
+    if (/hair/.test(name) || midY > 1.45) hex = a.hairColor;
+    else if (/skin|face|arm|hand|head|neck/.test(name) || (midY > 1.15 && midY <= 1.45)) hex = a.skin;
+    else if (/shoe|boot|sneaker/.test(name) || midY < 0.22) hex = a.shoes;
+    else if (/pant|leg|bottom|jean|trouser/.test(name) || (midY >= 0.22 && midY < 0.75)) hex = a.pants;
+    else if (/shirt|torso|top|hoodie|jacket|suit|body/.test(name) || (midY >= 0.75 && midY <= 1.15)) hex = a.shirt;
+    else if (midY >= 0.75) hex = a.shirt;
+    else hex = a.pants;
+    for (const mat of mats) {
+      const std = (mat as THREE.MeshStandardMaterial).clone();
+      if (!std?.color) continue;
+      std.color = new THREE.Color(hex);
+      std.roughness = Math.min(0.85, (std.roughness ?? 0.7) + 0.05);
+      std.metalness = Math.min(0.15, std.metalness ?? 0);
+      std.envMapIntensity = 0.7;
+      // replace so we don't share white materials across meshes
+      if (Array.isArray(m.material)) {
+        m.material = m.material.map((mm) => (mm === mat ? std : mm));
+      } else {
+        m.material = std;
+      }
+    }
+  }
 }
 
 export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void> {

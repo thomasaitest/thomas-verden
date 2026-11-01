@@ -22,10 +22,8 @@ import { canEnterHouse, doorPrompt, lockLabel } from './logic/houseLock.ts';
 import { friendDoorPos, HOME_ENTER_RADIUS, isRemotePlot, nearFriendDoor } from './logic/visitDoor.ts';
 import { miniReward, startMini, stepMini, type MiniState } from './logic/minigames.ts';
 import { buildCar, buildPram, CAR_AVATAR_SCALE, CAR_SEAT_Y } from './three/vehicles.ts';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { createLighting, type LightingRig } from './three/lighting.ts';
+import { preloadArchMaterials } from './three/futuristicArch.ts';
 import { Input } from './input.ts';
 import { animateAvatar, buildAvatar, type AvatarPose, type AvatarRig } from './three/avatarModel.ts';
 import { attachGltfAvatar, tickGltfAvatar, AVATAR_PREFETCH } from './three/avatarGltf.ts';
@@ -90,9 +88,11 @@ const RIDE = 15;
 
 export class Game {
   renderer: THREE.WebGLRenderer;
-  composer: EffectComposer | null = null;
-  private bloomPass: UnrealBloomPass | null = null;
+  private lighting: LightingRig | null = null;
   highQuality = false;
+  assetsReady: Promise<void> = Promise.resolve();
+  weatherLocked: null | "clear" | "cloudy" | "rain" = null;
+  private outdoorBgBackup: THREE.Color | THREE.Texture | null = null;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
   town: Town;
@@ -165,41 +165,16 @@ export class Game {
 
   constructor(private host: HTMLElement, ui: HTMLElement) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.95;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     host.append(this.renderer.domElement);
     this.thumbs = new Thumbs(this.renderer);
-    // Environment map for glass / metal reflections
-    try {
-      const pmrem = new THREE.PMREMGenerator(this.renderer);
-      pmrem.compileEquirectangularShader();
-      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-      pmrem.dispose();
-    } catch {
-      /* env optional */
-    }
 
     this.save = loadSave(localStorage);
     setSoundEnabled(this.save.sound);
 
-    this.hemi = new THREE.HemisphereLight('#ffe8d2', '#3a5a40', 0.55);
-    this.scene.add(this.hemi);
-    this.sun = new THREE.DirectionalLight('#ffd09a', 1.85);
-    this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
-    const sc = this.sun.shadow.camera;
-    sc.left = -30;
-    sc.right = 30;
-    sc.top = 30;
-    sc.bottom = -30;
-    sc.near = 1;
-    sc.far = 120;
-    this.sun.shadow.bias = -0.0008;
-    this.scene.add(this.sun, this.sun.target);
+    this.lighting = createLighting(this.renderer, this.scene, this.camera);
+    this.hemi = this.lighting.hemi;
+    this.sun = this.lighting.sun;
 
     this.town = buildTown();
     this.scene.add(this.town.group);
@@ -232,8 +207,7 @@ export class Game {
       quality: () => this.toggleQuality(),
     });
     this.setupPost();
-    void Promise.all([preloadFurnitureModels(), preloadPetModels()]);
-    prefetch([...AVATAR_PREFETCH, 'cars/race-future.glb', 'cars/suv-luxury.glb', 'cars/hatchback-sports.glb', 'buildings/building-e.glb', 'nature/tree_oak.glb']);
+        prefetch([...AVATAR_PREFETCH, 'cars/race-future.glb', 'cars/suv-luxury.glb', 'cars/hatchback-sports.glb', 'buildings/building-e.glb', 'nature/tree_oak.glb']);
     this.hud.setQualityLabel(this.highQuality);
     this.hud.soundBtn.textContent = this.save.sound ? '🔊' : '🔇';
     this.input = new Input(this.renderer.domElement, this.hud.joyBase, this.hud.joyKnob, this.hud.jump);
@@ -251,6 +225,9 @@ export class Game {
     this.cam.yaw = s.yaw + 0.5;
     this.syncPets();
 
+    // Wait for HDRI + PBR + glTF trees/pets/furniture, then rebuild town so SharedMats/maps/trees stick
+    this.assetsReady = this.bootstrapVisualAssets();
+
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) this.flush();
@@ -259,6 +236,26 @@ export class Game {
     this.resize();
     this.updateHud();
     this.mp = new MpClient(this);
+  }
+
+
+  private async bootstrapVisualAssets(): Promise<void> {
+    await Promise.all([
+      preloadArchMaterials(),
+      this.lighting!.envReady,
+      preloadFurnitureModels(),
+      preloadPetModels(),
+    ]);
+    const style = activeHouse(this.save).style;
+    const locked = !!activeHouse(this.save).locked;
+    this.scene.remove(this.town.group);
+    this.town = buildTown();
+    this.scene.add(this.town.group);
+    this.town.setHomeStyle(style, locked);
+    this.syncPets();
+    this.rebuildAvatar();
+    if (this.mode === 'house') this.interior.build(activeHouse(this.save));
+    this.lighting?.applyQuality(this.highQuality);
   }
 
   // ---------- state ----------
@@ -542,7 +539,8 @@ export class Game {
     this.cam.yaw = 0;
     this.cam.pitch = 0.55;
     this.cam.dist = 12;
-    this.scene.background = new THREE.Color('#ffe9f3');
+    this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
+    this.scene.background = new THREE.Color('#d8dde4');
     this.scene.fog = null;
     this.actors.forEach((a) => a.pos.set(this.player.pos.x + (this.rng() - 0.5) * 3, 0, this.player.pos.z - 2.5));
     this.syncPets();
@@ -563,6 +561,10 @@ export class Game {
     this.freezeCam = null;
     this.interior.group.visible = false;
     this.town.group.visible = true;
+    if (this.outdoorBgBackup) {
+      this.scene.background = this.outdoorBgBackup;
+      this.outdoorBgBackup = null;
+    }
     this.setSky();
     const p = this.town.entrances.home;
     this.player.pos.set(p.x, 0, p.z);
@@ -582,16 +584,22 @@ export class Game {
 
   private setSky(sky?: SkyState) {
     const s = sky ?? skyAt((performance.now() / 1000) - this.weatherT0);
-    this.scene.background = new THREE.Color(s.skyTop);
-    this.scene.fog = new THREE.Fog(s.fog, s.fogNear, s.fogFar);
+    if (this.weatherLocked) (s as SkyState).weather = this.weatherLocked;
+    // Keep HDRI as background/environment when available — never replace with flat color outdoors
+    if (!this.scene.environment) {
+      this.scene.background = new THREE.Color(s.skyTop);
+    }
+    // Soft fog only; HDRI days stay crisp
+    this.scene.fog = this.mode === 'town' ? new THREE.FogExp2(s.fog, s.weather === 'rain' ? 0.004 : 0.0018) : null;
     this.hemi.color.set(s.hemiSky);
     this.hemi.groundColor.set(s.hemiGround);
-    this.hemi.intensity = s.hemiIntensity;
-    this.sun.color.set(s.sunColor);
-    this.sun.intensity = s.sunIntensity;
-    const elev = Math.max(0.05, s.sunElevation);
-    this.sun.position.set(40 * Math.cos(s.dayT * Math.PI * 2), 10 + elev * 55, 30 * Math.sin(s.dayT * Math.PI * 2));
-    this.ensureRain(s.rain);
+    const elev = Math.max(0.15, s.sunElevation);
+    // Match sun to HDRI (upper-left / west-east)
+    this.sun.position.set(28, 48, 16);
+    if (this.player) this.sun.target.position.set(this.player.pos.x, 0, this.player.pos.z);
+    this.ensureRain(this.mode === 'town' && s.weather === 'rain' ? 0.25 : 0);
+    void elev;
+    void s.dayT;
   }
 
   private ensureRain(amount: number) {
@@ -946,16 +954,7 @@ export class Game {
 
 
   private setupPost() {
-    const w = Math.max(1, this.host.clientWidth || window.innerWidth);
-    const h = Math.max(1, this.host.clientHeight || window.innerHeight);
-    const composer = new EffectComposer(this.renderer);
-    composer.addPass(new RenderPass(this.scene, this.camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.0, 0.2, 0.95);
-    this.bloomPass = bloom;
-    composer.addPass(bloom);
-    this.composer = composer;
-    // Start LQ (no bloom) — HQ toggle enables mild bloom + shadows for capable GPUs
-    this.applyQuality(false);
+    this.lighting?.applyQuality(false);
   }
 
   toggleQuality() {
@@ -969,14 +968,7 @@ export class Game {
 
   private applyQuality(high: boolean) {
     this.highQuality = high;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, high ? 1.5 : 1.15));
-    this.renderer.shadowMap.enabled = high;
-    this.sun.castShadow = high;
-    this.renderer.toneMappingExposure = high ? 0.72 : 0.78;
-    if (this.bloomPass) {
-      this.bloomPass.strength = high ? 0.06 : 0.0;
-      this.bloomPass.threshold = high ? 0.9 : 1.0;
-    }
+    this.lighting?.applyQuality(high);
     this.hud.setQualityLabel(high);
     this.resize();
   }
@@ -986,10 +978,7 @@ export class Game {
     const w = this.host.clientWidth;
     const h = this.host.clientHeight;
     this.renderer.setSize(w, h);
-    if (this.composer) {
-      this.composer.setSize(w, h);
-      this.bloomPass?.resolution.set(w, h);
-    }
+    this.lighting?.resize(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w < h ? 68 : 55;
     this.camera.updateProjectionMatrix();
@@ -1002,8 +991,7 @@ export class Game {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       this.step(dt);
-      if (this.composer && this.highQuality) this.composer.render();
-      else this.renderer.render(this.scene, this.camera);
+      this.lighting?.render(this.highQuality) ?? this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -1204,6 +1192,7 @@ export class Game {
     // day/night + weather outdoors
     if (this.mode === 'town') {
       const sky = skyAt((performance.now() / 1000) - this.weatherT0);
+      if (this.weatherLocked) sky.weather = this.weatherLocked;
       this.setSky(sky);
       if (Math.floor(this.time) !== Math.floor(this.time - dt)) {
         if (!this.building && !this.editingAvatar && !this.guestHouse) {

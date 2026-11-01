@@ -50,6 +50,20 @@ Raw downloads (not shipped) are under `vendor/raw/` (gitignored if large).
 - Loader: `three/examples/jsm/loaders/GLTFLoader` + Draco decoder (Google gstatic)
 - Lazy-loaded / prefetched; procedural primitives remain as sync fallback for tests and offline failures
 
+
+## Environment & PBR textures (v5)
+
+| File(s) | Source | License | Notes |
+|---|---|---|---|
+| `env/syferfontein_1d_clear_1k.hdr`, `env/kloppenheim_06_puresky_1k.hdr` | [Poly Haven](https://polyhaven.com/hdris) | CC0 | Daytime HDRI → PMREM env + background |
+| `textures/wood-siding/*` | ambientCG WoodSiding007 1K | CC0 | Façade cladding |
+| `textures/wood/*` | ambientCG WoodFloor051 1K | CC0 | Interior / benches |
+| `textures/concrete/*` | ambientCG Concrete034 1K | CC0 | Architecture / fountain |
+| `textures/paving/*` | ambientCG PavingStones046 1K | CC0 | Plaza / sidewalks |
+| `textures/asphalt/*` | ambientCG Road001 1K | CC0 | Roads |
+| `textures/metal/*` | ambientCG Metal035 1K | CC0 | Solar frames / thrusters |
+| `textures/grass/*` | ambientCG Grass001 1K | CC0 | Ground / foliage tint |
+
 ## Procedural (authored in-repo, no third-party models)
 
 | Module | Notes |

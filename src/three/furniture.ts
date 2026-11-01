@@ -498,7 +498,53 @@ export const MODELS: Record<string, B> = {
 
 const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
+function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
+  const mat = new THREE.MeshStandardMaterial({
+    color: color || '#eef2f6',
+    roughness: 0.62,
+    metalness: 0.04,
+    envMapIntensity: 0.55,
+  });
+  const dark = new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.4, metalness: 0.3 });
+  // Arc of seat modules (curved sectional)
+  const n = 7;
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const ang = -0.95 + t * 1.9;
+    const r = 1.55;
+    const x = Math.sin(ang) * r;
+    const z = Math.cos(ang) * r - 0.4;
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.28, 0.85), mat);
+    seat.position.set(x, 0.42, z);
+    seat.rotation.y = ang;
+    g.add(seat);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.7, 0.22), mat);
+    back.position.set(x - Math.sin(ang) * 0.35, 0.85, z - Math.cos(ang) * 0.35);
+    back.rotation.y = ang;
+    g.add(back);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.28, 8), dark);
+    leg.position.set(x, 0.14, z);
+    g.add(leg);
+  }
+  // Corner cushion accent
+  const accent = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.18, 0.4), mat);
+  accent.position.set(0, 0.62, 0.15);
+  g.add(accent);
+}
+
 export function buildFurniture(model: string, color: string): THREE.Group {
+  if (model === 'sofalong') {
+    const g = new THREE.Group();
+    buildCurvedWhiteSofa(g, color || '#e8eef4');
+    g.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (m.isMesh) {
+        m.castShadow = true;
+        m.receiveShadow = true;
+      }
+    });
+    return g;
+  }
   const path = FURN_GLB[model];
   if (path && glbReady.has(path)) {
     const g = glbReady.get(path)!.clone(true);

@@ -118,7 +118,7 @@ export function ensureStarterFurniture(house: House): House {
 export function newHouse(style: HouseStyle, ownerId: string, now = Date.now()): House {
   const items = starterFurniture(style);
   void (HOUSE_BY_STYLE[style] ?? HOUSE_BY_STYLE.hytte);
-  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: '#e6eaef', floorColor: '#9aa3ae', items, createdAt: now, locked: false };
+  return { id: uid('house'), style, ownerId, editors: [], editRequests: [], wallColor: '#c5ccd4', floorColor: '#8a929c', items, createdAt: now, locked: false };
 }
 
 export function canEdit(house: House, playerId: string): boolean {
