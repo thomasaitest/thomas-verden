@@ -1,13 +1,12 @@
 /**
  * Natural greenery — offline-baked @dgreenheck/ez-tree (MIT) GLBs + procedural fallback.
- * Runtime never generates ez-tree; see scripts/bake-ez-trees.mjs.
+ * Leaf cards: MeshBasic + toneMapped:false so ACES/HDRI/bloom cannot bleach them white.
  */
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
 const LEAF_HEX = ['#2f6e28', '#3a7a30', '#256820', '#3d8532', '#2c7028', '#387830'];
 
-/** Baked ez-tree presets (Draco GLB). */
 const TREE_PATHS = [
   'nature/ez/oak-a.glb',
   'nature/ez/oak-b.glb',
@@ -23,47 +22,76 @@ const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
 
-function prepareTree(root: THREE.Object3D, kind = 0) {
+function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
+  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+  const std = src as THREE.MeshStandardMaterial | undefined;
+  const map = (std?.map || (std as any)?.alphaMap || null) as THREE.Texture | null;
+  // Prefer albedo map (texture is already green); never let base white × HDRI wash out.
+  const mat = new THREE.MeshBasicMaterial({
+    color: map ? '#e8f0e4' : hex, // slight multiply keeps map greens
+    map: map ?? undefined,
+    alphaMap: (std as any)?.alphaMap ?? undefined,
+    transparent: true,
+    alphaTest: 0.4,
+    side: THREE.DoubleSide,
+    toneMapped: false,
+    depthWrite: true,
+  });
+  if (map) {
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.needsUpdate = true;
+  }
+  return mat;
+}
+
+function trunkStandard(src?: THREE.Material | null): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    color: '#5a3d28',
+    map: (src as THREE.MeshStandardMaterial)?.map ?? null,
+    roughness: 0.94,
+    metalness: 0.02,
+    envMapIntensity: 0.2,
+  });
+}
+
+/** Force every mesh on an ez-tree: leaves = unlit green cards, trunk = brown PBR. */
+export function hardenEzTree(root: THREE.Object3D, kind = 0) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
     m.castShadow = true;
     m.receiveShadow = true;
     const mats = Array.isArray(m.material) ? m.material : [m.material];
+    const geo = (m.geometry as THREE.BufferGeometry)?.type || '';
+    const name = `${m.name || ''}`.toLowerCase();
+    const replaced: THREE.Material[] = [];
     for (const mat of mats) {
       const std = mat as THREE.MeshStandardMaterial;
-      if (!std?.color) continue;
-      const name = (std.name || m.name || '').toLowerCase();
-      const c = std.color;
-      const bright = (c.r + c.g + c.b) / 3;
-      const isLeaf =
-        name.includes('leaf') ||
-        name.includes('foliage') ||
-        name.includes('needle') ||
-        (!!std.map && bright > 0.55) ||
-        (c.g > c.r * 1.05 && c.g > 0.25);
-      const isTrunk = name.includes('bark') || name.includes('trunk') || name.includes('wood') || (c.r > c.g && c.b < 0.35 && bright < 0.45);
-      if (isLeaf || (!isTrunk && bright > 0.65)) {
-        // Never allow white/cloud canopies — solid green (drop maps that wash white under ACES)
-        const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
-        std.color.set(hex);
-        std.map = null;
-        std.emissive?.set?.('#000000');
-        if (std.emissive) std.emissiveIntensity = 0;
-        std.roughness = 0.82;
-        std.metalness = 0.02;
-        std.envMapIntensity = 0.35;
-        std.transparent = false;
-        std.opacity = 1;
-        std.side = THREE.DoubleSide;
-      } else if (isTrunk || bright < 0.35) {
-        std.color.set('#6a4a32');
-        std.roughness = 0.92;
-        std.metalness = 0.02;
+      const c = std?.color;
+      const bright = c ? (c.r + c.g + c.b) / 3 : 1;
+      const hasMap = !!(std?.map || (std as any)?.alphaMap);
+      const alphaBlend = (std as any)?.transparent || (std as any)?.alphaTest > 0 || (std as any)?.opacity < 1;
+      const trunkish =
+        name.includes('bark') ||
+        name.includes('trunk') ||
+        name.includes('wood') ||
+        geo.includes('Cylinder') ||
+        (!hasMap && !alphaBlend && c && c.r > c.g * 1.05 && bright < 0.55);
+      if (trunkish) {
+        replaced.push(trunkStandard(std));
+      } else {
+        // Leaf cards (white baseColor + green map) and any bright/non-trunk mesh
+        replaced.push(leafBasicFrom(std, kind));
       }
-      std.needsUpdate = true;
     }
+    m.material = replaced.length === 1 ? replaced[0]! : replaced;
+    const g = m.geometry as THREE.BufferGeometry;
+    if (g?.attributes?.color) g.deleteAttribute('color');
   });
+}
+
+function prepareTree(root: THREE.Object3D, kind = 0) {
+  hardenEzTree(root, kind);
 }
 
 export async function preloadNaturalTrees(): Promise<void> {
@@ -73,7 +101,7 @@ export async function preloadNaturalTrees(): Promise<void> {
       TREE_PATHS.map(async (p) => {
         try {
           const g = await loadModel(p);
-          prepareTree(g, TREE_PATHS.indexOf(p as typeof TREE_PATHS[number]));
+          prepareTree(g, TREE_PATHS.indexOf(p as (typeof TREE_PATHS)[number]));
           treeCache.set(p, g);
         } catch {
           /* procedural fallback */
@@ -91,7 +119,7 @@ export async function preloadNaturalTrees(): Promise<void> {
 
 function proceduralTree(kind: number): THREE.Group {
   const g = new THREE.Group();
-  const trunkMat = new THREE.MeshStandardMaterial({ color: '#6a4a32', roughness: 0.92, metalness: 0.02 });
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#6a4a32', roughness: 0.92, metalness: 0.02, envMapIntensity: 0.2 });
   const h = 2.6 + (kind % 3) * 0.5;
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.12 + (kind % 3) * 0.03, 0.2 + (kind % 3) * 0.04, h, 10),
@@ -114,7 +142,7 @@ function proceduralTree(kind: number): THREE.Group {
   const leafMat = new THREE.MeshBasicMaterial({
     color: LEAF_HEX[kind % LEAF_HEX.length],
     side: THREE.DoubleSide,
-    toneMapped: false, // ACES was bleaching canopy tops to white
+    toneMapped: false,
   });
   const blobs = [
     [0, h + 0.55, 0, 1.15],
@@ -140,56 +168,27 @@ function proceduralTree(kind: number): THREE.Group {
 }
 
 export function buildNaturalTree(kind = 0): THREE.Group {
-  // SwiftShader/ACES washes ez-tree leaf cards to white cloud blobs.
-  // Use procedural green canopies (still MIT-safe); keep ez GLBs preloaded for later.
-  const g = proceduralTree(kind);
-  forceGreenCanopies(g, kind);
-  g.userData.ezTree = false;
-  g.userData.treeKind = kind;
-  // If an ez trunk-only mesh is useful later, graft here — never use ez leaf cards as-is.
-  void TREE_PATHS;
-  void treeCache;
-  return g;
-}
-
-function forceGreenCanopies(root: THREE.Object3D, kind: number) {
-  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
-  // MeshBasic = unlit solid green (Standard+HDRI was washing canopies to white blobs)
-  const leafMat = new THREE.MeshBasicMaterial({ color: hex, side: THREE.DoubleSide, toneMapped: false });
-  const trunkMat = new THREE.MeshStandardMaterial({
-    color: '#5a3d28',
-    roughness: 0.94,
-    metalness: 0.02,
-    envMapIntensity: 0.25,
-  });
-  root.traverse((o) => {
-    const m = o as THREE.Mesh;
-    if (!m.isMesh) return;
-    const name = `${m.name || ''}`.toLowerCase();
-    const geo = (m.geometry as THREE.BufferGeometry)?.type || '';
-    // Prefer treating spheres/planes as canopy; cylinders as trunk
-    let trunkish =
-      name.includes('bark') ||
-      name.includes('trunk') ||
-      name.includes('wood') ||
-      geo.includes('Cylinder') ||
-      geo.includes('Capsule');
-    if (geo.includes('Sphere') || geo.includes('Plane') || geo.includes('Circle')) trunkish = false;
-    const mats = Array.isArray(m.material) ? m.material : [m.material];
-    for (const mat of mats) {
-      const std = mat as THREE.MeshStandardMaterial;
-      if (!std?.color) continue;
-      const c = std.color;
-      const bright = (c.r + c.g + c.b) / 3;
-      if (c.r > c.g * 1.15 && c.b < 0.35 && bright < 0.5) trunkish = true;
-    }
-    m.material = trunkish ? trunkMat.clone() : leafMat.clone();
-    // Drop vertex colors that force white
-    const g = m.geometry as THREE.BufferGeometry;
-    if (g?.attributes?.color) g.deleteAttribute('color');
-    m.castShadow = true;
-    m.receiveShadow = true;
-  });
+  const g = new THREE.Group();
+  const path = TREE_PATHS[Math.abs(kind) % TREE_PATHS.length]!;
+  const cached = treeCache.get(path);
+  if (cached) {
+    const model = cached.clone(true);
+    model.name = `ez-${path.split('/').pop()}`;
+    model.userData.ezTree = true;
+    // Re-harden clones (shared mats from cache already hardened; clone(true) shares mats — OK)
+    hardenEzTree(model, kind);
+    const s = 0.95 + (kind % 3) * 0.08;
+    model.scale.setScalar(s);
+    model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
+    g.add(model);
+    g.userData.ezTree = true;
+    g.userData.treeKind = kind;
+    return g;
+  }
+  const p = proceduralTree(kind);
+  p.userData.ezTree = false;
+  p.userData.treeKind = kind;
+  return p;
 }
 
 function grassClump(color: string, h: number): THREE.Group {
@@ -205,7 +204,7 @@ function grassClump(color: string, h: number): THREE.Group {
     const a = (i / 7) * Math.PI * 2;
     const r = 0.06 + (i % 3) * 0.03;
     blade.position.set(Math.cos(a) * r, h * 0.35, Math.sin(a) * r);
-    blade.rotation.z = (i % 2 ? 0.15 : -0.12) + (i * 0.04);
+    blade.rotation.z = (i % 2 ? 0.15 : -0.12) + i * 0.04;
     blade.rotation.x = (i % 3) * 0.08;
     blade.castShadow = true;
     g.add(blade);
@@ -240,7 +239,6 @@ export function buildPlanter(): THREE.Group {
     roughness: 0.4,
     metalness: 0.3,
   });
-  // Slim wood trough (dark grey/wood — not a white box)
   const pot = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.36, 0.42), wood);
   pot.position.y = 0.18;
   pot.castShadow = true;
@@ -259,7 +257,7 @@ export function buildPlanter(): THREE.Group {
   const grassColors = ['#5fa84a', '#6bb854', '#4e9a40', '#7ac45c'];
   for (let i = 0; i < 5; i++) {
     const clump = grassClump(grassColors[i % grassColors.length]!, 0.5 + (i % 3) * 0.1);
-    clump.position.set(-0.45 + i * 0.22, 0.35, (i % 2 ? 0.05 : -0.04));
+    clump.position.set(-0.45 + i * 0.22, 0.35, i % 2 ? 0.05 : -0.04);
     g.add(clump);
   }
 

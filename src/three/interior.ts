@@ -342,37 +342,52 @@ export function createInterior(): Interior {
         {
           ensureRectArea();
           const coveY = y0 + WALL_H - 0.14;
-          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffe2a8' });
+          // Thin recessed LED strips (not floating gold tubes)
+          const coveMat = new THREE.MeshBasicMaterial({
+            color: '#ffe8d0',
+            toneMapped: false,
+          });
           if (house.style === 'moderne' && f === 0) {
-            // Curved oval cove — thicker warm tubes + fill so default cam always sees LEDs
-            const mkOval = (rx: number, rz: number, y: number, r: number) => {
-              const oval = new THREE.EllipseCurve(0, 0, rx, rz, 0, Math.PI * 2, false, 0);
-              const pts = oval.getPoints(64).map((p) => new THREE.Vector3(p.x, 0, p.y));
-              const curve = new THREE.CatmullRomCurve3(pts, true);
-              const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, r, 8, true), coveMat);
-              tube.position.y = y;
-              fg.add(tube);
+            const ledH = 0.025; // ~2.5 cm
+            const ledD = 0.04;
+            const inset = 0.22;
+            const yLed = coveY - 0.02;
+            // Perimeter flush to ceiling edges
+            const mkStrip = (sx: number, sz: number, px: number, pz: number) => {
+              const c = new THREE.Mesh(new THREE.BoxGeometry(sx, ledH, sz), coveMat);
+              c.position.set(px, yLed, pz);
+              fg.add(c);
             };
-            mkOval(w * 0.36, d * 0.3, coveY, 0.09);
-            mkOval(w * 0.28, d * 0.22, y0 + 3.35, 0.075);
-            mkOval(w * 0.22, d * 0.16, y0 + 2.8, 0.06);
-            const area = new THREE.RectAreaLight('#ffe8d0', 7.5, w * 0.55, d * 0.4);
+            mkStrip(w - inset * 2, ledD, 0, -d / 2 + inset);
+            mkStrip(w - inset * 2, ledD, 0, d / 2 - inset);
+            mkStrip(ledD, d - inset * 2, -w / 2 + inset, 0);
+            mkStrip(ledD, d - inset * 2, w / 2 - inset, 0);
+            // Curved soffit LED (thin tube radius ~2.5cm) above living vignette
+            {
+              const oval = new THREE.EllipseCurve(0, 0, w * 0.22, d * 0.16, 0, Math.PI * 2, false, 0);
+              const pts = oval.getPoints(72).map((p) => new THREE.Vector3(p.x, 0, p.y));
+              const curve = new THREE.CatmullRomCurve3(pts, true);
+              const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.025, 6, true), coveMat);
+              tube.position.set(-1.2, y0 + WALL_H - 0.2, 0.4);
+              fg.add(tube);
+            }
+            const area = new THREE.RectAreaLight('#ffe8d0', 4.5, w * 0.5, d * 0.35);
             area.position.set(0, coveY - 0.08, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
             fg.add(area);
-            const soft = new THREE.PointLight('#ffe0b0', 0.55, 26, 2);
+            const soft = new THREE.PointLight('#ffe0b0', 0.4, 24, 2);
             soft.position.set(0, coveY - 0.5, 0);
             fg.add(soft);
           } else {
             const mkCove = (sx: number, sz: number, px: number, pz: number) => {
-              const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.09, sz), coveMat);
-              c.position.set(px, coveY, pz);
+              const c = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.025, sz), coveMat);
+              c.position.set(px, coveY - 0.02, pz);
               fg.add(c);
             };
-            mkCove(w * 0.92, 0.09, 0, -d / 2 + 0.35);
-            mkCove(w * 0.92, 0.09, 0, d / 2 - 0.35);
-            mkCove(0.09, d * 0.85, -w / 2 + 0.35, 0);
-            mkCove(0.09, d * 0.85, w / 2 - 0.35, 0);
+            mkCove(w * 0.92, 0.04, 0, -d / 2 + 0.35);
+            mkCove(w * 0.92, 0.04, 0, d / 2 - 0.35);
+            mkCove(0.04, d * 0.85, -w / 2 + 0.35, 0);
+            mkCove(0.04, d * 0.85, w / 2 - 0.35, 0);
             if (f === 0) {
               const area = new THREE.RectAreaLight('#ffe8d0', 11, w * 0.7, d * 0.45);
               area.position.set(0, coveY - 0.05, -d * 0.08);
@@ -435,19 +450,20 @@ export function createInterior(): Interior {
               sofa.add(pillow);
             }
             sofa.rotation.y = Math.PI; // back + pillows face door/cam
-            sofa.position.set(-1.6, y0, -0.2);
+            sofa.scale.set(1.35, 1.15, 1.25); // bigger curved sofa
+            sofa.position.set(-2.4, y0, 1.35); // closer to cam, left like concept
             living.add(sofa);
             const rug = new THREE.Mesh(
-              new THREE.CylinderGeometry(1.85, 1.85, 0.03, 48),
+              new THREE.CylinderGeometry(2.15, 2.15, 0.03, 48),
               new THREE.MeshStandardMaterial({ color: '#7a8694', roughness: 0.88, metalness: 0.02 }),
             );
-            rug.position.set(-1.6, y0 + 0.02, 0.85);
+            rug.position.set(-2.2, y0 + 0.02, 2.2);
             living.add(rug);
             const rugIn = new THREE.Mesh(
-              new THREE.CylinderGeometry(1.2, 1.2, 0.032, 48),
+              new THREE.CylinderGeometry(1.35, 1.35, 0.032, 48),
               new THREE.MeshStandardMaterial({ color: '#dce2ea', roughness: 0.9, metalness: 0.02 }),
             );
-            rugIn.position.set(-1.6, y0 + 0.025, 0.85);
+            rugIn.position.set(-2.2, y0 + 0.025, 2.2);
             living.add(rugIn);
           }
           // Round coffee table on rug
@@ -465,7 +481,7 @@ export function createInterior(): Interior {
             );
             stem.position.y = 0.2;
             table.add(stem);
-            table.position.set(-1.6, y0, 0.85);
+            table.position.set(-2.15, y0, 2.35);
             living.add(table);
           }
           // Holo-screen LEFT of window bay (default cam sees it) + lit shelves/plants
