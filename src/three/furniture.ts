@@ -616,7 +616,7 @@ export function buildFurniture(model: string, color: string): THREE.Group {
       model === 'armchair' ? 1.0 :
       1.15;
     g.scale.setScalar(scale);
-    // Tint seating fabric toward light grey when a color is provided
+    // Tint seating toward light grey fabric (Quaternius sofas ship brown)
     const tint = color && (model === 'sofalong' || model === 'sofa' || model === 'armchair');
     g.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -630,10 +630,14 @@ export function buildFurniture(model: string, color: string): THREE.Group {
           if (!std?.color) continue;
           const c = std.color;
           const bright = (c.r + c.g + c.b) / 3;
-          // Recolor soft/bright surfaces (cushions/fabric), leave dark legs
-          if (bright > 0.35) std.color.set(color || '#d0d6de');
-          std.roughness = Math.max(std.roughness ?? 0.6, 0.55);
-          std.metalness = Math.min(std.metalness ?? 0.05, 0.08);
+          // Recolor fabric/cushions; keep only very dark legs/frames
+          if (bright > 0.12) {
+            std.color.set(color || '#d0d6de');
+            std.map = null;
+            std.roughness = 0.62;
+            std.metalness = 0.04;
+            std.envMapIntensity = 0.45;
+          }
         }
       }
     });
