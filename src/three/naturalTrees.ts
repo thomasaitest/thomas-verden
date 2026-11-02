@@ -116,13 +116,16 @@ function proceduralTree(kind: number): THREE.Group {
     side: THREE.DoubleSide,
   });
   const blobs = [
-    [0, h + 0.35, 0, 1.5],
-    [0.55, h + 0.7, 0.2, 1.05],
-    [-0.5, h + 0.65, -0.25, 1.1],
-    [0.15, h + 1.2, -0.3, 0.9],
-    [-0.2, h + 1.05, 0.35, 0.85],
-    [0.4, h + 0.25, -0.45, 0.75],
-    [-0.45, h + 0.3, 0.4, 0.7],
+    [0, h + 0.55, 0, 1.15],
+    [0.45, h + 0.85, 0.15, 0.85],
+    [-0.4, h + 0.8, -0.2, 0.9],
+    [0.1, h + 1.25, -0.25, 0.7],
+    [-0.15, h + 1.15, 0.3, 0.65],
+    [0.55, h + 0.45, -0.35, 0.6],
+    [-0.5, h + 0.5, 0.35, 0.58],
+    [0.25, h + 0.35, 0.45, 0.55],
+    [-0.3, h + 0.4, -0.45, 0.52],
+    [0, h + 1.55, 0, 0.55],
   ] as const;
   for (const [x, y, z, r] of blobs) {
     const leaf = new THREE.Mesh(new THREE.SphereGeometry(r * (0.9 + (kind % 3) * 0.05), 14, 12), leafMat);
@@ -136,24 +139,16 @@ function proceduralTree(kind: number): THREE.Group {
 }
 
 export function buildNaturalTree(kind = 0): THREE.Group {
-  const g = new THREE.Group();
-  const path = TREE_PATHS[Math.abs(kind) % TREE_PATHS.length]!;
-  const cached = treeCache.get(path);
-  if (cached) {
-    const model = cached.clone(true);
-    model.name = `ez-${path.split('/').pop()}`;
-    model.userData.ezTree = true;
-    prepareTree(model, kind);
-    const s = 0.95 + (kind % 3) * 0.08;
-    model.scale.setScalar(s);
-    model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
-    g.add(model);
-    forceGreenCanopies(g, kind);
-    return g;
-  }
-  const proc = proceduralTree(kind);
-  forceGreenCanopies(proc, kind);
-  return proc;
+  // SwiftShader/ACES washes ez-tree leaf cards to white cloud blobs.
+  // Use procedural green canopies (still MIT-safe); keep ez GLBs preloaded for later.
+  const g = proceduralTree(kind);
+  forceGreenCanopies(g, kind);
+  g.userData.ezTree = false;
+  g.userData.treeKind = kind;
+  // If an ez trunk-only mesh is useful later, graft here — never use ez leaf cards as-is.
+  void TREE_PATHS;
+  void treeCache;
+  return g;
 }
 
 function forceGreenCanopies(root: THREE.Object3D, kind: number) {
