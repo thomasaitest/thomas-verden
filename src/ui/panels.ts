@@ -1,5 +1,5 @@
 import { sfx } from '../audio.ts';
-import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, FACES, HAIR_COLORS, HAIR_STYLES, HATS, OUTFIT_PRESETS, randomAvatar, SHIRT_PRINTS, SHOES, SKIN, type Avatar } from '../logic/avatar.ts';
+import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, FACES, HAIR_COLORS, HAIR_STYLES, HATS, OUTFIT_PRESETS, randomAvatar, SHOES, SKIN, type Avatar } from '../logic/avatar.ts';
 import { CARS, FLOOR_COLORS, FOODS, FOOD_BY_ID, FURN_BY_ID, FURN_CATS, FURNITURE, HOUSES, PALETTE, PET_SHOP, POTIONS, TOYS, WALL_COLORS, type FurnCat } from '../logic/catalog.ts';
 import { POINTS, ITEM_INFO, newGame, openDoor, useMagnifier, type DoorGame } from '../logic/doors.ts';
 import { activeHouse, addBucks, buyAndHatch, buyCar, buyFood, buyFurniture, buyHouse, buyPetShopItem, buyToy, editHouse, placeFromInventory, renamePet, storeItem, toggleEquip, usePotion } from '../logic/economy.ts';
@@ -584,7 +584,9 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
   document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {
     (el as HTMLElement).style.visibility = 'hidden';
   });
-  let a: Avatar = { ...game.save.avatar };
+  // Editor default: no huge backpack — accessory 'ingen' unless user picks one
+  let a: Avatar = { ...game.save.avatar, accessory: 'ingen' };
+  game.commit({ ...game.save, avatar: a }, { avatar: true });
   const set = (patch: Partial<Avatar>) => {
     a = { ...a, ...patch };
     game.commit({ ...game.save, avatar: a }, { avatar: true });
@@ -689,8 +691,6 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
           grid,
           el('h4', {}, 'Farge'),
           swatches(CLOTH_COLORS, a.shirt, (c) => set({ shirt: c })),
-          el('h4', {}, 'Trykk'),
-          chips('print', SHIRT_PRINTS, a.print, (id) => set({ print: id })),
           el('h4', {}, 'Underdel'),
           chips('bottom', BOTTOMS, a.bottom, (id) => set({ bottom: id })),
           swatches(CLOTH_COLORS, a.pants, (c) => set({ pants: c })),

@@ -208,16 +208,16 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 
   const acc = a.accessory || 'ingen';
   if (acc.startsWith('sekk') || acc === 'sekk') {
-    // Slim tech pack — old box+strips read as a giant black slab from shoulder cam
-    const pack = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.38, 6, 12), metal('#2a3344'));
-    pack.position.set(0, 1.42, -0.32);
+    // Compact tech pack — was reading as a giant black slab
+    const pack = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.22, 5, 10), metal('#2a3344'));
+    pack.position.set(0, 1.4, -0.26);
     gear.add(pack);
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.42, 0.04), metal('#1a2230'));
-    plate.position.set(0, 1.42, -0.42);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.03), metal('#1a2230'));
+    plate.position.set(0, 1.4, -0.34);
     gear.add(plate);
-    for (const y of [1.52, 1.38, 1.24]) {
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.02), glow('#3ecbff', 1.2));
-      strip.position.set(0, y, -0.45);
+    for (const y of [1.48, 1.38, 1.28]) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.015, 0.015), glow('#3ecbff', 1.2));
+      strip.position.set(0, y, -0.36);
       gear.add(strip);
     }
   }
@@ -357,8 +357,12 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 export async function buildAvatarPreviewRoot(a: Avatar): Promise<THREE.Group> {
   const root = new THREE.Group();
   const model = await loadModel(pickPath(a));
-  model.scale.setScalar(1.35);
-  model.position.set(0, 0, 0);
+  model.updateWorldMatrix(true, true);
+  const raw = new THREE.Box3().setFromObject(model);
+  const rawH = Math.max(0.5, raw.max.y - raw.min.y);
+  const targetH = 1.7;
+  model.scale.setScalar(targetH / rawH);
+  model.position.set(0, -raw.min.y * (targetH / rawH), 0);
   tintMeshes(model, a);
   addHairVolume(model, a);
   attachFuturisticGear(model, a);
@@ -369,8 +373,13 @@ export async function buildAvatarPreviewRoot(a: Avatar): Promise<THREE.Group> {
 export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void> {
   try {
     const model = await loadModel(pickPath(a));
-    model.scale.setScalar(1.35);
-    model.position.set(0, 0, 0);
+    // Normalize to ~1.7 m so editor Box3 framing and town scale match
+    model.updateWorldMatrix(true, true);
+    const raw = new THREE.Box3().setFromObject(model);
+    const rawH = Math.max(0.5, raw.max.y - raw.min.y);
+    const targetH = 1.7;
+    model.scale.setScalar(targetH / rawH);
+    model.position.set(0, -raw.min.y * (targetH / rawH), 0);
     model.userData.camIgnore = true;
     tintMeshes(model, a);
     addHairVolume(model, a);

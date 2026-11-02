@@ -275,7 +275,7 @@ await page.evaluate(async () => {
       bottom: 'bukse',
       shoes: '#c8d0d8',
       shoeStyle: 'sneakers',
-      accessory: 'sekk-stjerne',
+      accessory: 'ingen',
       hat: 'ingen',
       hair: 'kort',
       hairColor: '#2b2118',

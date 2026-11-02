@@ -1431,23 +1431,36 @@ export class Game {
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       this.ensureAvatarStudio();
-      // Snap into studio before framing — avatarHolder was copied earlier this frame at the old world pos
+      // Snap into studio (holder was copied earlier this frame at the old world pos)
       p.pos.set(0, 0, 0);
-      // Three-quarter front toward cam on −Z
-      p.yaw = Math.PI + 0.4;
+      // Front ¾: face −Z (toward cam), slight yaw so both eyes + shoulder read
+      p.yaw = 0.38;
       p.vy = 0;
       this.avatarHolder.position.set(0, 0, 0);
       this.avatarHolder.rotation.set(0, p.yaw, 0);
       this.avatarHolder.visible = true;
       this.avatarHolder.scale.setScalar(1);
+      this.avatarHolder.updateMatrixWorld(true);
       if (this.avatarStudio) this.avatarStudio.position.set(0, 0, 0);
       if (this.studioSoftShadow) this.studioSoftShadow.position.set(0, 0.03, 0);
-      const dist = 2.35;
-      this.camera.position.set(0.55, 1.1, -dist);
-      this.camera.lookAt(0.15, 1.0, 0);
+
+      // Fit head-to-feet from live Box3 (~72% of frame height, small margin above head)
+      const box = new THREE.Box3().setFromObject(this.avatarHolder);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const h = Math.max(0.8, size.y);
+      const fill = 0.72; // 70–75% of visible height
+      const vFov = THREE.MathUtils.degToRad(this.camera.fov);
+      let dist = (h * 0.5) / (Math.tan(vFov * 0.5) * fill);
+      dist = Math.max(1.6, Math.min(4.2, dist));
+      // Cam in front (−Z), slight +X for ¾; look at mid-body with margin above head
+      const lookY = center.y + h * 0.02;
+      this.camera.position.set(center.x + dist * 0.28, lookY, center.z - dist);
+      this.camera.lookAt(center.x - 0.05, lookY, center.z);
       this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
-      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.1, 0, vw, vh);
+      // Shift so figure is centred in the open area left of the glass panel (~42% right)
+      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.16, -vh * 0.01, vw, vh);
     } else {
       this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);
