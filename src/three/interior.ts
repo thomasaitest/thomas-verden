@@ -181,16 +181,16 @@ export function createInterior(): Interior {
           back.clear();
           walls = walls.filter((wl) => wl.mesh !== back);
           const panW = Math.min(w * 0.78, 9.5);
-          const panH = 2.55;
+          const panH = 1.85; // keep under drop ceiling ~3.05
           const zBack = -d / 2;
           const frameMat = new THREE.MeshStandardMaterial({ color: '#6a727c', metalness: 0.4, roughness: 0.35 });
           const darkMat = new THREE.MeshStandardMaterial({ color: '#2a3340', metalness: 0.45, roughness: 0.35 });
           // Clean panoramic open — no mullions/poles in front of the window
           const header = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.4, 0.28, 0.22), frameMat);
-          header.position.set(0, y0 + panH + 1.15, zBack);
+          header.position.set(0, y0 + 2.95, zBack); // tuck under drop ceiling
           back.add(header);
           const sill = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.3, 0.12, 0.28), darkMat);
-          sill.position.set(0, y0 + 1.05, zBack + 0.05);
+          sill.position.set(0, y0 + 0.95, zBack + 0.05);
           back.add(sill);
           // skyline backdrop (outside)
           {
@@ -215,7 +215,7 @@ export function createInterior(): Interior {
               new THREE.MeshBasicMaterial({ map: stex, side: THREE.DoubleSide }),
             );
             // Just outside the glass so it reads through translucent pane
-            card.position.set(0, y0 + 2.35, zBack - 0.55);
+            card.position.set(0, y0 + 1.9, zBack - 0.55);
             back.add(card);
             // (no outdoor tower boxes — they read as indoor pillars through glass)
           }
@@ -233,7 +233,7 @@ export function createInterior(): Interior {
               envMapIntensity: 1.1,
             }),
           );
-          glass.position.set(0, y0 + 2.35, zBack + 0.14);
+          glass.position.set(0, y0 + 1.9, zBack + 0.14);
           back.add(glass);
           walls.push({ mesh: back, axis: 'z', at: -d / 2, sign: -1 });
         } else {
@@ -342,9 +342,9 @@ export function createInterior(): Interior {
           });
           if (house.style === 'moderne' && f === 0) {
             // Dropped warm mid-grey ceiling at ~3.05 m (fills top of shoulder cam — not pitch-black void)
-            const dropY = y0 + 3.05;
+            const dropY = y0 + 2.85;
             const ceilMat = new THREE.MeshStandardMaterial({
-              color: '#9aa3ad', roughness: 0.82, metalness: 0.04, envMapIntensity: 0.35,
+              color: '#b4bcc6', roughness: 0.78, metalness: 0.04, envMapIntensity: 0.45,
             });
             const ceil = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, 0.22, d - 0.15), ceilMat);
             ceil.position.set(0, dropY + 0.08, 0);
@@ -391,6 +391,19 @@ export function createInterior(): Interior {
             );
             peri.position.set(0, dropY - 0.02, -d / 2 + 0.35);
             fg.add(peri);
+            // Front soffit lip (toward cam) — warm grey fills top of shoulder framing
+            const frontLip = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.9, 0.18, 0.55),
+              ceilMat,
+            );
+            frontLip.position.set(0, dropY - 0.05, d * 0.22);
+            fg.add(frontLip);
+            const frontLed = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.72, 0.035, 0.05),
+              new THREE.MeshBasicMaterial({ color: '#ffe8c8', toneMapped: false }),
+            );
+            frontLed.position.set(0, dropY - 0.16, d * 0.22);
+            fg.add(frontLed);
             const ledH = 0.03;
             const ledD = 0.05;
             const inset = 0.18;
