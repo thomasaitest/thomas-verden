@@ -393,64 +393,64 @@ export function createInterior(): Interior {
         // Living-room composition (concept 2-hus-inne): sofa/table/rug, left holo+shelves, right island, pod via right doorway
         if (f === 0) {
           const living = new THREE.Group();
-          const whiteFabric = new THREE.MeshStandardMaterial({ color: '#f2f4f8', roughness: 0.55, metalness: 0.04, envMapIntensity: 0.45 });
-          const pillowMat = new THREE.MeshStandardMaterial({ color: '#e8eef6', roughness: 0.7, metalness: 0.02 });
-          const accentPillow = new THREE.MeshStandardMaterial({ color: '#9aa8b8', roughness: 0.65, metalness: 0.04 });
-          // Large curved white sofa with tall backrest + soft cushions against the back
+          // Light grey fabric (not pure white) — total sofa height ~0.8 m so cam sees over back to table/rug
+          const fabric = new THREE.MeshStandardMaterial({ color: '#c5cdd6', roughness: 0.62, metalness: 0.03, envMapIntensity: 0.4 });
+          const pillowMat = new THREE.MeshStandardMaterial({ color: '#d5dde6', roughness: 0.72, metalness: 0.02 });
+          const accentPillow = new THREE.MeshStandardMaterial({ color: '#8a96a4', roughness: 0.68, metalness: 0.04 });
           {
             const sofa = new THREE.Group();
             const shape = new THREE.Shape();
-            shape.moveTo(-2.35, 0.65);
-            shape.quadraticCurveTo(-2.45, -0.2, -1.3, -0.7);
-            shape.quadraticCurveTo(0, -1.0, 1.3, -0.7);
-            shape.quadraticCurveTo(2.45, -0.2, 2.35, 0.65);
-            shape.lineTo(1.75, 0.65);
-            shape.quadraticCurveTo(1.65, 0.05, 0.95, -0.2);
-            shape.quadraticCurveTo(0, -0.4, -0.95, -0.2);
-            shape.quadraticCurveTo(-1.65, 0.05, -1.75, 0.65);
-            shape.lineTo(-2.35, 0.65);
-            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.42, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
+            shape.moveTo(-2.2, 0.55);
+            shape.quadraticCurveTo(-2.3, -0.15, -1.2, -0.6);
+            shape.quadraticCurveTo(0, -0.85, 1.2, -0.6);
+            shape.quadraticCurveTo(2.3, -0.15, 2.2, 0.55);
+            shape.lineTo(1.65, 0.55);
+            shape.quadraticCurveTo(1.55, 0.05, 0.9, -0.15);
+            shape.quadraticCurveTo(0, -0.32, -0.9, -0.15);
+            shape.quadraticCurveTo(-1.55, 0.05, -1.65, 0.55);
+            shape.lineTo(-2.2, 0.55);
+            // Seat cushion ~0.38 m high
+            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.36, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2, curveSegments: 48 });
             seatGeo.rotateX(-Math.PI / 2);
-            const seat = new THREE.Mesh(seatGeo, whiteFabric);
-            seat.position.y = 0.18;
+            const seat = new THREE.Mesh(seatGeo, fabric);
+            seat.position.y = 0.16;
             seat.castShadow = true;
+            seat.receiveShadow = true;
             sofa.add(seat);
-            // Tall curved backrest (reads as sofa back, not a flat bench)
+            // Thin curved backrest — extrude depth = back height (~0.38 → total ~0.8 m)
             const backShape = new THREE.Shape();
-            backShape.moveTo(-2.25, -0.55);
-            backShape.quadraticCurveTo(-1.2, -0.95, 0, -1.05);
-            backShape.quadraticCurveTo(1.2, -0.95, 2.25, -0.55);
-            backShape.lineTo(2.05, -0.35);
-            backShape.quadraticCurveTo(1.1, -0.7, 0, -0.78);
-            backShape.quadraticCurveTo(-1.1, -0.7, -2.05, -0.35);
-            backShape.lineTo(-2.25, -0.55);
-            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 1.15, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
+            backShape.moveTo(-2.1, -0.5);
+            backShape.quadraticCurveTo(-1.1, -0.85, 0, -0.95);
+            backShape.quadraticCurveTo(1.1, -0.85, 2.1, -0.5);
+            backShape.lineTo(1.95, -0.38);
+            backShape.quadraticCurveTo(1.05, -0.68, 0, -0.75);
+            backShape.quadraticCurveTo(-1.05, -0.68, -1.95, -0.38);
+            backShape.lineTo(-2.1, -0.5);
+            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.38, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2, curveSegments: 48 });
             backGeo.rotateX(-Math.PI / 2);
-            const backRest = new THREE.Mesh(backGeo, whiteFabric);
-            backRest.position.set(0, 0.42, 0);
+            const backRest = new THREE.Mesh(backGeo, fabric);
+            backRest.position.set(0, 0.42, 0); // top ≈ 0.42+0.38 = 0.8 m
             backRest.castShadow = true;
             sofa.add(backRest);
-            // Soft cushions nestled against the backrest (back is -Z after extrude)
+            // Soft cushions against the low back
             for (const [u, mat, sy] of [
-              [0.18, pillowMat, 0.48],
-              [0.5, accentPillow, 0.52],
-              [0.82, pillowMat, 0.48],
+              [0.2, pillowMat, 0.38],
+              [0.5, accentPillow, 0.4],
+              [0.8, pillowMat, 0.38],
             ] as const) {
-              const ang = -Math.PI * 0.2 + u * Math.PI * 0.4;
-              const px = Math.sin(ang) * 1.5;
-              // against curved back (−Z), slightly above seat
-              const pz = -0.72 + Math.cos(ang) * 0.08;
-              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), mat);
-              pillow.scale.set(1.4, sy, 0.75);
-              pillow.position.set(px, 0.72, pz);
-              pillow.rotation.y = ang * 0.5;
+              const ang = -Math.PI * 0.18 + u * Math.PI * 0.36;
+              const px = Math.sin(ang) * 1.35;
+              const pz = -0.55 + Math.cos(ang) * 0.06;
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 10), mat);
+              pillow.scale.set(1.25, sy, 0.7);
+              pillow.position.set(px, 0.58, pz);
+              pillow.rotation.y = ang * 0.4;
               pillow.castShadow = true;
               sofa.add(pillow);
             }
-            // Open seat faces +Z (door/cam); curved back at −Z
             sofa.rotation.y = 0;
-            sofa.scale.set(1.55, 1.3, 1.35);
-            sofa.position.set(-2.8, y0, 2.0);
+            sofa.scale.set(1.45, 1.0, 1.25); // no Y stretch — keep ~0.8 m
+            sofa.position.set(-2.8, y0, 2.05);
             living.add(sofa);
             const rug = new THREE.Mesh(
               new THREE.CylinderGeometry(2.15, 2.15, 0.03, 48),
