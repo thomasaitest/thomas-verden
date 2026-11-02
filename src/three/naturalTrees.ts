@@ -21,26 +21,76 @@ const BUSH_PATH = 'nature/plant_bushDetailed.glb';
 const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
+const fixedLeafMaps = new WeakSet<THREE.Texture>();
+
+/** Transparent leaf texels are often stored as white RGB — mipmaps bleach canopies at distance. */
+function fixLeafMapMips(map: THREE.Texture) {
+  if (fixedLeafMaps.has(map)) return;
+  const img = map.image as { width?: number; height?: number; data?: Uint8ClampedArray } | HTMLImageElement | ImageBitmap | undefined;
+  try {
+    const canvas = document.createElement('canvas');
+    const w = (img as HTMLImageElement)?.naturalWidth || (img as ImageBitmap)?.width || (img as any)?.width || 0;
+    const h = (img as HTMLImageElement)?.naturalHeight || (img as ImageBitmap)?.height || (img as any)?.height || 0;
+    if (!w || !h) {
+      // Still harden sampler even if we can't edit pixels yet
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.generateMipmaps = true;
+      map.minFilter = THREE.LinearMipmapLinearFilter;
+      map.magFilter = THREE.LinearFilter;
+      map.needsUpdate = true;
+      fixedLeafMaps.add(map);
+      return;
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(img as CanvasImageSource, 0, 0);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const d = imageData.data;
+    // Flood transparent/near-transparent texels with average opaque green so mips stay green
+    let sr = 0, sg = 0, sb = 0, n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3]! > 140) {
+        sr += d[i]!; sg += d[i + 1]!; sb += d[i + 2]!; n++;
+      }
+    }
+    const fr = n ? Math.round(sr / n) : 60;
+    const fg = n ? Math.round(sg / n) : 120;
+    const fb = n ? Math.round(sb / n) : 40;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3]! < 140) {
+        d[i] = fr; d[i + 1] = fg; d[i + 2] = fb;
+        // keep alpha for alphaTest
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    map.image = canvas;
+  } catch {
+    /* SwiftShader / worker may lack canvas — still set filters */
+  }
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.generateMipmaps = true;
+  map.minFilter = THREE.LinearMipmapLinearFilter;
+  map.magFilter = THREE.LinearFilter;
+  map.needsUpdate = true;
+  fixedLeafMaps.add(map);
+}
 
 function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
   const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   const std = src as THREE.MeshStandardMaterial | undefined;
   const map = (std?.map || (std as any)?.alphaMap || null) as THREE.Texture | null;
-  // Prefer albedo map (texture is already green); never let base white × HDRI wash out.
+  if (map) fixLeafMapMips(map);
+  // Opaque + alphaTest avoids blend-with-sky wash; toneMapped:false keeps greens under ACES
   const mat = new THREE.MeshBasicMaterial({
-    color: map ? '#e8f0e4' : hex, // slight multiply keeps map greens
+    color: map ? '#ffffff' : hex,
     map: map ?? undefined,
-    alphaMap: (std as any)?.alphaMap ?? undefined,
-    transparent: true,
-    alphaTest: 0.4,
+    transparent: false,
+    alphaTest: 0.45,
     side: THREE.DoubleSide,
     toneMapped: false,
     depthWrite: true,
   });
-  if (map) {
-    map.colorSpace = THREE.SRGBColorSpace;
-    map.needsUpdate = true;
-  }
   return mat;
 }
 

@@ -19,7 +19,12 @@ await page.waitForFunction(() => !!window.__hv, null, { timeout: 120000 });
 await page.evaluate(async () => {
   const g = window.__hv;
   await g.assetsReady;
-  // unregister SW already done by reload path; settle
+  g.editingAvatar = false;
+  g.paused = false;
+  if (g.save && !g.save.avatarDone) {
+    g.commit?.({ ...g.save, avatarDone: true, bucks: 2480 });
+  }
+  document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   await new Promise((r) => setTimeout(r, 1500));
 });
 

@@ -136,7 +136,7 @@ export function createLighting(
       hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
       if (bloom) {
         bloom.strength = on ? 0.22 : (hq ? 0.32 : 0.0);
-        bloom.threshold = on ? 0.78 : (hq ? 0.72 : 1.0);
+        bloom.threshold = on ? 0.78 : (hq ? 0.82 : 1.0);
       }
     },
     applyQuality(high) {
@@ -152,7 +152,7 @@ export function createLighting(
       if (bloom) {
         // Mild bloom ONLY for bright lights/holograms
         bloom.strength = high ? 0.32 : 0.0;
-        bloom.threshold = high ? 0.72 : 1.0;
+        bloom.threshold = high ? 0.82 : 1.0;
         bloom.radius = 0.45;
       }
       if (n8) (n8 as any).enabled = high;
