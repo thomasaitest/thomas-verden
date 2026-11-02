@@ -1431,7 +1431,7 @@ export class Game {
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       this.ensureAvatarStudio();
-      // Teleport BEFORE framing — avatarHolder was copied earlier this frame at the old world pos
+      // Snap into studio before framing — avatarHolder was copied earlier this frame at the old world pos
       p.pos.set(0, 0, 0);
       // Three-quarter front toward cam on −Z
       p.yaw = Math.PI + 0.4;
