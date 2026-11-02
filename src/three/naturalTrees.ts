@@ -111,11 +111,9 @@ function proceduralTree(kind: number): THREE.Group {
     limb.castShadow = true;
     g.add(limb);
   }
-  const leafMat = new THREE.MeshStandardMaterial({
+  const leafMat = new THREE.MeshBasicMaterial({
     color: LEAF_HEX[kind % LEAF_HEX.length],
-    roughness: 0.84,
-    metalness: 0.02,
-    envMapIntensity: 0.55,
+    side: THREE.DoubleSide,
   });
   const blobs = [
     [0, h + 0.35, 0, 1.5],
@@ -160,13 +158,8 @@ export function buildNaturalTree(kind = 0): THREE.Group {
 
 function forceGreenCanopies(root: THREE.Object3D, kind: number) {
   const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
-  const leafMat = new THREE.MeshStandardMaterial({
-    color: hex,
-    roughness: 0.86,
-    metalness: 0.02,
-    envMapIntensity: 0.28,
-    side: THREE.DoubleSide,
-  });
+  // MeshBasic = unlit solid green (Standard+HDRI was washing canopies to white blobs)
+  const leafMat = new THREE.MeshBasicMaterial({ color: hex, side: THREE.DoubleSide });
   const trunkMat = new THREE.MeshStandardMaterial({
     color: '#5a3d28',
     roughness: 0.94,
@@ -177,8 +170,16 @@ function forceGreenCanopies(root: THREE.Object3D, kind: number) {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
     const name = `${m.name || ''}`.toLowerCase();
+    const geo = (m.geometry as THREE.BufferGeometry)?.type || '';
+    // Prefer treating spheres/planes as canopy; cylinders as trunk
+    let trunkish =
+      name.includes('bark') ||
+      name.includes('trunk') ||
+      name.includes('wood') ||
+      geo.includes('Cylinder') ||
+      geo.includes('Capsule');
+    if (geo.includes('Sphere') || geo.includes('Plane') || geo.includes('Circle')) trunkish = false;
     const mats = Array.isArray(m.material) ? m.material : [m.material];
-    let trunkish = name.includes('bark') || name.includes('trunk') || name.includes('wood');
     for (const mat of mats) {
       const std = mat as THREE.MeshStandardMaterial;
       if (!std?.color) continue;
@@ -186,8 +187,10 @@ function forceGreenCanopies(root: THREE.Object3D, kind: number) {
       const bright = (c.r + c.g + c.b) / 3;
       if (c.r > c.g * 1.15 && c.b < 0.35 && bright < 0.5) trunkish = true;
     }
-    // Hard replace — never keep baked leaf maps/colors that wash to white under ACES
     m.material = trunkish ? trunkMat.clone() : leafMat.clone();
+    // Drop vertex colors that force white
+    const g = m.geometry as THREE.BufferGeometry;
+    if (g?.attributes?.color) g.deleteAttribute('color');
     m.castShadow = true;
     m.receiveShadow = true;
   });

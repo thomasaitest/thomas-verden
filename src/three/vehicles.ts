@@ -29,24 +29,24 @@ function carKind(carId: string): CarKind {
 /** Hover pod under a fender — dark disc + cyan glow ring. */
 function hoverPod(g: THREE.Group, x: number, y: number, z: number) {
   const disc = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.26, 0.08, 16),
+    new THREE.CylinderGeometry(0.14, 0.16, 0.05, 14),
     new THREE.MeshStandardMaterial({ color: '#1a2230', metalness: 0.85, roughness: 0.28 }),
   );
   disc.position.set(x, y, z);
   g.add(disc);
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.2, 0.025, 8, 24),
+    new THREE.TorusGeometry(0.13, 0.016, 8, 20),
     new THREE.MeshBasicMaterial({ color: '#3ecbff' }),
   );
   ring.rotation.x = Math.PI / 2;
-  ring.position.set(x, y - 0.02, z);
+  ring.position.set(x, y - 0.015, z);
   g.add(ring);
   const glow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.18, 16),
-    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.35, depthWrite: false }),
+    new THREE.CircleGeometry(0.11, 14),
+    new THREE.MeshBasicMaterial({ color: '#7ef0ff', transparent: true, opacity: 0.3, depthWrite: false }),
   );
   glow.rotation.x = -Math.PI / 2;
-  glow.position.set(x, y - 0.06, z);
+  glow.position.set(x, y - 0.04, z);
   g.add(glow);
 }
 
@@ -131,13 +131,13 @@ export function buildCar(carId: string): THREE.Group {
     const fx = sx * bodyW * 0.4;
     const fz = sz * bodyLen * 0.28;
     const fender = new THREE.Mesh(
-      new THREE.TorusGeometry(0.24, 0.045, 8, 16, Math.PI * 0.9),
+      new THREE.TorusGeometry(0.18, 0.028, 8, 14, Math.PI * 0.85),
       chrome,
     );
     fender.rotation.x = Math.PI / 2;
     fender.rotation.z = sx > 0 ? -0.15 : 0.15;
-    fender.position.set(fx, hoverY + 0.12, fz);
-    fender.scale.set(0.85, 1, 0.55);
+    fender.position.set(fx, hoverY + 0.08, fz);
+    fender.scale.set(0.75, 1, 0.45);
     g.add(fender);
     hoverPod(g, fx, hoverY - 0.04, fz);
   }

@@ -342,7 +342,7 @@ export function createInterior(): Interior {
         {
           ensureRectArea();
           const coveY = y0 + WALL_H - 0.14;
-          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffe2b0' });
+          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffd090' });
           if (house.style === 'moderne' && f === 0) {
             // Curved oval cove — ceiling + mid ring so default cam always sees warm LED
             const mkOval = (rx: number, rz: number, y: number, r: number) => {
@@ -353,8 +353,9 @@ export function createInterior(): Interior {
               tube.position.y = y;
               fg.add(tube);
             };
-            mkOval(w * 0.38, d * 0.32, coveY, 0.055);
-            mkOval(w * 0.28, d * 0.22, y0 + 3.55, 0.045);
+            mkOval(w * 0.36, d * 0.3, coveY, 0.07);
+            mkOval(w * 0.26, d * 0.2, y0 + 3.4, 0.06);
+            mkOval(w * 0.2, d * 0.14, y0 + 2.85, 0.05);
             const area = new THREE.RectAreaLight('#ffe8d0', 5.5, w * 0.55, d * 0.4);
             area.position.set(0, coveY - 0.08, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
@@ -433,19 +434,20 @@ export function createInterior(): Interior {
               pillow.position.set(px, 0.85, pz);
               sofa.add(pillow);
             }
-            sofa.position.set(-1.6, y0, 0.35);
+            sofa.rotation.y = Math.PI; // back + pillows face door/cam
+            sofa.position.set(-1.6, y0, -0.2);
             living.add(sofa);
             const rug = new THREE.Mesh(
               new THREE.CylinderGeometry(1.85, 1.85, 0.03, 48),
               new THREE.MeshStandardMaterial({ color: '#7a8694', roughness: 0.88, metalness: 0.02 }),
             );
-            rug.position.set(-1.6, y0 + 0.02, -0.55);
+            rug.position.set(-1.6, y0 + 0.02, 0.85);
             living.add(rug);
             const rugIn = new THREE.Mesh(
               new THREE.CylinderGeometry(1.2, 1.2, 0.032, 48),
               new THREE.MeshStandardMaterial({ color: '#dce2ea', roughness: 0.9, metalness: 0.02 }),
             );
-            rugIn.position.set(-1.6, y0 + 0.025, -0.55);
+            rugIn.position.set(-1.6, y0 + 0.025, 0.85);
             living.add(rugIn);
           }
           // Round coffee table on rug
@@ -463,7 +465,7 @@ export function createInterior(): Interior {
             );
             stem.position.y = 0.2;
             table.add(stem);
-            table.position.set(-1.6, y0, -0.55);
+            table.position.set(-1.6, y0, 0.85);
             living.add(table);
           }
           // Holo-screen LEFT of window bay (default cam sees it) + lit shelves/plants
