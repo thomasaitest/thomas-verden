@@ -187,25 +187,19 @@ export function buildNaturalTree(kind = 0): THREE.Group {
     model.scale.setScalar(s);
     model.rotation.y = ((ki * 47) % 360) * (Math.PI / 180);
     g.add(model);
-    // Soft lit under-fill (Standard, darker) — volume without neon flat cards
-    const hex = LEAF_HEX[ki]!;
+    // Small dark under-fill for volume only — leaf cards carry the look
     const fillMat = new THREE.MeshStandardMaterial({
-      color: hex,
-      roughness: 0.9,
+      color: '#1e4a1c',
+      roughness: 0.95,
       metalness: 0.02,
-      envMapIntensity: 0.25,
+      envMapIntensity: 0.15,
     });
-    for (const [y, sx, sy, sz] of [
-      [2.7, 1.15, 0.85, 1.1],
-      [3.35, 0.95, 0.72, 0.9],
-    ] as const) {
-      const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), fillMat);
-      fill.position.y = y;
-      fill.scale.set(sx, sy, sz);
-      fill.castShadow = true;
-      fill.receiveShadow = true;
-      g.add(fill);
-    }
+    const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), fillMat);
+    fill.position.y = 2.85;
+    fill.scale.set(0.85, 0.65, 0.8);
+    fill.castShadow = true;
+    fill.receiveShadow = true;
+    g.add(fill);
     g.userData.ezTree = true;
     g.userData.treeKind = ki;
     return g;

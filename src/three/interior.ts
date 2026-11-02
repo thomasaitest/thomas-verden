@@ -419,17 +419,17 @@ export function createInterior(): Interior {
             sofa.add(seat);
             // Thin curved backrest — extrude depth = back height (~0.38 → total ~0.8 m)
             const backShape = new THREE.Shape();
-            backShape.moveTo(-2.1, -0.5);
-            backShape.quadraticCurveTo(-1.1, -0.85, 0, -0.95);
-            backShape.quadraticCurveTo(1.1, -0.85, 2.1, -0.5);
-            backShape.lineTo(1.95, -0.38);
-            backShape.quadraticCurveTo(1.05, -0.68, 0, -0.75);
-            backShape.quadraticCurveTo(-1.05, -0.68, -1.95, -0.38);
-            backShape.lineTo(-2.1, -0.5);
-            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.38, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2, curveSegments: 48 });
+            backShape.moveTo(-2.1, -0.48);
+            backShape.quadraticCurveTo(-1.1, -0.88, 0, -0.98);
+            backShape.quadraticCurveTo(1.1, -0.88, 2.1, -0.48);
+            backShape.lineTo(1.9, -0.28);
+            backShape.quadraticCurveTo(1.05, -0.62, 0, -0.7);
+            backShape.quadraticCurveTo(-1.05, -0.62, -1.9, -0.28);
+            backShape.lineTo(-2.1, -0.48);
+            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.42, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.035, bevelSegments: 2, curveSegments: 48 });
             backGeo.rotateX(-Math.PI / 2);
             const backRest = new THREE.Mesh(backGeo, fabric);
-            backRest.position.set(0, 0.42, 0); // top ≈ 0.42+0.38 = 0.8 m
+            backRest.position.set(0, 0.4, 0.02); // top ≈ 0.82 m — thin, cam sees over to table
             backRest.castShadow = true;
             sofa.add(backRest);
             // Soft cushions against the low back
