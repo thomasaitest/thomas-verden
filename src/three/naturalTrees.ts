@@ -22,10 +22,10 @@ const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
 function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
-  void src; void kind;
-  // Solid opaque green cards — keep ez leaf-card geometry; color only.
+  void src;
+  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   return new THREE.MeshBasicMaterial({
-    color: '#2ecc40',
+    color: hex,
     side: THREE.DoubleSide,
     toneMapped: false,
     depthWrite: true,
@@ -169,7 +169,8 @@ export function buildNaturalTree(kind = 0): THREE.Group {
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
     g.add(model);
     // Dense green under-fill so sky cannot read as a white canopy blob through sparse cards
-    const fillMat = new THREE.MeshBasicMaterial({ color: '#2ecc40', toneMapped: false }); // vivid green fill — must never read white
+    const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+    const fillMat = new THREE.MeshBasicMaterial({ color: hex, toneMapped: false });
     for (const [y, sx, sy, sz] of [
       [2.9, 1.55, 1.05, 1.45],
       [3.6, 1.25, 0.9, 1.15],
