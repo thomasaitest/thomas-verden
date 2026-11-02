@@ -48,7 +48,7 @@ async function prep(page) {
         shoes: '#c8d0d8',
         shoeStyle: 'sneakers',
         hat: 'ingen',
-        accessory: 'sekk-stjerne',
+        accessory: 'ingen',
       },
       avatarDone: true,
       pets: [{ uid: 'pet1', speciesId: 'hund', name: 'Byte', flyable: false, rideable: false, obtainedAt: now - 60000, xp: 80 }],

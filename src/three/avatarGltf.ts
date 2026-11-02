@@ -178,23 +178,18 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 
   const acc = a.accessory || 'ingen';
   if (acc.startsWith('sekk') || acc === 'sekk') {
-    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.62, 0.26), metal('#2a3344'));
-    pack.position.set(0, 1.38, -0.4);
+    // Slim tech pack — old box+strips read as a giant black slab from shoulder cam
+    const pack = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.38, 6, 12), metal('#2a3344'));
+    pack.position.set(0, 1.42, -0.32);
     gear.add(pack);
-    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.12, 0.28), metal('#1a2230'));
-    lid.position.set(0, 1.72, -0.4);
-    gear.add(lid);
-    for (const y of [1.58, 1.4, 1.22]) {
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.035, 0.035), glow('#3ecbff', 1.6));
-      strip.position.set(0, y, -0.54);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.42, 0.04), metal('#1a2230'));
+    plate.position.set(0, 1.42, -0.42);
+    gear.add(plate);
+    for (const y of [1.52, 1.38, 1.24]) {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.02), glow('#3ecbff', 1.2));
+      strip.position.set(0, y, -0.45);
       gear.add(strip);
     }
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.32, 8), metal('#8aa0b8'));
-    antenna.position.set(0.16, 1.95, -0.4);
-    gear.add(antenna);
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), glow('#7ef0ff', 2));
-    tip.position.set(0.16, 2.12, -0.4);
-    gear.add(tip);
   }
 
   if (acc.includes('vinger')) {
