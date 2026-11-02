@@ -419,22 +419,23 @@ export function createInterior(): Interior {
         // Living-room composition (concept 2-hus-inne): sofa/table/rug, left holo+shelves, right island, pod via right doorway
         if (f === 0) {
           const living = new THREE.Group();
-          // Living set — Quaternius CC0 GLBs (sofa sectional, round table, carpet)
+          // Living set — Quaternius CC0 GLBs (3-seater sofa, round table, carpet)
+          // Default cam at ~z=3.2 looking −Z: sofa open face toward +Z (toward cam)
           {
-            const sofa = buildFurniture('sofalong', '#d4dae2');
-            sofa.position.set(-2.6, y0, 1.75);
-            sofa.rotation.y = Math.PI; // open toward door/cam
+            const sofa = buildFurniture('sofalong', '#d8dee6');
+            sofa.position.set(-2.8, y0, 1.55);
+            sofa.rotation.y = 0;
             living.add(sofa);
-            // Accent armchair
+            // Accent armchair — left of sofa, not in cam foreground
             const chair = buildFurniture('armchair', '#c8d0d8');
-            chair.position.set(-0.35, y0, 3.1);
-            chair.rotation.y = -Math.PI * 0.65;
+            chair.position.set(-5.0, y0, 2.4);
+            chair.rotation.y = Math.PI * 0.35;
             living.add(chair);
             const rug = buildFurniture('carpet', '#7a8694');
-            rug.position.set(-2.4, y0, 2.85);
+            rug.position.set(-2.5, y0, 2.75);
             living.add(rug);
             const table = buildFurniture('coffeetable', '#c8b79a');
-            table.position.set(-2.4, y0, 2.95);
+            table.position.set(-2.5, y0, 2.85);
             living.add(table);
           }
           // Holo-screen LEFT of window bay (default cam sees it) + lit shelves/plants

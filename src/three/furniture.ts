@@ -6,7 +6,7 @@ type B = (g: THREE.Group, c: string) => void;
 
 const FURN_GLB: Record<string, string> = {
   sofa: 'furniture/couch-medium1.glb',
-  sofalong: 'furniture/couch-l.glb',
+  sofalong: 'furniture/couch-large1.glb',
   armchair: 'furniture2/sofa2.glb',
   // procedural capsule pod beds (concept) — not Quaternius boxes
   coffeetable: 'furniture/table-roundlarge.glb',
@@ -607,13 +607,14 @@ export function buildFurniture(model: string, color: string): THREE.Group {
   if (path && glbReady.has(path)) {
     const g = glbReady.get(path)!.clone(true);
     const scale =
-      model === 'sofalong' ? 1.55 :
-      model === 'sofa' ? 1.35 :
-      model === 'coffeetable' ? 1.25 :
-      model === 'carpet' ? 2.2 :
-      model.startsWith('plant') ? 1.4 :
-      model === 'bookshelf' ? 1.15 :
-      1.2;
+      model === 'sofalong' ? 1.05 :
+      model === 'sofa' ? 1.0 :
+      model === 'coffeetable' ? 1.1 :
+      model === 'carpet' ? 1.8 :
+      model.startsWith('plant') ? 1.25 :
+      model === 'bookshelf' ? 1.05 :
+      model === 'armchair' ? 1.0 :
+      1.15;
     g.scale.setScalar(scale);
     // Tint seating fabric toward light grey when a color is provided
     const tint = color && (model === 'sofalong' || model === 'sofa' || model === 'armchair');
