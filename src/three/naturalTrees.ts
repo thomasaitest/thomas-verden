@@ -160,41 +160,36 @@ export function buildNaturalTree(kind = 0): THREE.Group {
 
 function forceGreenCanopies(root: THREE.Object3D, kind: number) {
   const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: hex,
+    roughness: 0.86,
+    metalness: 0.02,
+    envMapIntensity: 0.28,
+    side: THREE.DoubleSide,
+  });
+  const trunkMat = new THREE.MeshStandardMaterial({
+    color: '#5a3d28',
+    roughness: 0.94,
+    metalness: 0.02,
+    envMapIntensity: 0.25,
+  });
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
+    const name = `${m.name || ''}`.toLowerCase();
     const mats = Array.isArray(m.material) ? m.material : [m.material];
-    for (let i = 0; i < mats.length; i++) {
-      const std = mats[i] as THREE.MeshStandardMaterial;
+    let trunkish = name.includes('bark') || name.includes('trunk') || name.includes('wood');
+    for (const mat of mats) {
+      const std = mat as THREE.MeshStandardMaterial;
       if (!std?.color) continue;
-      const name = `${std.name || ''} ${m.name || ''}`.toLowerCase();
       const c = std.color;
       const bright = (c.r + c.g + c.b) / 3;
-      const isTrunk =
-        name.includes('bark') ||
-        name.includes('trunk') ||
-        name.includes('wood') ||
-        (c.r > c.g * 1.15 && c.b < 0.35 && bright < 0.5);
-      if (isTrunk) continue;
-      // Clone material so we don't mutate the shared GLB cache oddly mid-frame
-      const leaf = std.clone();
-      leaf.color.set(hex);
-      leaf.map = null;
-      leaf.normalMap = null;
-      leaf.roughnessMap = null;
-      leaf.aoMap = null;
-      leaf.emissive?.set?.('#0a2008');
-      if (leaf.emissive) leaf.emissiveIntensity = 0.04;
-      leaf.envMapIntensity = 0.3;
-      leaf.roughness = 0.85;
-      leaf.metalness = 0.02;
-      leaf.transparent = false;
-      leaf.opacity = 1;
-      leaf.side = THREE.DoubleSide;
-      leaf.needsUpdate = true;
-      if (Array.isArray(m.material)) (m.material as THREE.Material[])[i] = leaf;
-      else m.material = leaf;
+      if (c.r > c.g * 1.15 && c.b < 0.35 && bright < 0.5) trunkish = true;
     }
+    // Hard replace — never keep baked leaf maps/colors that wash to white under ACES
+    m.material = trunkish ? trunkMat.clone() : leafMat.clone();
+    m.castShadow = true;
+    m.receiveShadow = true;
   });
 }
 
