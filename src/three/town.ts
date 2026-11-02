@@ -907,8 +907,8 @@ export function buildTown(): Town {
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
       { id: 'bil-rosa', x: -1.55, z: 28, yaw: Math.PI },
       { id: 'bil-lilla', x: 1.55, z: -22, yaw: 0 },
-      { id: 'bil-gronn', x: 16.5, z: -2.0, yaw: Math.PI / 2 },
-      { id: 'bil-bla', x: -16.5, z: 3.0, yaw: -Math.PI / 2 },
+      { id: 'bil-gronn', x: 19.5, z: -2.0, yaw: Math.PI / 2 },
+      { id: 'bil-bla', x: -19.5, z: 3.0, yaw: -Math.PI / 2 },
       { id: 'bil-gul', x: 1.55, z: 48, yaw: 0 },
     ];
     for (const c of traffic) {

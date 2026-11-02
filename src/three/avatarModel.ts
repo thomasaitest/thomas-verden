@@ -27,11 +27,17 @@ function canvasTex(key: string, w: number, h: number, draw: (ctx: CanvasRenderin
 
 function faceTexture(face: Avatar['face']): THREE.CanvasTexture {
   return canvasTex(`face-${face}`, 256, 256, (ctx) => {
-    const ink = '#2b2340';
+    // Soft skin underpaint so decals don't look cut-out on Quaternius heads
+    const skinG = ctx.createRadialGradient(128, 140, 20, 128, 140, 140);
+    skinG.addColorStop(0, 'rgba(255,220,190,0.0)');
+    skinG.addColorStop(1, 'rgba(240,180,150,0.08)');
+    ctx.fillStyle = skinG;
+    ctx.fillRect(0, 0, 256, 256);
+    const ink = '#2a2438';
     ctx.fillStyle = ink;
     ctx.strokeStyle = ink;
     ctx.lineCap = 'round';
-    ctx.lineWidth = 12;
+    ctx.lineWidth = 10;
     const eye = (x: number, y: number) => {
       ctx.fillStyle = ink;
       ctx.beginPath();
@@ -380,9 +386,10 @@ function decal(parent: THREE.Object3D, tex: THREE.Texture, pos: [number, number,
 function hair(head: THREE.Group, a: Avatar) {
   const c = a.hairColor;
   if (a.hair === 'ingen') return;
-  // cap of hair on top and back
-  rbox(head, c, [0, 0.3, -0.04], [0.8, 0.2, 0.8]);
-  rbox(head, c, [0, 0.1, -0.33], [0.8, 0.5, 0.16]);
+  // Volume under-cap so styles read fuller in studio
+  rbox(head, c, [0, 0.32, -0.02], [0.88, 0.26, 0.88]);
+  rbox(head, c, [0, 0.12, -0.34], [0.86, 0.58, 0.22]);
+  sph(head, c, [0, 0.38, -0.05], [0.72, 0.4, 0.72]);
   switch (a.hair) {
     case 'kort':
       rbox(head, c, [0, 0.27, 0.28], [0.8, 0.14, 0.22]);

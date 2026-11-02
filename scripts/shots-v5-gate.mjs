@@ -168,6 +168,7 @@ await page.evaluate(async () => {
   g.syncPets?.();
   // Stand on south approach facing fountain — DEFAULT third-person cam
   // From south of plaza face +Z (fountain). three.js yaw 0 = -Z, so use PI.
+  g.clearVehicle?.();
   g.player.pos.set(0.5, 0, -7.5);
   g.player.yaw = Math.PI;
   g.cam.yaw = Math.PI;
@@ -175,6 +176,8 @@ await page.evaluate(async () => {
   g.cam.dist = 7.2;
   g.camShown = 7.2;
   g.rebuildAvatar?.();
+  // Hide any leftover vehicle mesh that could sit on plaza
+  if (g.vehicleMesh) g.vehicleMesh.visible = false;
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
@@ -247,12 +250,19 @@ await page.evaluate(async () => {
 });
 await shot(page, '03-house-interior', 2200);
 
-// Avatar framing outdoors — human in foreground, plaza behind
+// Avatar editor — in-game Avatar button / openAvatar at default Neon Tech state
 await page.evaluate(async () => {
   const g = window.__hv;
   g.freezeCam = null;
   if (g.mode === 'house') g.exitHouse();
-  // Neon Tech look for avatar compare
+  if (g.driving) g.toggleDrive();
+  g.clearVehicle?.();
+  // Park any leftover player vehicle well off plaza (south road)
+  if (g.vehicleMesh) {
+    g.vehicleMesh.position.set(1.7, 0, -28);
+    g.vehicleMesh.visible = false;
+  }
+  // Neon Tech look — matches concept 3-figurer default stylish char
   g.commit?.({
     ...g.save,
     equipped: [],
@@ -269,22 +279,25 @@ await page.evaluate(async () => {
       hat: 'ingen',
       hair: 'kort',
       hairColor: '#2b2118',
+      face: 'smil',
     },
   });
   g.rebuildAvatar?.();
-  g.player.pos.set(0.4, 0, -5.5);
+  // Stand on plaza approach first so studio pose restore is sane; editor teleports to studio
+  g.player.pos.set(0.4, 0, -18);
   g.player.yaw = Math.PI;
-  g.cam.yaw = Math.PI + 0.45;
-  g.cam.pitch = 0.16;
-  g.cam.dist = 5.5;
-  g.camShown = 5.5;
-  await new Promise((r) => setTimeout(r, 3500));
-  if (g.avatarHolder) g.avatarHolder.visible = true;
-  g.editingAvatar = false;
-  g.hud?.setWhere?.('Dag · Sol');
+  for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
+  // Open real avatar editor sheet (Klær / Hår / Tilbehør + FERDIG)
+  g.panels?.openAvatar?.() || g.openAvatar?.();
+  await new Promise((r) => setTimeout(r, 3200));
+  if (g.avatarHolder) g.avatarHolder.visible = true;
+  // Hide dock/HUD chrome for concept-like framing
+  document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {
+    el.style.visibility = 'hidden';
+  });
 });
-await shot(page, '04-avatar', 2000);
+await shot(page, '04-avatar', 2400);
 
 await browser.close();
 

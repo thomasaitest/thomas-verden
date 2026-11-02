@@ -11,14 +11,14 @@ Raw downloads (not shipped) are under `vendor/raw/` (gitignored if large).
 |---|---|---|---|
 | `characters/m-*.glb`, `characters/w-*.glb` | [Quaternius Ultimate Modular Men / Women](https://quaternius.com/) via [gamedev.trebeljahr.com mirror](https://gamedev.trebeljahr.com/quaternius) | CC0 | Idle/Walk/Run/Wave clips embedded; recolored at runtime |
 
-## Avatar quality plan (next pass)
+## Avatar quality (this pass)
 
-Current player body is already **Quaternius Ultimate Modular** (`characters/m-*.glb` / `w-*.glb`) with runtime tint + light futuristic gear. Faces still read low-poly/angular vs concept `3-figurer` because:
-1. Quaternius heads are intentionally stylized/blocky;
-2. Indoor ACES + N8AO crush skin; we already lift peach albedo + soft emissive;
-3. A flat cyan “chest stripe” gear accent was reading as a name-tag (removed → collar pip).
-
-**Next character pass (not this commit):** keep Quaternius CC0 base; add smoother face maps or a higher-res Quaternius variant if available; stronger glowing suit edge accents; light translucent wings (already partially in `attachFuturisticGear` for `vinger` accessory) matching concept neon silhouette. Prefer recolor/gear over swapping to a non-CC0 pack.
+Player body stays **Quaternius Ultimate Modular** CC0 (`characters/m-*.glb` / `w-*.glb`) with runtime tint + futuristic gear:
+- Softer skin (lifted albedo, gentler normals, soft emissive fill vs N8AO)
+- Hair volume shells + fuller procedural under-cap
+- Suit edge accents as MeshBasic cyan lines (selective bloom)
+- Light wings: translucent emissive gradient planes + subtle flutter (`vinger*`)
+- Avatar editor: studio cyclorama + soft lights; dark glass Klær/Hår/Tilbehør panel + FERDIG
 
 
 

@@ -94,6 +94,10 @@ export class Game {
   assetsReady: Promise<void> = Promise.resolve();
   weatherLocked: null | "clear" | "cloudy" | "rain" = null;
   private outdoorBgBackup: THREE.Color | THREE.Texture | null = null;
+  private avatarStudio: THREE.Group | null = null;
+  private avatarStudioLights: THREE.Light[] = [];
+  private avatarStudioPose: { x: number; y: number; z: number; yaw: number } | null = null;
+  private avatarStudioBg: THREE.Color | THREE.Texture | null = null;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
   town: Town;
@@ -388,6 +392,101 @@ export class Game {
     this.avatarHolder.userData.camIgnore = true;
     void attachGltfAvatar(this.avatar, this.save.avatar);
   }
+
+  /** Soft studio cyclorama + lights while the avatar editor is open. */
+  private ensureAvatarStudio() {
+    if (this.avatarStudio) return;
+    // Remember where the player stood so FERDIG returns them there
+    if (!this.avatarStudioPose) {
+      this.avatarStudioPose = {
+        x: this.player.pos.x,
+        y: this.player.pos.y,
+        z: this.player.pos.z,
+        yaw: this.player.yaw,
+      };
+    }
+    if (this.avatarStudioBg == null) {
+      this.avatarStudioBg = this.scene.background as THREE.Color | THREE.Texture | null;
+    }
+    const g = new THREE.Group();
+    g.name = 'AvatarStudio';
+    // Soft grey gradient backdrop (cyclorama)
+    const c = document.createElement('canvas');
+    c.width = 512; c.height = 512;
+    const ctx = c.getContext('2d')!;
+    const grd = ctx.createLinearGradient(0, 0, 0, 512);
+    grd.addColorStop(0, '#5a6470');
+    grd.addColorStop(0.4, '#8e97a2');
+    grd.addColorStop(0.7, '#c4ccd4');
+    grd.addColorStop(1, '#e6eaef');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 512, 512);
+    // soft vignette so edges melt into fog
+    const vg = ctx.createRadialGradient(256, 280, 40, 256, 280, 320);
+    vg.addColorStop(0, 'rgba(255,255,255,0)');
+    vg.addColorStop(1, 'rgba(40,48,58,0.35)');
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, 512, 512);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const back = new THREE.Mesh(
+      new THREE.PlaneGeometry(16, 11),
+      new THREE.MeshBasicMaterial({ map: tex, depthWrite: false }),
+    );
+    back.position.set(0, 3.4, -3.4);
+    g.add(back);
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(5.8, 48),
+      new THREE.MeshStandardMaterial({ color: '#d2d8e0', roughness: 0.32, metalness: 0.1, envMapIntensity: 0.7 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = 0.02;
+    floor.receiveShadow = true;
+    g.add(floor);
+    this.scene.add(g);
+    this.avatarStudio = g;
+    const key = new THREE.DirectionalLight('#fff4e8', 1.45);
+    key.position.set(2.8, 5.8, 3.8);
+    key.castShadow = false;
+    const fill = new THREE.DirectionalLight('#c8e0ff', 0.6);
+    fill.position.set(-3.8, 3.4, 1.8);
+    const rim = new THREE.PointLight('#7ef0ff', 1.25, 12, 2);
+    rim.position.set(0.5, 2.5, -1.4);
+    const bounce = new THREE.PointLight('#ffe8d0', 0.55, 10, 2);
+    bounce.position.set(-0.6, 0.6, 2.2);
+    for (const L of [key, fill, rim, bounce]) {
+      this.scene.add(L);
+      this.avatarStudioLights.push(L);
+    }
+    if (this.town?.group) this.town.group.visible = false;
+    if (this.interior?.group) this.interior.group.visible = false;
+    if (this.vehicleMesh) this.vehicleMesh.visible = false;
+  }
+
+  private teardownAvatarStudio() {
+    if (!this.avatarStudio && !this.avatarStudioPose) return;
+    if (this.avatarStudio) {
+      this.scene.remove(this.avatarStudio);
+      this.avatarStudio = null;
+    }
+    for (const L of this.avatarStudioLights) this.scene.remove(L);
+    this.avatarStudioLights = [];
+    if (this.avatarStudioPose) {
+      this.player.pos.set(this.avatarStudioPose.x, this.avatarStudioPose.y, this.avatarStudioPose.z);
+      this.player.yaw = this.avatarStudioPose.yaw;
+      this.avatarStudioPose = null;
+    }
+    if (this.avatarStudioBg != null) {
+      this.scene.background = this.avatarStudioBg;
+      this.avatarStudioBg = null;
+    } else if (this.mode === 'town') {
+      this.setSky();
+    }
+    if (this.mode === 'town' && this.town?.group) this.town.group.visible = true;
+    if (this.mode === 'house' && this.interior?.group) this.interior.group.visible = true;
+    if (this.vehicleMesh) this.vehicleMesh.visible = true;
+  }
+
 
   // ---------- pets ----------
   private needTexture(kind: string): THREE.Texture {
@@ -1299,10 +1398,25 @@ export class Game {
     else if (this.driving && vw > 0) this.camera.setViewOffset(vw, vh, 0, vh * 0.04, vw, vh);
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
+      this.ensureAvatarStudio();
+      // Character large on the left; glass panel sits on the right
+      p.pos.set(-1.35, 0, 0.15);
+      p.yaw = 0.42;
+      p.vy = 0;
+      if (this.avatarStudio) this.avatarStudio.position.copy(p.pos);
       const fy = p.yaw;
-      this.camera.position.set(p.pos.x + Math.sin(fy) * 6.5 + Math.cos(fy) * 1.6, p.pos.y + 2.4, p.pos.z + Math.cos(fy) * 6.5 - Math.sin(fy) * 1.6);
-      this.camera.lookAt(p.pos.x + Math.cos(fy) * 1.4, p.pos.y + 1.5, p.pos.z - Math.sin(fy) * 1.4);
+      this.camera.position.set(
+        p.pos.x + Math.sin(fy) * 3.9 + Math.cos(fy) * 1.55,
+        p.pos.y + 1.72,
+        p.pos.z + Math.cos(fy) * 3.9 - Math.sin(fy) * 1.55,
+      );
+      this.camera.lookAt(p.pos.x + Math.cos(fy) * 0.15, p.pos.y + 1.28, p.pos.z - Math.sin(fy) * 0.15);
+      this.scene.background = new THREE.Color('#8a929c');
+      this.scene.fog = null;
+      // Shift framing left so character fills the open studio and panel covers the right
+      if (vw > 0) this.camera.setViewOffset(vw, vh, -vw * 0.12, vh * 0.02, vw, vh);
     } else {
+      this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);
       let dist = this.cam.dist;
       if (this.mode === 'town' && !this.building) {
@@ -2001,7 +2115,7 @@ export class Game {
     this.updateHud();
   }
 
-  private clearVehicle() {
+  clearVehicle() {
     this.driving = null;
     this.pramming = null;
     if (this.vehicleMesh) {

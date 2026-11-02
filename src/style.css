@@ -421,3 +421,55 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
   .prompt { font-size: 14px; padding: 10px 16px; }
   .minimap { width: min(92vw, 340px) !important; height: min(92vw, 340px) !important; }
 }
+
+/* Avatar editor — concept 3-figurer: dark glass panel, studio left */
+.sheet-wrap.avatar-edit {
+  background: linear-gradient(120deg, rgba(28, 34, 44, 0.55) 0%, rgba(18, 24, 34, 0.25) 45%, rgba(8, 12, 20, 0.15) 100%);
+  pointer-events: none;
+  place-items: center end;
+}
+.sheet-wrap.avatar-edit .sheet {
+  pointer-events: auto;
+  width: min(420px, 46vw);
+  max-height: 94vh;
+  background: rgba(12, 18, 28, 0.78);
+  border: 1px solid rgba(120, 200, 255, 0.32);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 0 48px rgba(62,203,255,0.12);
+  backdrop-filter: blur(22px) saturate(1.2);
+}
+.sheet-wrap.avatar-edit .sheet-head {
+  background: transparent;
+  border-bottom: 1px solid rgba(120, 200, 255, 0.22);
+  padding: 14px 16px 12px 20px;
+  gap: 12px;
+}
+.sheet-wrap.avatar-edit .sheet-head h2 {
+  font-size: 15px;
+  letter-spacing: 0.14em;
+}
+.sheet-wrap.avatar-edit .btn.ferdig {
+  margin-left: auto;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+.sheet-wrap.avatar-edit .avatar-tabs {
+  justify-content: stretch;
+  gap: 0;
+  border-bottom: 1px solid rgba(120, 200, 255, 0.2);
+  margin: 0 0 12px;
+  padding: 0;
+}
+.sheet-wrap.avatar-edit .avatar-tabs .tab {
+  flex: 1;
+  text-align: center;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+.sheet-wrap.avatar-edit .avatar-foot { margin-top: 14px; justify-content: center; }
+@media (max-aspect-ratio: 1/1) {
+  .sheet-wrap.avatar-edit { place-items: end center; }
+  .sheet-wrap.avatar-edit .sheet { width: 100%; max-height: 52vh; }
+}

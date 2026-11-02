@@ -84,26 +84,30 @@ function tintMeshes(root: THREE.Object3D, a: Avatar) {
       const std = (mat as THREE.MeshStandardMaterial).clone();
       if (!std?.color) return mat;
       if (kind === 'skin') {
-        // Drop baked maps that crush/tint skin; use lifted peach albedo
+        // Soft studio skin: lift albedo, keep a gentle normal if present, drop crushing AO
         std.map = null;
-        std.normalMap = null;
         std.roughnessMap = null;
         std.metalnessMap = null;
         std.aoMap = null;
+        if (std.normalMap) {
+          std.normalScale = new THREE.Vector2(0.35, 0.35); // less angular Quaternius faceting
+        }
         std.color = skinCol.clone();
-        std.emissive = new THREE.Color('#3a2214');
-        std.emissiveIntensity = 0.08; // soft fill vs N8AO crush
-        std.roughness = 0.58;
+        std.emissive = new THREE.Color('#4a2e1c');
+        std.emissiveIntensity = 0.1; // soft fill vs N8AO crush
+        std.roughness = 0.52;
         std.metalness = 0.0;
-        std.envMapIntensity = 0.7;
+        std.envMapIntensity = 0.85;
       } else {
         std.color = new THREE.Color(hex);
         std.emissive = new THREE.Color('#000000');
         std.emissiveIntensity = 0;
         if (kind === 'hair') {
-          std.roughness = 0.7;
-          std.metalness = 0.02;
-          std.envMapIntensity = 0.5;
+          std.roughness = 0.55;
+          std.metalness = 0.04;
+          std.envMapIntensity = 0.65;
+          std.emissive = new THREE.Color(hex).multiplyScalar(0.15);
+          std.emissiveIntensity = 0.12;
         } else if (techLook && kind === 'shirt') {
           std.roughness = 0.4;
           std.metalness = 0.22;
@@ -124,6 +128,32 @@ function tintMeshes(root: THREE.Object3D, a: Avatar) {
     if (Array.isArray(m.material)) m.material = m.material.map(apply);
     else m.material = apply(m.material);
   }
+}
+
+
+/** Extra hair shell for volume — soft duplicate of hair meshes, slightly larger. */
+function addHairVolume(root: THREE.Object3D, a: Avatar) {
+  if (!a.hair || a.hair === 'ingen') return;
+  const shells: THREE.Mesh[] = [];
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const name = `${(m.material as THREE.Material)?.name || ''} ${m.name || ''}`.toLowerCase();
+    if (!/hair|ponytail|bun|bangs/.test(name)) return;
+    const shell = m.clone();
+    shell.scale.multiplyScalar(1.1);
+    shell.position.y += 0.012;
+    const src = (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.MeshStandardMaterial;
+    const mat = src.clone();
+    mat.transparent = true;
+    mat.opacity = 0.4;
+    mat.depthWrite = false;
+    mat.roughness = 0.72;
+    mat.color = new THREE.Color(a.hairColor);
+    shell.material = mat;
+    shells.push(shell);
+  });
+  for (const s of shells) root.add(s);
 }
 
 /** Concept-style overlays on Quaternius humans: glow skirt, tech pack, light wings, jewellery. */
@@ -194,17 +224,82 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 
   if (acc.includes('vinger')) {
     const wingCol = acc.includes('regnbue') ? '#7ef0ff' : acc.includes('engel') ? '#fff4e0' : '#e0b8ff';
+    // Translucent emissive planes with gradient + subtle flutter (tickGltfAvatar)
+    const wingTex = (() => {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      const ctx = c.getContext('2d')!;
+      const g = ctx.createLinearGradient(0, 20, 220, 240);
+      g.addColorStop(0, wingCol);
+      g.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(20, 128);
+      ctx.quadraticCurveTo(80, 20, 240, 40);
+      ctx.quadraticCurveTo(200, 128, 240, 220);
+      ctx.quadraticCurveTo(80, 236, 20, 128);
+      ctx.closePath();
+      ctx.fill();
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    })();
+    const wingMat = new THREE.MeshBasicMaterial({
+      map: wingTex,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      toneMapped: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const wingHold = new THREE.Group();
+    wingHold.name = 'lightWings';
     for (const s of [-1, 1]) {
-      const wing = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12, 0, Math.PI, 0, Math.PI), glass(wingCol, 0.4));
-      wing.scale.set(0.55, 1.05, 0.12);
-      wing.position.set(s * 0.55, 1.45, -0.35);
-      wing.rotation.y = s * 0.55;
-      wing.rotation.z = s * 0.25;
-      gear.add(wing);
-      const rib = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.7, 0.04), glow(wingCol, 1.1));
-      rib.position.set(s * 0.35, 1.45, -0.32);
-      rib.rotation.z = s * 0.35;
-      gear.add(rib);
+      const wing = new THREE.Mesh(new THREE.PlaneGeometry(1.15, 1.35), wingMat.clone());
+      wing.position.set(s * 0.42, 1.5, -0.28);
+      wing.rotation.y = s * 0.85;
+      wing.rotation.z = s * 0.18;
+      wing.rotation.x = -0.12;
+      wing.userData.wingSide = s;
+      wingHold.add(wing);
+      const rib = new THREE.Mesh(
+        new THREE.BoxGeometry(0.03, 0.85, 0.03),
+        new THREE.MeshBasicMaterial({ color: wingCol, toneMapped: false }),
+      );
+      rib.position.set(s * 0.28, 1.48, -0.26);
+      rib.rotation.z = s * 0.28;
+      wingHold.add(rib);
+    }
+    gear.add(wingHold);
+  }
+
+  // Suit edge accents — emissive lines selective bloom picks up (tech / neon looks)
+  const wantEdges =
+    a.print === 'lyn' ||
+    a.print === 'stjerne' ||
+    acc.startsWith('sekk') ||
+    acc.includes('vinger') ||
+    skirtLike ||
+    a.hat === 'hjelm';
+  if (wantEdges) {
+    const edgeCol = '#3ecbff';
+    const edge = new THREE.MeshBasicMaterial({ color: edgeCol, toneMapped: false });
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.012, 6, 24), edge);
+    collar.rotation.x = Math.PI / 2;
+    collar.position.set(0, 1.55, 0.02);
+    gear.add(collar);
+    for (const s of [-1, 1]) {
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.55, 0.018), edge);
+      seam.position.set(s * 0.32, 1.25, 0.12);
+      gear.add(seam);
+    }
+    for (const s of [-1, 1]) {
+      const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.01, 6, 16), edge);
+      cuff.rotation.z = Math.PI / 2;
+      cuff.position.set(s * 0.58, 1.05, 0.02);
+      gear.add(cuff);
     }
   }
 
@@ -264,6 +359,7 @@ export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void>
     model.position.set(0, 0, 0);
     model.userData.camIgnore = true;
     tintMeshes(model, a);
+    addHairVolume(model, a);
     attachFuturisticGear(model, a);
     // swap in only after successful load
     while (rig.body.children.length) rig.body.remove(rig.body.children[0]!);
@@ -335,6 +431,17 @@ export function tickGltfAvatar(rig: AvatarRig, dt: number, pose: AvatarPose, spe
     rig.body.rotation.x = 0;
   }
   ext.mixer.update(dt);
+  // Subtle wing flutter
+  const wings = rig.body.getObjectByName('lightWings') as THREE.Group | undefined;
+  if (wings) {
+    const t = performance.now() * 0.001;
+    wings.children.forEach((ch) => {
+      const side = (ch.userData.wingSide as number) || 0;
+      if (!side) return;
+      ch.rotation.z = side * (0.18 + Math.sin(t * 3.2) * 0.08);
+      ch.rotation.y = side * (0.85 + Math.sin(t * 2.4 + side) * 0.06);
+    });
+  }
   return true;
 }
 

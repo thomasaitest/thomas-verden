@@ -574,9 +574,10 @@ export function openPetShop(game: Game) {
   render();
 }
 
-// ---------- Avatar ----------
+// ---------- Avatar (concept 3-figurer: glass panel right, Klær/Hår/Tilbehør, FERDIG) ----------
 export function openAvatar(game: Game, first = false, onDone?: () => void) {
   game.editingAvatar = true;
+  game.clearVehicle();
   game.updateHud();
   let a: Avatar = { ...game.save.avatar };
   const set = (patch: Partial<Avatar>) => {
@@ -584,93 +585,105 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
     game.commit({ ...game.save, avatar: a }, { avatar: true });
     render();
   };
-  type Tab = 'hud' | 'har' | 'ansikt' | 'klaer' | 'hatt' | 'ting' | 'antrekk';
-  let tab: Tab = 'hud';
-  const s = sheet(first ? 'Lag din figur!' : 'Avatar', '#ff8fb1', () => {
+  type Tab = 'klaer' | 'har' | 'tilbehor';
+  let tab: Tab = 'klaer';
+  const finish = () => {
     game.editingAvatar = false;
     game.commit({ ...game.save, avatar: a, avatarDone: true });
     onDone?.();
-  }, 'side');
-  const swatches = (list: readonly string[], cur: string, on: (c: string) => void) => el('div', { class: 'swatches' }, ...list.map((c) => button('', () => on(c), `swatch ${c === cur ? 'on' : ''}`, { style: `background:${c}`, 'aria-label': c })));
+  };
+  const s = sheet(first ? 'Lag din figur!' : 'Avatar-tilpasning', '#3ecbff', finish, 'side avatar-edit');
+  // Replace default close with FERDIG in the header (concept)
+  const head = s.root.querySelector('.sheet-head');
+  if (head) {
+    head.replaceChildren(
+      el('h2', {}, first ? 'Lag din figur!' : 'Avatar-tilpasning'),
+      button('Ferdig ✓', () => s.close(), 'btn green ferdig'),
+    );
+  }
+  const swatches = (list: readonly string[], cur: string, on: (c: string) => void) =>
+    el('div', { class: 'swatches' }, ...list.map((c) => button('', () => on(c), `swatch ${c === cur ? 'on' : ''}`, { style: `background:${c}`, 'aria-label': c })));
   type Field = 'hair' | 'face' | 'print' | 'bottom' | 'shoeStyle' | 'hat' | 'accessory';
-  /** A small picture of the avatar wearing this option (the rest of the look stays as it is now). */
   const optThumb = (field: Field, id: string): string => {
-    const head = field === 'hair' || field === 'face' || field === 'hat';
+    const headish = field === 'hair' || field === 'face' || field === 'hat';
     const behind = field === 'accessory' && ['vinger', 'vinger-engel', 'vinger-regnbue', 'sommerfugl', 'sekk', 'sekk-stjerne', 'sekk-rosa', 'kappe', 'stjernekappe'].includes(id);
-    const frame = head
+    const frame = headish
       ? field === 'hat' ? { y: 2.4, r: 1.05 } : { y: 2.22, r: 0.72 }
       : field === 'accessory'
         ? ['briller', 'solbriller', 'hodetelefoner', 'glorie'].includes(id) ? { y: 2.25, r: 0.75 } : { y: 1.35, r: 1.75 }
         : field === 'print' ? { y: 1.45, r: 0.95 }
           : field === 'bottom' ? { y: 0.55, r: 1.05 }
             : { y: 0.35, r: 0.95 };
-    const sig = head
+    const sig = headish
       ? `${a.skin}|${a.hairColor}|${a.hair}|${a.hat}|${a.face}`
       : field === 'accessory' ? `${a.skin}|${a.shirt}` : field === 'print' ? `${a.shirt}|${a.skin}` : field === 'bottom' ? `${a.pants}|${a.skin}|${a.shoes}` : `${a.shoes}|${a.pants}|${a.skin}`;
     return game.thumbs.get(`av|${field}|${id}|${sig}`, () => buildAvatar({ ...a, [field]: id }).root, { yaw: behind ? 2.7 : 0.25, pitch: 0.08, focus: frame });
   };
   const chips = <T extends { id: string; name: string }>(field: Field, list: readonly T[], cur: string, on: (id: T['id']) => void) =>
     el('div', { class: 'opts' }, ...list.map((o) => button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src: optThumb(field, o.id), alt: '' }), el('b', {}, o.name)), () => on(o.id), `opt ${o.id === cur ? 'on' : ''}`)));
-  const tabs: [Tab, string][] = [['antrekk', '👗 Antrekk'], ['hud', '🖐️ Hud'], ['har', '💇 Hår'], ['ansikt', '😊 Ansikt'], ['klaer', '👕 Klær'], ['hatt', '👑 Hatt'], ['ting', '🎒 Ting']];
+  const tabs: [Tab, string][] = [['klaer', 'Klær'], ['har', 'Hår'], ['tilbehor', 'Tilbehør']];
   const render = () => {
     let content: HTMLElement;
     switch (tab) {
-      case 'antrekk':
+      case 'klaer':
         content = el(
           'div',
           {},
-          el('h4', {}, 'Ferdige antrekk'),
+          el('h4', {}, 'Topp'),
           el(
             'div',
             { class: 'opts' },
             ...OUTFIT_PRESETS.map((o) => {
               const preview = { ...a, ...o.patch };
               const src = game.thumbs.get(`outfit|${o.id}|${JSON.stringify(o.patch)}`, () => buildAvatar(preview).root, { yaw: 0.25, pitch: 0.08, focus: { y: 1.4, r: 1.6 } });
-              return button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src, alt: '' }), el('b', {}, o.name)), () => set(o.patch), 'opt');
+              const on = Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v);
+              return button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src, alt: '' }), el('b', {}, o.name)), () => set(o.patch), `opt ${on ? 'on' : ''}`);
             }),
           ),
-        );
-        break;
-      case 'hud':
-        content = el('div', {}, el('h4', {}, 'Hudfarge'), swatches(SKIN, a.skin, (c) => set({ skin: c })));
-        break;
-      case 'har':
-        content = el('div', {}, el('h4', {}, 'Frisyre'), chips('hair', HAIR_STYLES, a.hair, (id) => set({ hair: id })), el('h4', {}, 'Hårfarge'), swatches(HAIR_COLORS, a.hairColor, (c) => set({ hairColor: c })));
-        break;
-      case 'ansikt':
-        content = el('div', {}, el('h4', {}, 'Ansikt'), chips('face', FACES, a.face, (id) => set({ face: id })));
-        break;
-      case 'klaer':
-        content = el(
-          'div',
-          {},
-          el('h4', {}, 'Genser'),
+          el('h4', {}, 'Farge'),
           swatches(CLOTH_COLORS, a.shirt, (c) => set({ shirt: c })),
           el('h4', {}, 'Trykk'),
           chips('print', SHIRT_PRINTS, a.print, (id) => set({ print: id })),
           el('h4', {}, 'Underdel'),
           chips('bottom', BOTTOMS, a.bottom, (id) => set({ bottom: id })),
           swatches(CLOTH_COLORS, a.pants, (c) => set({ pants: c })),
-          el('h4', {}, 'Skotype'),
+          el('h4', {}, 'Sko'),
           chips('shoeStyle', SHOES, a.shoeStyle, (id) => set({ shoeStyle: id })),
-          el('h4', {}, 'Skofarge'),
           swatches(CLOTH_COLORS, a.shoes, (c) => set({ shoes: c })),
+          el('h4', {}, 'Hud'),
+          swatches(SKIN, a.skin, (c) => set({ skin: c })),
+          el('h4', {}, 'Ansikt'),
+          chips('face', FACES, a.face, (id) => set({ face: id })),
         );
         break;
-      case 'hatt':
-        content = el('div', {}, el('h4', {}, 'Hatt'), chips('hat', HATS, a.hat, (id) => set({ hat: id })));
+      case 'har':
+        content = el(
+          'div',
+          {},
+          el('h4', {}, 'Frisyre'),
+          chips('hair', HAIR_STYLES, a.hair, (id) => set({ hair: id })),
+          el('h4', {}, 'Hårfarge'),
+          swatches(HAIR_COLORS, a.hairColor, (c) => set({ hairColor: c })),
+        );
         break;
-      case 'ting':
-        content = el('div', {}, el('h4', {}, 'Tilbehør'), chips('accessory', ACCESSORIES, a.accessory, (id) => set({ accessory: id })));
+      case 'tilbehor':
+        content = el(
+          'div',
+          {},
+          el('h4', {}, 'Tilbehør'),
+          chips('accessory', ACCESSORIES, a.accessory, (id) => set({ accessory: id })),
+          el('h4', {}, 'Hatt'),
+          chips('hat', HATS, a.hat, (id) => set({ hat: id })),
+        );
         break;
     }
     s.body.replaceChildren(
-      el('div', { class: 'tabs' }, ...tabs.map(([id, label]) => button(label, () => {
+      el('div', { class: 'tabs avatar-tabs' }, ...tabs.map(([id, label]) => button(label, () => {
         tab = id;
         render();
       }, `tab ${tab === id ? 'on' : ''}`))),
       content,
-      el('div', { class: 'row' }, button('🎲 Tilfeldig', () => set(randomAvatar(Math.random)), 'btn purple'), button('Ferdig ✓', () => s.close(), 'btn green')),
+      el('div', { class: 'row avatar-foot' }, button('🎲 Tilfeldig', () => set(randomAvatar(Math.random)), 'btn purple')),
     );
   };
   render();
