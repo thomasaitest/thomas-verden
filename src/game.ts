@@ -1449,10 +1449,10 @@ export class Game {
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
       const h = Math.max(0.8, size.y);
-      const fill = 0.72; // 70–75% of visible height
+      const fill = 0.8; // ~70–75% of the open (left) studio area
       const vFov = THREE.MathUtils.degToRad(this.camera.fov);
       let dist = (h * 0.5) / (Math.tan(vFov * 0.5) * fill);
-      dist = Math.max(1.6, Math.min(4.2, dist));
+      dist = Math.max(1.4, Math.min(3.6, dist));
       // Cam in front (−Z), slight +X for ¾; look at mid-body with margin above head
       const lookY = center.y + h * 0.02;
       this.camera.position.set(center.x + dist * 0.28, lookY, center.z - dist);
@@ -1460,7 +1460,7 @@ export class Game {
       this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
       // Shift so figure is centred in the open area left of the glass panel (~42% right)
-      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.16, -vh * 0.01, vw, vh);
+      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.14, -vh * 0.015, vw, vh);
     } else {
       this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);
