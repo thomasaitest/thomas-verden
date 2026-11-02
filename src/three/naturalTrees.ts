@@ -1,11 +1,12 @@
 /**
  * Natural greenery — offline-baked @dgreenheck/ez-tree (MIT) GLBs + procedural fallback.
- * Leaf cards: MeshBasic + toneMapped:false so ACES/HDRI/bloom cannot bleach them white.
+ * Leaf cards: lit MeshStandard (varied darker greens, alphaTest, shadows) so canopies have depth.
  */
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
-const LEAF_HEX = ['#3d9a35', '#4aaa40', '#348a2c', '#55b848', '#3a9432', '#48a83c'];
+/** Darker, varied canopy greens — concept depth, not neon paper. */
+const LEAF_HEX = ['#2f6e28', '#3a7a30', '#275f22', '#458538', '#336b2a', '#3d8034'];
 
 const TREE_PATHS = [
   'nature/ez/oak-a.glb',
@@ -21,18 +22,29 @@ const BUSH_PATH = 'nature/plant_bushDetailed.glb';
 const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
+
 function leafKind(kind: number): number {
   return Math.abs(Math.floor(kind)) % LEAF_HEX.length;
 }
 
-function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
-  void src;
+function leafStandardFrom(src?: THREE.Material | null, kind = 0): THREE.MeshStandardMaterial {
   const hex = LEAF_HEX[leafKind(kind)]!;
-  return new THREE.MeshBasicMaterial({
+  const srcStd = src as THREE.MeshStandardMaterial | undefined;
+  const map = srcStd?.map ?? null;
+  const alphaMap = (srcStd as any)?.alphaMap ?? null;
+  return new THREE.MeshStandardMaterial({
     color: hex,
+    map,
+    alphaMap: alphaMap || undefined,
+    roughness: 0.82,
+    metalness: 0.02,
+    envMapIntensity: 0.35,
     side: THREE.DoubleSide,
-    toneMapped: false,
+    // Keep leaf cards readable without sky holes; slight soft edge when maps exist
+    alphaTest: map || alphaMap ? 0.35 : 0,
+    transparent: false,
     depthWrite: true,
+    // Soft fill from sky/hemi — not flat unlit
   });
 }
 
@@ -46,7 +58,7 @@ function trunkStandard(src?: THREE.Material | null): THREE.MeshStandardMaterial 
   });
 }
 
-/** Force every mesh on an ez-tree: leaves = unlit green cards, trunk = brown PBR. */
+/** Force every mesh on an ez-tree: leaves = lit green cards, trunk = brown PBR. */
 export function hardenEzTree(root: THREE.Object3D, kind = 0) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
@@ -72,8 +84,7 @@ export function hardenEzTree(root: THREE.Object3D, kind = 0) {
       if (trunkish) {
         replaced.push(trunkStandard(std));
       } else {
-        // Leaf cards (white baseColor + green map) and any bright/non-trunk mesh
-        replaced.push(leafBasicFrom(std, kind));
+        replaced.push(leafStandardFrom(std, kind));
       }
     }
     m.material = replaced.length === 1 ? replaced[0]! : replaced;
@@ -132,10 +143,12 @@ function proceduralTree(kind: number): THREE.Group {
     limb.castShadow = true;
     g.add(limb);
   }
-  const leafMat = new THREE.MeshBasicMaterial({
+  const leafMat = new THREE.MeshStandardMaterial({
     color: LEAF_HEX[leafKind(kind)],
+    roughness: 0.82,
+    metalness: 0.02,
+    envMapIntensity: 0.35,
     side: THREE.DoubleSide,
-    toneMapped: false,
   });
   const blobs = [
     [0, h + 0.55, 0, 1.15],
@@ -174,18 +187,23 @@ export function buildNaturalTree(kind = 0): THREE.Group {
     model.scale.setScalar(s);
     model.rotation.y = ((ki * 47) % 360) * (Math.PI / 180);
     g.add(model);
-    // Dense green under-fill so sky cannot read as a white canopy blob through sparse cards
+    // Soft lit under-fill (Standard, darker) — volume without neon flat cards
     const hex = LEAF_HEX[ki]!;
-    const fillMat = new THREE.MeshBasicMaterial({ color: hex, toneMapped: false });
+    const fillMat = new THREE.MeshStandardMaterial({
+      color: hex,
+      roughness: 0.9,
+      metalness: 0.02,
+      envMapIntensity: 0.25,
+    });
     for (const [y, sx, sy, sz] of [
-      [2.9, 1.55, 1.05, 1.45],
-      [3.6, 1.25, 0.9, 1.15],
-      [4.15, 0.85, 0.7, 0.85],
+      [2.7, 1.15, 0.85, 1.1],
+      [3.35, 0.95, 0.72, 0.9],
     ] as const) {
-      const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), fillMat);
+      const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), fillMat);
       fill.position.y = y;
       fill.scale.set(sx, sy, sz);
       fill.castShadow = true;
+      fill.receiveShadow = true;
       g.add(fill);
     }
     g.userData.ezTree = true;
@@ -196,6 +214,94 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   proc.userData.ezTree = false;
   proc.userData.treeKind = ki;
   return proc;
+}
+
+/** Slim roadside palm — trunk + radial fronds (concept palms). */
+export function buildPalm(kind = 0): THREE.Group {
+  const g = new THREE.Group();
+  const k = leafKind(kind);
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#7a5a38', roughness: 0.88, metalness: 0.04, envMapIntensity: 0.25 });
+  const frondMat = new THREE.MeshStandardMaterial({
+    color: LEAF_HEX[(k + 2) % LEAF_HEX.length],
+    roughness: 0.78,
+    metalness: 0.02,
+    envMapIntensity: 0.4,
+    side: THREE.DoubleSide,
+  });
+  const h = 3.4 + (k % 3) * 0.35;
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.14, h, 8), trunkMat);
+  trunk.position.y = h / 2;
+  trunk.castShadow = true;
+  g.add(trunk);
+  // slight lean
+  trunk.rotation.z = ((k % 5) - 2) * 0.03;
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + k * 0.2;
+    const frond = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.35, 5, 1, true), frondMat);
+    frond.position.set(Math.cos(a) * 0.15, h - 0.05, Math.sin(a) * 0.15);
+    frond.rotation.z = Math.PI / 2 - 0.55;
+    frond.rotation.y = -a;
+    frond.castShadow = true;
+    frond.receiveShadow = true;
+    g.add(frond);
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), frondMat);
+    tip.scale.set(1.6, 0.35, 0.7);
+    tip.position.set(Math.cos(a) * 0.85, h - 0.35, Math.sin(a) * 0.85);
+    tip.castShadow = true;
+    g.add(tip);
+  }
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), frondMat);
+  crown.position.y = h + 0.05;
+  crown.scale.set(1.2, 0.55, 1.2);
+  crown.castShadow = true;
+  g.add(crown);
+  g.userData.palm = true;
+  return g;
+}
+
+/** Low roadside shrub / bush clump. */
+export function buildShrub(kind = 0): THREE.Group {
+  const g = new THREE.Group();
+  const k = leafKind(kind);
+  if (bushCached) {
+    const b = bushCached.clone(true);
+    b.scale.setScalar(0.7 + (k % 3) * 0.12);
+    b.rotation.y = k * 0.9;
+    b.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      if (mat?.color && mat.color.g > mat.color.r) {
+        mat.color.set(LEAF_HEX[k]!);
+        mat.roughness = 0.85;
+      }
+    });
+    g.add(b);
+  } else {
+    const mat = new THREE.MeshStandardMaterial({
+      color: LEAF_HEX[k]!,
+      roughness: 0.85,
+      metalness: 0.02,
+      envMapIntensity: 0.3,
+    });
+    for (const [x, y, z, r] of [
+      [0, 0.35, 0, 0.45],
+      [0.28, 0.28, 0.1, 0.32],
+      [-0.22, 0.3, -0.12, 0.3],
+      [0.05, 0.48, -0.15, 0.28],
+    ] as const) {
+      const s = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+      s.position.set(x, y, z);
+      s.scale.set(1.1, 0.75, 1.0);
+      s.castShadow = true;
+      s.receiveShadow = true;
+      g.add(s);
+    }
+  }
+  g.userData.shrub = true;
+  return g;
 }
 
 function grassClump(color: string, h: number): THREE.Group {

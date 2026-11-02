@@ -23,6 +23,8 @@ import {
   buildSleekFountain,
   buildNaturalTree,
   buildPlanter,
+  buildPalm,
+  buildShrub,
   buildModernBench,
   buildSkylineTower,
   grassGroundMaterial,
@@ -765,14 +767,38 @@ export function buildTown(): Town {
         group.add(strip);
       }
     }
-    // street trees / palm-ish along chase road (both sides like concept)
+    // Street trees set back to sidewalk edge, smaller (~0.7), + palms & low shrubs (concept)
     for (const [x, z] of [
-      [-6.5, 18], [6.5, 18], [-6.5, 24], [6.5, 24], [-6.5, 30], [6.5, 30],
-      [-6.5, 36], [6.5, 36], [-6.5, 42], [6.5, 42],
-      [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
-      [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
+      [-8.6, 18], [8.6, 18], [-8.6, 24], [8.6, 24], [-8.6, 30], [8.6, 30],
+      [-8.6, 36], [8.6, 36], [-8.6, 42], [8.6, 42],
+      [-10.5, 26], [10.5, 26], [-10.5, 32], [10.5, 32], [-10.5, 38], [10.5, 38],
+      [-11, 45], [11, 45], [-11, 55], [11, 55], [-26, 48], [26, 48],
     ] as const) {
-      tree(group, x, z, 1.05, Math.floor(Math.abs(x + z)) % 3, true, stat);
+      tree(group, x, z, 0.7, Math.floor(Math.abs(x + z)) % 3, true, stat);
+    }
+    // Palms in planting beds along chase road
+    for (const [x, z, k] of [
+      [-6.8, 20, 0], [6.8, 20, 1], [-6.8, 28, 2], [6.8, 28, 3],
+      [-6.8, 36, 4], [6.8, 36, 5], [-12, 32, 1], [12, 32, 2],
+      [-12, 46, 3], [12, 46, 0],
+    ] as const) {
+      const palm = buildPalm(k);
+      palm.position.set(x, 0.2, z);
+      palm.scale.setScalar(0.85 + (k % 3) * 0.06);
+      palm.rotation.y = k * 0.7;
+      group.add(palm);
+      shadowAll(palm);
+    }
+    // Low shrubs between trees / on bed edges
+    for (const [x, z, k] of [
+      [-7.2, 22, 0], [7.2, 22, 1], [-7.2, 34, 2], [7.2, 34, 3],
+      [-9.2, 28, 4], [9.2, 28, 5], [-9.2, 40, 1], [9.2, 40, 2],
+      [-5.5, 14, 3], [5.5, 14, 4], [-5.5, 48, 0], [5.5, 48, 1],
+    ] as const) {
+      const shrub = buildShrub(k);
+      shrub.position.set(x, 0.05, z);
+      shrub.scale.setScalar(0.9 + (k % 2) * 0.15);
+      group.add(shrub);
     }
   }
 

@@ -15,6 +15,8 @@ import {
   preloadNaturalTrees,
   buildNaturalTree as buildEzTree,
   buildPlanter as buildEzPlanter,
+  buildPalm as buildEzPalm,
+  buildShrub as buildEzShrub,
 } from './naturalTrees.ts';
 
 let mapsReady: Promise<void> | null = null;
@@ -264,7 +266,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     );
     sign.position.set(glassX, 0.28 + glassH + 0.65, d / 2 + 0.28);
     g.add(sign);
-    const signGlow = new THREE.Mesh(new THREE.BoxGeometry(signW + 0.3, 1.25, 0.1), glowMat(spec.logoColor, 1.2));
+    const signGlow = new THREE.Mesh(new THREE.BoxGeometry(signW + 0.3, 1.25, 0.1), glowMat(spec.logoColor, 2.4));
     signGlow.position.set(glassX, 0.28 + glassH + 0.65, d / 2 + 0.18);
     g.add(signGlow);
   }
@@ -306,7 +308,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     post.position.set(s * (w * 0.3), h + 0.45, d * 0.18);
     g.add(post);
   }
-  const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 2.6, 0.05, 0.07), glowMat('#7ef0ff', 0.75));
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(w + 2.6, 0.05, 0.07), glowMat('#7ef0ff', 1.6));
   edge.position.set(0, h + 0.78, d * 0.4);
   g.add(edge);
 
@@ -319,13 +321,13 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     const hz = d / 2 + 0.65;
     const board = new THREE.Mesh(
       new THREE.BoxGeometry(signW, signH, 0.14),
-      glowMat(spec.logoColor, 1.8),
+      glowMat(spec.logoColor, 3.2),
     );
     board.position.set(glassX, hy, hz);
     g.add(board);
     const halo = new THREE.Mesh(
       new THREE.BoxGeometry(signW + 0.45, signH + 0.45, 0.08),
-      new THREE.MeshBasicMaterial({ color: spec.logoColor, transparent: true, opacity: 0.38, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color: spec.logoColor, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }),
     );
     halo.position.set(glassX, hy, hz + 0.04);
     g.add(halo);
@@ -361,7 +363,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     plateB.rotation.y = Math.PI;
     plateB.position.z = hz - 0.12;
     g.add(plateB);
-    const pl = new THREE.PointLight(spec.logoColor, 1.6, 18, 2);
+    const pl = new THREE.PointLight(spec.logoColor, 2.6, 20, 2);
     pl.position.set(glassX, hy, hz + 2.0);
     g.add(pl);
   }
@@ -577,6 +579,14 @@ export function buildNaturalTree(kind = 0): THREE.Group {
 
 export function buildPlanter(): THREE.Group {
   return buildEzPlanter();
+}
+
+export function buildPalm(kind = 0): THREE.Group {
+  return buildEzPalm(kind);
+}
+
+export function buildShrub(kind = 0): THREE.Group {
+  return buildEzShrub(kind);
 }
 
 export function buildModernBench(): THREE.Group {
