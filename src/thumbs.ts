@@ -19,10 +19,38 @@ export class Thumbs {
     this.scene.add(d);
   }
 
-  get(key: string, make: () => THREE.Object3D, opts: { yaw?: number; pitch?: number; /** Frame this point and radius instead of the whole model (e.g. just the head). */ focus?: { y: number; r: number } } = {}): string {
+  get(key: string, make: () => THREE.Object3D, opts: { yaw?: number; pitch?: number; /** Frame this point and radius instead of the whole model (e.g. just the head). */ focus?: { y: number; r: number }; size?: number } = {}): string {
     const hit = this.cache.get(key);
     if (hit) return hit;
-    const obj = make();
+    return this.renderObj(key, make(), opts);
+  }
+
+  /** Async thumb (e.g. Quaternius outfit preview). Caches like get(). */
+  async getAsync(
+    key: string,
+    make: () => Promise<THREE.Object3D>,
+    opts: { yaw?: number; pitch?: number; focus?: { y: number; r: number }; size?: number } = {},
+  ): Promise<string> {
+    const hit = this.cache.get(key);
+    if (hit) return hit;
+    const obj = await make();
+    return this.renderObj(key, obj, opts);
+  }
+
+  private renderObj(
+    key: string,
+    obj: THREE.Object3D,
+    opts: { yaw?: number; pitch?: number; focus?: { y: number; r: number }; size?: number },
+  ): string {
+    const sz = opts.size ?? this.size;
+    const useCustom = sz !== this.size;
+    const target = useCustom
+      ? new THREE.WebGLRenderTarget(sz, sz, { colorSpace: THREE.SRGBColorSpace })
+      : this.target;
+    const canvas = useCustom ? document.createElement('canvas') : this.canvas;
+    if (useCustom) {
+      canvas.width = canvas.height = sz;
+    }
     const holder = new THREE.Group();
     holder.add(obj);
     holder.rotation.y = opts.yaw ?? -0.6;
@@ -46,26 +74,26 @@ export class Thumbs {
     const prevAlpha = this.renderer.getClearAlpha();
     const prevShadow = this.renderer.shadowMap.enabled;
     this.renderer.shadowMap.enabled = false;
-    this.renderer.setRenderTarget(this.target);
+    this.renderer.setRenderTarget(target);
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.clear();
     this.renderer.render(this.scene, this.cam);
-    const px = new Uint8Array(this.size * this.size * 4);
-    this.renderer.readRenderTargetPixels(this.target, 0, 0, this.size, this.size, px);
+    const px = new Uint8Array(sz * sz * 4);
+    this.renderer.readRenderTargetPixels(target, 0, 0, sz, sz, px);
     this.renderer.setRenderTarget(prevTarget);
     this.renderer.setClearColor(prevClear, prevAlpha);
     this.renderer.shadowMap.enabled = prevShadow;
     this.scene.remove(holder);
-    const ctx = this.canvas.getContext('2d')!;
-    const img = ctx.createImageData(this.size, this.size);
-    // flip vertically
-    for (let y = 0; y < this.size; y++) {
-      const src = (this.size - 1 - y) * this.size * 4;
-      img.data.set(px.subarray(src, src + this.size * 4), y * this.size * 4);
+    const ctx = canvas.getContext('2d')!;
+    const img = ctx.createImageData(sz, sz);
+    for (let y = 0; y < sz; y++) {
+      const src = (sz - 1 - y) * sz * 4;
+      img.data.set(px.subarray(src, src + sz * 4), y * sz * 4);
     }
     ctx.putImageData(img, 0, 0);
-    const url = this.canvas.toDataURL('image/png');
+    const url = canvas.toDataURL('image/png');
     this.cache.set(key, url);
+    if (useCustom) target.dispose();
     return url;
   }
 }

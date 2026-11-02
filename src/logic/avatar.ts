@@ -152,22 +152,23 @@ export const DEFAULT_AVATAR: Avatar = {
 };
 
 
-/** Ready-made outfits with thumbnails in the avatar editor. */
-export const OUTFIT_PRESETS: { id: string; name: string; patch: Partial<Avatar> }[] = [
-  { id: 'neontech', name: 'Neon Tech', patch: { hat: 'ingen', shirt: '#2a6fd8', print: 'lyn', pants: '#1a2230', bottom: 'bukse', shoes: '#c8d0d8', shoeStyle: 'sneakers', accessory: 'sekk-stjerne', hair: 'kort', hairColor: '#2b2118' } },
-  { id: 'glowskjort', name: 'Glow-skjørt', patch: { hat: 'ingen', shirt: '#1a2230', print: 'ingen', pants: '#c88bff', bottom: 'miniskjort', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'halskjede', hair: 'hestehale', hairColor: '#3b2a1e' } },
-  { id: 'fevinger', name: 'Lysvinger', patch: { hat: 'ingen', shirt: '#e8eef6', print: 'stjerne', pants: '#7ef0ff', bottom: 'kjole', shoes: '#ffffff', shoeStyle: 'sko', accessory: 'vinger', hair: 'fletter', hairColor: '#c88bff' } },
-  { id: 'gullsmykke', name: 'Gullsmykke', patch: { hat: 'bandeau', shirt: '#2a3344', print: 'ingen', pants: '#1a2230', bottom: 'bukse', shoes: '#e8d090', shoeStyle: 'sko', accessory: 'oreringer', hair: 'bob', hairColor: '#e0a64f' } },
-  { id: 'prinsesse', name: 'Prinsesse', patch: { hat: 'prinsesse', shirt: '#ffa6d5', print: 'hjerte', pants: '#c88bff', bottom: 'kjole', shoes: '#ffe066', shoeStyle: 'sko', accessory: 'glorie', hair: 'lang', hairColor: '#e0a64f' } },
-  { id: 'ridder', name: 'Ridder', patch: { hat: 'hjelm', shirt: '#555a75', print: 'ingen', pants: '#2b2b38', bottom: 'bukse', shoes: '#2b2b38', shoeStyle: 'stovler', accessory: 'kappe', hair: 'kort', hairColor: '#2b2118' } },
-  { id: 'pirat', name: 'Pirat', patch: { hat: 'pirat', shirt: '#ff6f6f', print: 'ingen', pants: '#2b2b38', bottom: 'bukse', shoes: '#8a5a3c', shoeStyle: 'stovler', accessory: 'ingen', hair: 'piggete', hairColor: '#2b2118' } },
-  { id: 'trollmann', name: 'Trollmann', patch: { hat: 'trollmann', shirt: '#7a4dff', print: 'stjerne', pants: '#2b2b38', bottom: 'bukse', shoes: '#c88bff', shoeStyle: 'sko', accessory: 'stjernekappe', hair: 'lang', hairColor: '#ffffff' } },
-  { id: 'sporty', name: 'Sporty', patch: { hat: 'caps', shirt: '#5cc3f2', print: 'lyn', pants: '#3f6fd8', bottom: 'shorts', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'hodetelefoner', hair: 'kort', hairColor: '#5b3a29' } },
-  { id: 'fe', name: 'Fe', patch: { hat: 'blomster', shirt: '#e0b8ff', print: 'blomst', pants: '#ffa6d5', bottom: 'kjole', shoes: '#ffffff', shoeStyle: 'sko', accessory: 'vinger', hair: 'fletter', hairColor: '#c88bff' } },
-  { id: 'kokk', name: 'Kokk', patch: { hat: 'kokkelue', shirt: '#ffffff', print: 'ingen', pants: '#555a75', bottom: 'bukse', shoes: '#2b2b38', shoeStyle: 'sko', accessory: 'ingen', hair: 'kort', hairColor: '#a0632f' } },
-  { id: 'enhjorn', name: 'Enhjørning', patch: { hat: 'enhjorn', shirt: '#ff8fb1', print: 'enhjorn', pants: '#c88bff', bottom: 'overall', shoes: '#ffe066', shoeStyle: 'sneakers', accessory: 'sommerfugl', hair: 'lang', hairColor: '#ff8fc7' } },
-  { id: 'ballerina', name: 'Ballerina', patch: { hat: 'bandeau', shirt: '#ffa6d5', print: 'ingen', pants: '#ff8fb1', bottom: 'tutu', shoes: '#ffffff', shoeStyle: 'sko', accessory: 'vinger-engel', hair: 'bob', hairColor: '#2b2118' } },
-  { id: 'shopper', name: 'Shopper', patch: { hat: 'ingen', shirt: '#ffe066', print: 'hjerte', pants: '#ff4f7f', bottom: 'miniskjort', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'veske-hjerte', hair: 'hestehale', hairColor: '#a0632f' } },
+/** Futuristic ready-mades for Thomas-verden avatar editor (concept 3-figurer). */
+export type OutfitPreset = {
+  id: string;
+  name: string;
+  tagline: string;
+  blurb: string;
+  patch: Partial<Avatar>;
+};
+export const OUTFIT_PRESETS: OutfitPreset[] = [
+  { id: 'neonjakke', name: 'Neon-jakke', tagline: 'FUTURISTISK HVERDAGSSJIKK', blurb: 'Passer til mange stiler', patch: { hat: 'ingen', shirt: '#2a6fd8', print: 'lyn', pants: '#1a2230', bottom: 'bukse', shoes: '#c8d0d8', shoeStyle: 'sneakers', accessory: 'sekk-stjerne', hair: 'kort', hairColor: '#2b2118' } },
+  { id: 'techbomber', name: 'Tech-bomber', tagline: 'GATE-TECH', blurb: 'Bomber med lysstriper', patch: { hat: 'ingen', shirt: '#1a2230', print: 'stjerne', pants: '#2a3344', bottom: 'bukse', shoes: '#3ecbff', shoeStyle: 'sneakers', accessory: 'sekk', hair: 'piggete', hairColor: '#2b2118' } },
+  { id: 'lysvinger', name: 'Lysvinger-topp', tagline: 'LETTE LYSVINGER', blurb: 'Transparente vinger + glow', patch: { hat: 'ingen', shirt: '#e8eef6', print: 'stjerne', pants: '#7ef0ff', bottom: 'kjole', shoes: '#ffffff', shoeStyle: 'sko', accessory: 'vinger', hair: 'hestehale', hairColor: '#c88bff' } },
+  { id: 'langfrakk', name: 'Lang frakk', tagline: 'ELEGANTE LINJER', blurb: 'Lang tech-frakk for plaza', patch: { hat: 'ingen', shirt: '#2a3344', print: 'ingen', pants: '#1a2230', bottom: 'bukse', shoes: '#e8d090', shoeStyle: 'sko', accessory: 'oreringer', hair: 'bob', hairColor: '#9aa0b5' } },
+  { id: 'glowhette', name: 'Glow-hettegenser', tagline: 'NEON COMFORT', blurb: 'Myk genser med cyan glow', patch: { hat: 'ingen', shirt: '#3f6fd8', print: 'lyn', pants: '#2b2b38', bottom: 'joggebukse', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'hodetelefoner', hair: 'lugg', hairColor: '#5b3a29' } },
+  { id: 'pilotdress', name: 'Pilotdress', tagline: 'SKYLINE PILOT', blurb: 'Romdrakt-inspirert dress', patch: { hat: 'hjelm', shirt: '#555a75', print: 'ingen', pants: '#2b2b38', bottom: 'bukse', shoes: '#c8d0d8', shoeStyle: 'stovler', accessory: 'sekk', hair: 'kort', hairColor: '#2b2118' } },
+  { id: 'cyberskjort', name: 'Cyber-skjørt', tagline: 'HOLO-SKJØRT', blurb: 'Plissert glow med smykker', patch: { hat: 'ingen', shirt: '#1a2230', print: 'ingen', pants: '#c88bff', bottom: 'plissert', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'halskjede', hair: 'hestehale', hairColor: '#3b2a1e' } },
+  { id: 'streetwear', name: 'Streetwear', tagline: 'PLAZA STREET', blurb: 'Avslappet futuristisk hverdag', patch: { hat: 'caps', shirt: '#5cc3f2', print: 'ingen', pants: '#2a3344', bottom: 'shorts', shoes: '#ffffff', shoeStyle: 'sneakers', accessory: 'solbriller', hair: 'kort', hairColor: '#2b2118' } },
 ];
 
 export function randomAvatar(rng: Rng): Avatar {

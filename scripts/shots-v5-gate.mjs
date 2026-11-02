@@ -176,11 +176,8 @@ await page.evaluate(async () => {
   g.cam.dist = 7.2;
   g.camShown = 7.2;
   g.rebuildAvatar?.();
-  // No vehicles in plaza gate framing (concept road cars only appear in car shot)
-  if (g.vehicleMesh) g.vehicleMesh.visible = false;
-  g.town?.group?.traverse?.((o) => {
-    if (o.name?.startsWith('traffic-') || o.name?.startsWith('parked-')) o.visible = false;
-  });
+  // Real scene: only clear player vehicle if it was left on plaza from a prior shot
+  g.clearVehicle?.();
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
@@ -195,10 +192,6 @@ await page.evaluate(() => {
   const g = window.__hv;
   g.freezeCam = null;
   g.editingAvatar = false;
-  // Restore ambient road cars hidden during plaza gate
-  g.town?.group?.traverse?.((o) => {
-    if (o.name?.startsWith('traffic-') || o.name?.startsWith('parked-')) o.visible = true;
-  });
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   const bag = { ...g.save.bag };
   for (const k of Object.keys(bag)) if (k.startsWith('bil-')) delete bag[k];
@@ -287,17 +280,22 @@ await page.evaluate(async () => {
       hair: 'kort',
       hairColor: '#2b2118',
       face: 'smil',
+      shoeStyle: 'sneakers',
+      shoes: '#c8d0d8',
+      bottom: 'bukse',
+      pants: '#1a2230',
+      print: 'lyn',
+      shirt: '#2a6fd8',
     },
   });
   g.rebuildAvatar?.();
-  // Stand on plaza approach first so studio pose restore is sane; editor teleports to studio
   g.player.pos.set(0.4, 0, -18);
   g.player.yaw = Math.PI;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
-  // Open real avatar editor sheet (Klær / Hår / Tilbehør + FERDIG)
   g.panels?.openAvatar?.() || g.openAvatar?.();
-  await new Promise((r) => setTimeout(r, 3200));
+  // Wait for Quaternius outfit thumbs + studio settle
+  await new Promise((r) => setTimeout(r, 4500));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   // Hide dock/HUD chrome for concept-like framing
   document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {

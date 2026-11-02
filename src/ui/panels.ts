@@ -8,6 +8,7 @@ import { joyNow, NEED_INFO, stageOf, stageProgress, STAGES, type PetState } from
 import { EGGS, RARITY_INFO, SPECIES_BY_ID, type EggType } from '../logic/pets.ts';
 import type { Game } from '../game.ts';
 import { buildAvatar } from '../three/avatarModel.ts';
+import { buildAvatarPreviewRoot } from '../three/avatarGltf.ts';
 import { buildFurniture } from '../three/furniture.ts';
 import { buildPet } from '../three/petModel.ts';
 import { buildToy } from '../three/toys.ts';
@@ -579,6 +580,10 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
   game.editingAvatar = true;
   game.clearVehicle();
   game.updateHud();
+  // Hide gameplay chrome — concept is studio + panel only
+  document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {
+    (el as HTMLElement).style.visibility = 'hidden';
+  });
   let a: Avatar = { ...game.save.avatar };
   const set = (patch: Partial<Avatar>) => {
     a = { ...a, ...patch };
@@ -589,18 +594,36 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
   let tab: Tab = 'klaer';
   const finish = () => {
     game.editingAvatar = false;
+    document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {
+      (el as HTMLElement).style.visibility = '';
+    });
     game.commit({ ...game.save, avatar: a, avatarDone: true });
     onDone?.();
   };
   const s = sheet(first ? 'Lag din figur!' : 'Avatar-tilpasning', '#3ecbff', finish, 'side avatar-edit');
-  // Replace default close with FERDIG in the header (concept)
+  // Concept chrome: back + title top-left (over studio), FERDIG in panel head
+  const titleBar = el(
+    'div',
+    { class: 'avatar-titlebar' },
+    button('←', () => s.close(), 'btn avatar-back', { 'aria-label': 'Tilbake' }),
+    el('h1', {}, first ? 'LAG DIN FIGUR' : 'AVATAR-TILPASNING'),
+  );
+  s.root.prepend(titleBar);
   const head = s.root.querySelector('.sheet-head');
   if (head) {
-    head.replaceChildren(
-      el('h2', {}, first ? 'Lag din figur!' : 'Avatar-tilpasning'),
-      button('Ferdig ✓', () => s.close(), 'btn green ferdig'),
-    );
+    head.replaceChildren(button('Ferdig ✓', () => s.close(), 'btn green ferdig'));
   }
+  const activeOutfit = () =>
+    OUTFIT_PRESETS.find((o) => Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v)) ?? OUTFIT_PRESETS[0]!;
+  const descCard = () => {
+    const o = activeOutfit();
+    return el(
+      'div',
+      { class: 'avatar-desc' },
+      el('div', { class: 'avatar-desc-ico' }, '👕'),
+      el('div', {}, el('b', {}, o.tagline), el('small', {}, o.blurb)),
+    );
+  };
   const swatches = (list: readonly string[], cur: string, on: (c: string) => void) =>
     el('div', { class: 'swatches' }, ...list.map((c) => button('', () => on(c), `swatch ${c === cur ? 'on' : ''}`, { style: `background:${c}`, 'aria-label': c })));
   type Field = 'hair' | 'face' | 'print' | 'bottom' | 'shoeStyle' | 'hat' | 'accessory';
@@ -621,25 +644,49 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
   };
   const chips = <T extends { id: string; name: string }>(field: Field, list: readonly T[], cur: string, on: (id: T['id']) => void) =>
     el('div', { class: 'opts' }, ...list.map((o) => button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src: optThumb(field, o.id), alt: '' }), el('b', {}, o.name)), () => on(o.id), `opt ${o.id === cur ? 'on' : ''}`)));
+  const fillOutfitThumbs = (grid: HTMLElement) => {
+    for (const o of OUTFIT_PRESETS) {
+      const preview = { ...a, ...o.patch } as Avatar;
+      const key = `outfit-gltf|${o.id}|${JSON.stringify(o.patch)}`;
+      const img = el('img', { class: 'opt-img', src: '', alt: '' }) as HTMLImageElement;
+      // procedural placeholder until Quaternius render lands
+      img.src = game.thumbs.get(`outfit-ph|${o.id}`, () => buildAvatar(preview).root, {
+        yaw: 0.28,
+        pitch: 0.06,
+        focus: { y: 1.15, r: 1.35 },
+        size: 192,
+      });
+      void game.thumbs
+        .getAsync(key, () => buildAvatarPreviewRoot(preview), {
+          yaw: 0.28,
+          pitch: 0.06,
+          focus: { y: 1.15, r: 1.35 },
+          size: 192,
+        })
+        .then((url) => {
+          img.src = url;
+        })
+        .catch(() => {
+          /* keep procedural placeholder */
+        });
+      const on = Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v);
+      grid.append(
+        button(el('span', { class: 'opt-in' }, img, el('b', {}, o.name)), () => set(o.patch), `opt outfit-opt ${on ? 'on' : ''}`),
+      );
+    }
+  };
   const tabs: [Tab, string][] = [['klaer', 'Klær'], ['har', 'Hår'], ['tilbehor', 'Tilbehør']];
   const render = () => {
     let content: HTMLElement;
     switch (tab) {
-      case 'klaer':
+      case 'klaer': {
+        const grid = el('div', { class: 'opts outfit-grid' });
+        fillOutfitThumbs(grid);
         content = el(
           'div',
           {},
           el('h4', {}, 'Topp'),
-          el(
-            'div',
-            { class: 'opts' },
-            ...OUTFIT_PRESETS.map((o) => {
-              const preview = { ...a, ...o.patch };
-              const src = game.thumbs.get(`outfit|${o.id}|${JSON.stringify(o.patch)}`, () => buildAvatar(preview).root, { yaw: 0.25, pitch: 0.08, focus: { y: 1.4, r: 1.6 } });
-              const on = Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v);
-              return button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src, alt: '' }), el('b', {}, o.name)), () => set(o.patch), `opt ${on ? 'on' : ''}`);
-            }),
-          ),
+          grid,
           el('h4', {}, 'Farge'),
           swatches(CLOTH_COLORS, a.shirt, (c) => set({ shirt: c })),
           el('h4', {}, 'Trykk'),
@@ -656,6 +703,7 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
           chips('face', FACES, a.face, (id) => set({ face: id })),
         );
         break;
+      }
       case 'har':
         content = el(
           'div',
@@ -683,6 +731,7 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
         render();
       }, `tab ${tab === id ? 'on' : ''}`))),
       content,
+      descCard(),
       el('div', { class: 'row avatar-foot' }, button('🎲 Tilfeldig', () => set(randomAvatar(Math.random)), 'btn purple')),
     );
   };

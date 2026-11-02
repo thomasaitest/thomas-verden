@@ -98,6 +98,7 @@ export class Game {
   private avatarStudioLights: THREE.Light[] = [];
   private avatarStudioPose: { x: number; y: number; z: number; yaw: number } | null = null;
   private avatarStudioBg: THREE.Color | THREE.Texture | null = null;
+  private studioSoftShadow: THREE.Mesh | null = null;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 500);
   town: Town;
@@ -414,17 +415,17 @@ export class Game {
     const c = document.createElement('canvas');
     c.width = 512; c.height = 512;
     const ctx = c.getContext('2d')!;
+    // Concept: soft light grey → lavender studio wash
     const grd = ctx.createLinearGradient(0, 0, 0, 512);
-    grd.addColorStop(0, '#5a6470');
-    grd.addColorStop(0.4, '#8e97a2');
-    grd.addColorStop(0.7, '#c4ccd4');
-    grd.addColorStop(1, '#e6eaef');
+    grd.addColorStop(0, '#9aa3b4');
+    grd.addColorStop(0.35, '#b8b6c8');
+    grd.addColorStop(0.65, '#d4cfe0');
+    grd.addColorStop(1, '#ebe6f2');
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, 512, 512);
-    // soft vignette so edges melt into fog
-    const vg = ctx.createRadialGradient(256, 280, 40, 256, 280, 320);
+    const vg = ctx.createRadialGradient(256, 300, 60, 256, 300, 340);
     vg.addColorStop(0, 'rgba(255,255,255,0)');
-    vg.addColorStop(1, 'rgba(40,48,58,0.35)');
+    vg.addColorStop(1, 'rgba(90,80,120,0.22)');
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, 512, 512);
     const tex = new THREE.CanvasTexture(c);
@@ -436,8 +437,13 @@ export class Game {
     back.position.set(0, 3.4, -3.4);
     g.add(back);
     const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(5.8, 48),
-      new THREE.MeshStandardMaterial({ color: '#d2d8e0', roughness: 0.32, metalness: 0.1, envMapIntensity: 0.7 }),
+      new THREE.CircleGeometry(6.2, 48),
+      new THREE.MeshStandardMaterial({
+        color: '#d8d2e4',
+        roughness: 0.18,
+        metalness: 0.35,
+        envMapIntensity: 1.1,
+      }),
     );
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0.02;
@@ -470,6 +476,16 @@ export class Game {
     if (this.interior?.group) this.interior.group.visible = false;
     if (this.vehicleMesh) this.vehicleMesh.visible = false;
     if (this.avatarShadow) this.avatarShadow.visible = false;
+    if (!this.studioSoftShadow) {
+      const sh = new THREE.Mesh(
+        new THREE.CircleGeometry(0.55, 32),
+        new THREE.MeshBasicMaterial({ color: '#1a1428', transparent: true, opacity: 0.28, depthWrite: false }),
+      );
+      sh.rotation.x = -Math.PI / 2;
+      sh.position.y = 0.03;
+      this.scene.add(sh);
+      this.studioSoftShadow = sh;
+    }
   }
 
   private teardownAvatarStudio() {
@@ -495,6 +511,10 @@ export class Game {
     if (this.mode === 'house' && this.interior?.group) this.interior.group.visible = true;
     if (this.vehicleMesh) this.vehicleMesh.visible = true;
     if (this.avatarShadow) this.avatarShadow.visible = true;
+    if (this.studioSoftShadow) {
+      this.scene.remove(this.studioSoftShadow);
+      this.studioSoftShadow = null;
+    }
   }
 
 
@@ -1409,22 +1429,24 @@ export class Game {
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       this.ensureAvatarStudio();
-      // Character large on the left; glass panel sits on the right
-      p.pos.set(-1.35, 0, 0.15);
-      p.yaw = 0.42;
+      // Character fills ~70% height; cam ~2.5 m at chest; panel on right
+      p.pos.set(-0.85, 0, 0);
+      p.yaw = 0.28;
       p.vy = 0;
       if (this.avatarStudio) this.avatarStudio.position.copy(p.pos);
+      if (this.studioSoftShadow) this.studioSoftShadow.position.set(p.pos.x, 0.03, p.pos.z);
       const fy = p.yaw;
+      const dist = 2.45;
       this.camera.position.set(
-        p.pos.x + Math.sin(fy) * 3.9 + Math.cos(fy) * 1.55,
-        p.pos.y + 1.72,
-        p.pos.z + Math.cos(fy) * 3.9 - Math.sin(fy) * 1.55,
+        p.pos.x + Math.sin(fy) * dist + Math.cos(fy) * 0.35,
+        p.pos.y + 1.15, // chest height
+        p.pos.z + Math.cos(fy) * dist - Math.sin(fy) * 0.35,
       );
-      this.camera.lookAt(p.pos.x + Math.cos(fy) * 0.15, p.pos.y + 1.28, p.pos.z - Math.sin(fy) * 0.15);
-      this.scene.background = new THREE.Color('#8a929c');
+      this.camera.lookAt(p.pos.x, p.pos.y + 1.05, p.pos.z);
+      this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
-      // Shift framing left so character fills the open studio and panel covers the right
-      if (vw > 0) this.camera.setViewOffset(vw, vh, -vw * 0.12, vh * 0.02, vw, vh);
+      // Nudge left so glass panel (right) doesn't cover the figure
+      if (vw > 0) this.camera.setViewOffset(vw, vh, -vw * 0.16, 0, vw, vh);
     } else {
       this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);

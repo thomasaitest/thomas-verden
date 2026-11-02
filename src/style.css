@@ -424,15 +424,42 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
 
 /* Avatar editor — concept 3-figurer: dark glass panel, studio left */
 .sheet-wrap.avatar-edit {
-  background: linear-gradient(120deg, rgba(28, 34, 44, 0.55) 0%, rgba(18, 24, 34, 0.25) 45%, rgba(8, 12, 20, 0.15) 100%);
+  background: transparent;
   pointer-events: none;
   place-items: center end;
+  padding: 18px 18px 18px 0;
+}
+.sheet-wrap.avatar-edit .avatar-titlebar {
+  pointer-events: auto;
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 2;
+}
+.sheet-wrap.avatar-edit .avatar-titlebar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+}
+.sheet-wrap.avatar-edit .btn.avatar-back {
+  width: 42px; height: 42px; padding: 0;
+  border-radius: 50%;
+  font-size: 20px;
+  background: rgba(12, 18, 28, 0.72);
+  border: 1px solid rgba(120, 200, 255, 0.35);
+  color: #fff;
 }
 .sheet-wrap.avatar-edit .sheet {
   pointer-events: auto;
-  width: min(420px, 46vw);
+  width: min(440px, 42vw);
   max-height: 94vh;
-  background: rgba(12, 18, 28, 0.78);
+  background: rgba(12, 18, 28, 0.82);
   border: 1px solid rgba(120, 200, 255, 0.32);
   box-shadow: 0 24px 80px rgba(0,0,0,0.55), 0 0 48px rgba(62,203,255,0.12);
   backdrop-filter: blur(22px) saturate(1.2);
@@ -440,17 +467,15 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
 .sheet-wrap.avatar-edit .sheet-head {
   background: transparent;
   border-bottom: 1px solid rgba(120, 200, 255, 0.22);
-  padding: 14px 16px 12px 20px;
-  gap: 12px;
-}
-.sheet-wrap.avatar-edit .sheet-head h2 {
-  font-size: 15px;
-  letter-spacing: 0.14em;
+  padding: 12px 14px;
+  justify-content: flex-end;
 }
 .sheet-wrap.avatar-edit .btn.ferdig {
   margin-left: auto;
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 10px 18px;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .sheet-wrap.avatar-edit .avatar-tabs {
   justify-content: stretch;
@@ -468,8 +493,54 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
   text-transform: uppercase;
   font-size: 12px;
 }
-.sheet-wrap.avatar-edit .avatar-foot { margin-top: 14px; justify-content: center; }
+.sheet-wrap.avatar-edit .outfit-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.sheet-wrap.avatar-edit .outfit-grid .opt-img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  background: rgba(30, 40, 58, 0.65);
+}
+.sheet-wrap.avatar-edit .outfit-grid .opt b {
+  font-size: 11px;
+  line-height: 1.15;
+}
+.sheet-wrap.avatar-edit .avatar-desc {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(20, 30, 48, 0.85);
+  border: 1px solid rgba(120, 200, 255, 0.22);
+}
+.sheet-wrap.avatar-edit .avatar-desc-ico {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: rgba(62, 203, 255, 0.15);
+  font-size: 22px;
+}
+.sheet-wrap.avatar-edit .avatar-desc b {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: #e8f4ff;
+}
+.sheet-wrap.avatar-edit .avatar-desc small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-dim);
+  font-weight: 600;
+}
+.sheet-wrap.avatar-edit .avatar-foot { margin-top: 12px; justify-content: center; }
 @media (max-aspect-ratio: 1/1) {
   .sheet-wrap.avatar-edit { place-items: end center; }
   .sheet-wrap.avatar-edit .sheet { width: 100%; max-height: 52vh; }
+  .sheet-wrap.avatar-edit .outfit-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sheet-wrap.avatar-edit .avatar-titlebar { top: 10px; left: 10px; }
+  .sheet-wrap.avatar-edit .avatar-titlebar h1 { font-size: 14px; }
 }

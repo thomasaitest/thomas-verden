@@ -352,6 +352,20 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
 }
 
 
+
+/** Standalone Quaternius preview root for outfit thumbnails (offscreen Thumbs). */
+export async function buildAvatarPreviewRoot(a: Avatar): Promise<THREE.Group> {
+  const root = new THREE.Group();
+  const model = await loadModel(pickPath(a));
+  model.scale.setScalar(1.35);
+  model.position.set(0, 0, 0);
+  tintMeshes(model, a);
+  addHairVolume(model, a);
+  attachFuturisticGear(model, a);
+  root.add(model);
+  return root;
+}
+
 export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void> {
   try {
     const model = await loadModel(pickPath(a));
