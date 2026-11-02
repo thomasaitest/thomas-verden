@@ -1106,8 +1106,8 @@ export function buildTown(): Town {
   const clouds = new THREE.Group();
   for (let i = 0; i < 12; i++) {
     const c = new THREE.Group();
-    for (let j = 0; j < 4; j++) sph(c, '#ffffff', [j * 2.4 - 3.6, Math.sin(j) * 0.8, (j % 2) * 1.2], [4 - Math.abs(j - 1.5), 3 - Math.abs(j - 1.5) * 0.6, 3]);
-    c.position.set((rnd() - 0.5) * SIZE * 1.2, 30 + rnd() * 12, (rnd() - 0.5) * SIZE * 1.2);
+    for (let j = 0; j < 4; j++) sph(c, '#c5d2e0', [j * 2.4 - 3.6, Math.sin(j) * 0.8, (j % 2) * 1.2], [4 - Math.abs(j - 1.5), 3 - Math.abs(j - 1.5) * 0.6, 3]);
+    c.position.set((rnd() - 0.5) * SIZE * 1.2, 55 + rnd() * 18, (rnd() - 0.5) * SIZE * 1.2);
     clouds.add(c);
   }
   const mergedClouds = mergeStatic(clouds);
