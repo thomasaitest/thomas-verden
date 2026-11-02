@@ -93,12 +93,12 @@ export function buildCar(carId: string): THREE.Group {
   hull.receiveShadow = true;
   g.add(hull);
 
-  // Lower belly / chassis
+  // Lower belly / chassis — tapered, shorter aft so rear isn't a black deck
   const belly = new THREE.Mesh(
-    new THREE.BoxGeometry(bodyW * 0.72, 0.14, bodyLen * 0.78),
+    new THREE.BoxGeometry(bodyW * 0.58, 0.11, bodyLen * 0.62),
     darkMat,
   );
-  belly.position.set(0, hoverY + 0.08, 0.02);
+  belly.position.set(0, hoverY + 0.07, -0.06);
   belly.castShadow = true;
   g.add(belly);
 
@@ -112,13 +112,13 @@ export function buildCar(carId: string): THREE.Group {
   nose.rotation.x = Math.PI;
   g.add(nose);
 
-  // Rear haunches
+  // Rear haunches — slim taper (no flat black deck behind canopy)
   const rear = new THREE.Mesh(
     new THREE.SphereGeometry(0.5, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
     chrome,
   );
-  rear.scale.set(bodyW * 0.52, 0.28, 0.48);
-  rear.position.set(0, hoverY + 0.22, bodyLen * 0.34);
+  rear.scale.set(bodyW * 0.42, 0.22, 0.36);
+  rear.position.set(0, hoverY + 0.2, bodyLen * 0.3);
   g.add(rear);
 
   // Slim fender arches over each hover pod (low — not rear thruster pipes)
@@ -128,8 +128,8 @@ export function buildCar(carId: string): THREE.Group {
     [-1, 1],
     [1, 1],
   ] as const) {
-    const fx = sx * bodyW * 0.4;
-    const fz = sz * bodyLen * 0.28;
+    const fx = sx * bodyW * 0.36;
+    const fz = sz * bodyLen * 0.24;
     const fender = new THREE.Mesh(
       new THREE.TorusGeometry(0.18, 0.028, 8, 14, Math.PI * 0.85),
       chrome,
@@ -206,15 +206,15 @@ export function buildCar(carId: string): THREE.Group {
 
   // Compact rear taillights (not giant thruster rings)
   for (const s of [-1, 1] as const) {
-    rbox(g, '#ff4b6a', [s * bodyW * 0.3, hoverY + 0.35, bodyLen * 0.44], [0.22, 0.05, 0.04], undefined, 0.9);
+    rbox(g, '#ff4b6a', [s * bodyW * 0.22, hoverY + 0.32, bodyLen * 0.38], [0.16, 0.04, 0.03], undefined, 0.9);
   }
   // Small rear cyan vents
   for (const s of [-1, 1] as const) {
     const vent = new THREE.Mesh(
-      new THREE.CircleGeometry(0.06, 12),
+      new THREE.CircleGeometry(0.045, 12),
       glowMat('#3ecbff', 1.5),
     );
-    vent.position.set(s * 0.28, hoverY + 0.28, bodyLen * 0.46);
+    vent.position.set(s * 0.2, hoverY + 0.25, bodyLen * 0.4);
     g.add(vent);
   }
 

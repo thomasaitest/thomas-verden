@@ -48,13 +48,13 @@ const WHITE = '#ffffff';
 const PILLOW = '#fff8f0';
 
 const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
-  // futuristic sleeping pod — canopy shell + cyan ring + soft mattress
+  // futuristic sleeping pod — open-face canopy (not a closed egg) + cyan ring
   const shell = new THREE.Mesh(
-    new THREE.SphereGeometry(Math.max(w, d) * 0.42, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.7),
+    new THREE.SphereGeometry(Math.max(w, d) * 0.42, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.58),
     new THREE.MeshStandardMaterial({ color: '#eef3f8', roughness: 0.32, metalness: 0.18, envMapIntensity: 1.05 }),
   );
-  shell.position.set(0, 0.95, -0.15);
-  shell.scale.set(w * 0.55, 0.85, d * 0.42);
+  shell.position.set(0, 0.95, -0.35);
+  shell.scale.set(w * 0.52, 0.78, d * 0.4);
   shell.castShadow = true;
   g.add(shell);
   rbox(g, '#1a2230', [0, 0.42, 0.05], [w * 0.85, 0.28, d * 0.75]);

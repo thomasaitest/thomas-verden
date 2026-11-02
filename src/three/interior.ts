@@ -342,9 +342,9 @@ export function createInterior(): Interior {
         {
           ensureRectArea();
           const coveY = y0 + WALL_H - 0.14;
-          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffd090' });
+          const coveMat = new THREE.MeshBasicMaterial({ color: '#ffe2a8' });
           if (house.style === 'moderne' && f === 0) {
-            // Curved oval cove — ceiling + mid ring so default cam always sees warm LED
+            // Curved oval cove — thicker warm tubes + fill so default cam always sees LEDs
             const mkOval = (rx: number, rz: number, y: number, r: number) => {
               const oval = new THREE.EllipseCurve(0, 0, rx, rz, 0, Math.PI * 2, false, 0);
               const pts = oval.getPoints(64).map((p) => new THREE.Vector3(p.x, 0, p.y));
@@ -353,14 +353,14 @@ export function createInterior(): Interior {
               tube.position.y = y;
               fg.add(tube);
             };
-            mkOval(w * 0.36, d * 0.3, coveY, 0.07);
-            mkOval(w * 0.26, d * 0.2, y0 + 3.4, 0.06);
-            mkOval(w * 0.2, d * 0.14, y0 + 2.85, 0.05);
-            const area = new THREE.RectAreaLight('#ffe8d0', 5.5, w * 0.55, d * 0.4);
+            mkOval(w * 0.36, d * 0.3, coveY, 0.09);
+            mkOval(w * 0.28, d * 0.22, y0 + 3.35, 0.075);
+            mkOval(w * 0.22, d * 0.16, y0 + 2.8, 0.06);
+            const area = new THREE.RectAreaLight('#ffe8d0', 7.5, w * 0.55, d * 0.4);
             area.position.set(0, coveY - 0.08, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
             fg.add(area);
-            const soft = new THREE.PointLight('#ffe0b0', 0.35, 24, 2);
+            const soft = new THREE.PointLight('#ffe0b0', 0.55, 26, 2);
             soft.position.set(0, coveY - 0.5, 0);
             fg.add(soft);
           } else {
@@ -538,27 +538,38 @@ export function createInterior(): Interior {
               leaf.position.set(hx + sx * (tw / 2 + 0.5), y0 + 2.45, hz + 0.25);
               living.add(leaf);
             }
-            // Bedroom doorway frame (right) — thin posts + lintel, not black pillars
+            // Bedroom doorway frame (right) — readable opening + warm lintel so pod peeks through
             {
               const gx = w / 2 - 7;
               const nx = gx - 6.0;
               const nz = -d / 2 + 5.2;
               const dx = (nx + gx) / 2;
-              const frameMat = new THREE.MeshStandardMaterial({ color: '#6a727c', metalness: 0.35, roughness: 0.4 });
+              const frameMat = new THREE.MeshStandardMaterial({ color: '#7a848e', metalness: 0.4, roughness: 0.35 });
+              const halfW = 1.15;
               for (const sx of [-1, 1] as const) {
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.35, 0.08), frameMat);
-                post.position.set(dx + sx * 0.95, y0 + 1.2, nz + 0.05);
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.45, 0.12), frameMat);
+                post.position.set(dx + sx * halfW, y0 + 1.25, nz + 0.08);
                 living.add(post);
               }
-              const lintel = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.1, 0.1), frameMat);
-              lintel.position.set(dx, y0 + 2.4, nz + 0.05);
+              const lintel = new THREE.Mesh(new THREE.BoxGeometry(halfW * 2 + 0.2, 0.12, 0.14), frameMat);
+              lintel.position.set(dx, y0 + 2.5, nz + 0.08);
               living.add(lintel);
               const glow = new THREE.Mesh(
-                new THREE.BoxGeometry(1.7, 0.04, 0.05),
+                new THREE.BoxGeometry(halfW * 2 - 0.15, 0.06, 0.06),
                 new THREE.MeshBasicMaterial({ color: '#ffe6c4' }),
               );
-              glow.position.set(dx, y0 + 2.38, nz + 0.12);
+              glow.position.set(dx, y0 + 2.48, nz + 0.16);
               living.add(glow);
+              // Floor threshold glow — draws the eye into the alcove
+              const thresh = new THREE.Mesh(
+                new THREE.BoxGeometry(halfW * 1.7, 0.03, 0.35),
+                new THREE.MeshBasicMaterial({ color: '#7ef0ff' }),
+              );
+              thresh.position.set(dx, y0 + 0.03, nz + 0.2);
+              living.add(thresh);
+              const alcoveLight = new THREE.PointLight('#ffe8d0', 0.45, 7, 2);
+              alcoveLight.position.set(dx, y0 + 1.6, nz - 1.2);
+              living.add(alcoveLight);
               // Alcove enclosure (right-back) — warm-grey walls, not pillars
               const alcoveWall = new THREE.MeshStandardMaterial({ color: '#4e555e', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 });
               const side = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, nz - (-d / 2) + 0.2), alcoveWall);

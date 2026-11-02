@@ -61,8 +61,11 @@ export function starterSpots(style: HouseStyle): { bed: { x: number; z: number; 
   // Nudge bed/table off the exact centre so they do not stack on the player spawn path.
   // Moderne: dining table lives in kitchen so living vignette (sofa/TV) stays clear
   const tableAt = style === 'moderne' ? kitchen : live;
+  // Moderne alcove doorway faces +Z into living — open pod lip toward cam
+  const bedRot = style === 'moderne' ? 0 : Math.PI / 2;
+  const bedZ = style === 'moderne' ? sleep.z + 0.6 : sleep.z;
   return {
-    bed: { x: sleep.x, z: sleep.z, rot: Math.PI / 2 },
+    bed: { x: sleep.x, z: bedZ, rot: bedRot },
     table: { x: tableAt.x, z: tableAt.z, rot: 0 },
   };
 }
