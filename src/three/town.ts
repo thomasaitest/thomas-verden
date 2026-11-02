@@ -28,8 +28,8 @@ import {
   buildModernBench,
   buildSkylineTower,
   grassGroundMaterial,
-  pavingGroundMaterial,
   asphaltGroundMaterial,
+  sidewalkGroundMaterial,
   preloadArchMaterials,
 } from './futuristicArch.ts';
 import { buildCar } from './vehicles.ts';
@@ -354,16 +354,43 @@ export function buildTown(): Town {
   const roads = buildRoadNetwork();
   const benches: { x: number; z: number; yaw: number }[] = [];
 
-  // plaza + fountain (outer wall jumpable; rim and upper bowl are landable)
+  // plaza: smooth inner pavers + asphalt road ring + light sidewalk rim (concept)
   {
+    const innerR = 6.2; // around fountain bowls
+    const roadOuter = 10.2;
+    const walkInner = roadOuter;
+    // Soft light plaza disc under fountain (not heavy cobble)
     const plaza = new THREE.Mesh(
-      new THREE.CylinderGeometry(PLAZA_R, PLAZA_R, 0.12, 64),
-      pavingGroundMaterial(),
+      new THREE.CylinderGeometry(innerR, innerR, 0.1, 64),
+      sidewalkGroundMaterial(),
     );
-    plaza.position.y = 0.05;
+    plaza.position.y = 0.045;
     plaza.receiveShadow = true;
     plaza.userData.noCast = true;
     stat.add(plaza);
+    // Asphalt ring around fountain — driveable road loop
+    const roadRing = new THREE.Mesh(
+      new THREE.RingGeometry(innerR + 0.15, roadOuter, 64),
+      asphaltGroundMaterial(),
+    );
+    roadRing.rotation.x = -Math.PI / 2;
+    roadRing.position.y = 0.055;
+    roadRing.receiveShadow = true;
+    roadRing.userData.noCast = true;
+    if ((roadRing.material as THREE.MeshStandardMaterial).map) {
+      (roadRing.material as THREE.MeshStandardMaterial).map!.repeat.set(4, 1);
+    }
+    stat.add(roadRing);
+    // Smooth sidewalk rim to PLAZA_R
+    const walkRim = new THREE.Mesh(
+      new THREE.RingGeometry(walkInner, PLAZA_R, 64),
+      sidewalkGroundMaterial(),
+    );
+    walkRim.rotation.x = -Math.PI / 2;
+    walkRim.position.y = 0.06;
+    walkRim.receiveShadow = true;
+    walkRim.userData.noCast = true;
+    stat.add(walkRim);
   }
   // sleek multi-tier fountain (concept match)
   const fountainBuilt = buildSleekFountain();
@@ -707,7 +734,7 @@ export function buildTown(): Town {
     ] as const) {
       const walk = new THREE.Mesh(
         new THREE.BoxGeometry(sx, 0.08, sz),
-        pavingGroundMaterial(),
+        sidewalkGroundMaterial(),
       );
       walk.position.set(x, 0.06, z);
       walk.receiveShadow = true;

@@ -102,10 +102,16 @@ export const SharedMats = {
     envMapIntensity: 0.65,
   }),
   paving: new THREE.MeshStandardMaterial({
-    color: '#b8c0c8',
+    color: '#c5ccd6',
     metalness: 0.05,
     roughness: 0.72,
     envMapIntensity: 0.6,
+  }),
+  sidewalk: new THREE.MeshStandardMaterial({
+    color: '#d8dee6',
+    metalness: 0.05,
+    roughness: 0.48,
+    envMapIntensity: 0.55,
   }),
   asphalt: new THREE.MeshStandardMaterial({
     color: '#5a5e66',
@@ -166,7 +172,14 @@ export async function preloadSharedPbr(): Promise<void> {
       SharedMats.wood.color.set('#d4b896');
       applyMaps(SharedMats.concrete, concrete, 0.08);
       applyMaps(SharedMats.paving, paving, 0.05);
-      SharedMats.paving.color.set('#b8c0c8');
+      SharedMats.paving.color.set('#c5ccd6');
+      SharedMats.paving.roughness = 0.72;
+      // Smooth sidewalks: concrete maps, soft normals, warm-light grey
+      applyMaps(SharedMats.sidewalk, concrete, 0.04);
+      SharedMats.sidewalk.color.set('#d8dee6');
+      SharedMats.sidewalk.roughness = 0.48;
+      SharedMats.sidewalk.metalness = 0.05;
+      if (SharedMats.sidewalk.normalMap) SharedMats.sidewalk.normalScale = new THREE.Vector2(0.15, 0.15);
       applyMaps(SharedMats.asphalt, asphalt, 0.05);
       SharedMats.asphalt.color.set('#5c6068');
       SharedMats.asphalt.roughness = 0.92;

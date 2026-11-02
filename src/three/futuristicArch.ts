@@ -73,7 +73,9 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   const v = spec.variant ?? 0;
   const woodSide = v % 2 === 0 ? -1 : 1;
   const white = whiteMat();
-  const wm = woodMat();
+  const wm = woodMat().clone();
+  wm.color.set('#e0c4a0');
+  wm.roughness = 0.62;
   const wallT = 0.28;
   const cornerR = 1.45;
 
@@ -149,8 +151,8 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   frontLip.position.set(0, h + 0.28, d / 2 - 0.1);
   g.add(frontLip);
 
-  // Façade split: ~35% warm wood bay, ~65% big lit glass
-  const woodW = w * 0.34;
+  // Façade split: ~45% warm wood bay (more organic), rest lit glass
+  const woodW = w * 0.45;
   const glassW = w * 0.58;
   const glassH = h * 0.88;
   const glassX = -woodSide * (w * 0.12);
@@ -647,6 +649,9 @@ export function pavingGroundMaterial(): THREE.MeshStandardMaterial {
 }
 export function asphaltGroundMaterial(): THREE.MeshStandardMaterial {
   return SharedMats.asphalt;
+}
+export function sidewalkGroundMaterial(): THREE.MeshStandardMaterial {
+  return SharedMats.sidewalk ?? SharedMats.paving;
 }
 
 // Legacy texture helpers kept for town.ts imports during transition
