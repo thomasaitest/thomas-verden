@@ -10,10 +10,11 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { N8AOPass } from 'n8ao';
+import { publicUrl } from '../util/publicUrl';
 
-export const HDRI_URL = '/env/kloofendal_43d_clear_puresky_1k.hdr';
-export const HDRI_FALLBACK = '/env/syferfontein_1d_clear_1k.hdr';
-export const HDRI_FALLBACK2 = '/env/kloppenheim_06_puresky_1k.hdr';
+export const HDRI_URL = publicUrl('env/kloofendal_43d_clear_puresky_1k.hdr');
+export const HDRI_FALLBACK = publicUrl('env/syferfontein_1d_clear_1k.hdr');
+export const HDRI_FALLBACK2 = publicUrl('env/kloppenheim_06_puresky_1k.hdr');
 
 export interface LightingRig {
   hemi: THREE.HemisphereLight;

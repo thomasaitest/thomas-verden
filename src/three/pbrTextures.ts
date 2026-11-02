@@ -1,5 +1,6 @@
 /** CC0 PBR texture sets (ambientCG) — shared materials updated when maps load. */
 import * as THREE from 'three';
+import { publicUrl } from '../util/publicUrl';
 
 export type PbrKind = 'wood' | 'wood-siding' | 'concrete' | 'paving' | 'asphalt' | 'metal' | 'grass';
 
@@ -55,7 +56,7 @@ export async function loadPbr(kind: PbrKind, repeat: [number, number] = [1, 1]):
     cache.set(key, maps);
     return maps;
   }
-  const base = `/textures/${kind}`;
+  const base = publicUrl(`textures/${kind}`);
   const map = await loadOne(`${base}/color.jpg`, THREE.SRGBColorSpace);
   const normalMap = await loadOne(`${base}/normal.jpg`);
   const roughnessMap = await loadOne(`${base}/roughness.jpg`);

@@ -1,20 +1,21 @@
-/** Lazy GLB loader with shared cache. Paths under /models/. */
+/** Lazy GLB loader with shared cache. Paths under public/models/ (base-aware). */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { publicUrl } from '../util/publicUrl';
 
 type Entry = { scene: THREE.Group; animations: THREE.AnimationClip[] };
 
 const loader = new GLTFLoader();
 const draco = new DRACOLoader();
-draco.setDecoderPath('/draco/');
+draco.setDecoderPath(publicUrl('draco/'));
 loader.setDRACOLoader(draco);
 
 const cache = new Map<string, Promise<Entry>>();
 
 export function loadModel(path: string): Promise<THREE.Group & { animations: THREE.AnimationClip[] }> {
-  const key = path.startsWith('/') ? path : `/models/${path}`;
+  const key = path.startsWith('/') ? publicUrl(path) : publicUrl(`models/${path}`);
   let p = cache.get(key);
   if (!p) {
     p = loader.loadAsync(key).then((gltf) => {
