@@ -80,18 +80,50 @@ function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMa
   const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   const std = src as THREE.MeshStandardMaterial | undefined;
   const map = (std?.map || (std as any)?.alphaMap || null) as THREE.Texture | null;
-  if (map) fixLeafMapMips(map);
-  // Opaque + alphaTest avoids blend-with-sky wash; toneMapped:false keeps greens under ACES
-  const mat = new THREE.MeshBasicMaterial({
-    color: map ? '#ffffff' : hex,
-    map: map ?? undefined,
+  // Build a clean alpha mask from the leaf map so silhouette stays leaf-shaped
+  // while RGB is forced solid green (no white mip fringe).
+  let alpha: THREE.Texture | undefined;
+  if (map && typeof document !== 'undefined') {
+    try {
+      if (!fixedLeafMaps.has(map)) fixLeafMapMips(map);
+      const img = map.image as CanvasImageSource & { width?: number; height?: number; naturalWidth?: number };
+      const w = (img as any).naturalWidth || (img as any).width || 0;
+      const h = (img as any).naturalHeight || (img as any).height || 0;
+      if (w && h) {
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h);
+        const d = data.data;
+        // grayscale alpha in all channels for Three alphaMap (uses green channel)
+        for (let i = 0; i < d.length; i += 4) {
+          const a = d[i + 3]!;
+          d[i] = a; d[i + 1] = a; d[i + 2] = a; d[i + 3] = 255;
+        }
+        ctx.putImageData(data, 0, 0);
+        alpha = new THREE.CanvasTexture(c);
+        alpha.wrapS = map.wrapS;
+        alpha.wrapT = map.wrapT;
+        alpha.flipY = map.flipY;
+        alpha.generateMipmaps = true;
+        alpha.minFilter = THREE.LinearMipmapLinearFilter;
+        alpha.magFilter = THREE.LinearFilter;
+        alpha.needsUpdate = true;
+      }
+    } catch {
+      alpha = undefined;
+    }
+  }
+  return new THREE.MeshBasicMaterial({
+    color: hex,
+    alphaMap: alpha,
     transparent: false,
-    alphaTest: 0.45,
+    alphaTest: alpha ? 0.4 : 0,
     side: THREE.DoubleSide,
     toneMapped: false,
     depthWrite: true,
   });
-  return mat;
 }
 
 function trunkStandard(src?: THREE.Material | null): THREE.MeshStandardMaterial {
