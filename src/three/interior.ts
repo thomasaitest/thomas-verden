@@ -343,14 +343,19 @@ export function createInterior(): Interior {
           if (house.style === 'moderne' && f === 0) {
             // Dropped warm mid-grey ceiling at ~3.05 m (fills top of shoulder cam — not pitch-black void)
             const dropY = y0 + 2.85;
-            const ceilMat = new THREE.MeshStandardMaterial({
-              color: '#d0d6de', roughness: 0.75, metalness: 0.02, envMapIntensity: 0.3,
-              emissive: '#9aa3ad', emissiveIntensity: 0.55,
+            // MeshBasic so ACES + low indoor exposure cannot crush mid-grey to black
+            const ceilMat = new THREE.MeshBasicMaterial({ color: '#aeb6c0' });
+            const ceilShade = new THREE.MeshStandardMaterial({
+              color: '#c8d0d8', roughness: 0.8, metalness: 0.02,
+              emissive: '#9aa3ad', emissiveIntensity: 0.35,
             });
             const ceil = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, 0.22, d - 0.15), ceilMat);
             ceil.position.set(0, dropY + 0.08, 0);
-            ceil.receiveShadow = true;
             fg.add(ceil);
+            // Soft underside for LED bounce (standard)
+            const ceilUnder = new THREE.Mesh(new THREE.BoxGeometry(w - 0.25, 0.04, d - 0.25), ceilShade);
+            ceilUnder.position.set(0, dropY - 0.02, 0);
+            fg.add(ceilUnder);
             // Keep upper slab too (above drop) so no black leaks past edges
             const upper = new THREE.Mesh(
               new THREE.BoxGeometry(w - 0.1, 0.35, d - 0.1),
@@ -359,14 +364,14 @@ export function createInterior(): Interior {
             upper.position.set(0, coveY + 0.05, 0);
             fg.add(upper);
             // Curved recessed soffit well + warm LED ring (visible in top band)
-            const soffitMat = new THREE.MeshStandardMaterial({ color: '#c8d0d8', roughness: 0.8, metalness: 0.03, emissive: '#9aa3ad', emissiveIntensity: 0.45 });
+            const soffitMat = new THREE.MeshBasicMaterial({ color: '#b4bcc6' });
             const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.14, 48), soffitMat);
             soffit.scale.set(w * 0.32, 1, d * 0.3);
             soffit.position.set(-0.4, dropY - 0.05, -0.2);
             fg.add(soffit);
             const soffitWell = new THREE.Mesh(
               new THREE.CylinderGeometry(0.9, 0.9, 0.06, 48),
-              new THREE.MeshStandardMaterial({ color: '#7a848e', roughness: 0.88, metalness: 0.02 }),
+              new THREE.MeshBasicMaterial({ color: '#9aa3ad' }),
             );
             soffitWell.scale.set(w * 0.32, 1, d * 0.3);
             soffitWell.position.set(-0.4, dropY - 0.14, -0.2);
