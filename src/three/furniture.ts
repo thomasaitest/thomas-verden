@@ -641,16 +641,28 @@ export function buildCurvedSectional(color = '#d4dae2'): THREE.Group {
   g.add(back);
 
   // Soft rounded cushions against the back
-  for (const [u, mat] of [[0.18, cush], [0.5, accent], [0.82, cush]] as const) {
-    const ang = -0.5 + u * 1.0;
+  for (const [u, mat] of [[0.15, cush], [0.5, accent], [0.85, cush]] as const) {
+    const ang = -0.52 + u * 1.04;
     const px = Math.sin(ang) * 1.05;
     const pz = -0.36 + Math.cos(ang) * 0.04;
-    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), mat);
-    pillow.scale.set(1.2, 0.4, 0.78);
+    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 12), mat);
+    pillow.scale.set(1.25, 0.42, 0.8);
     pillow.position.set(px, 0.58, pz);
     pillow.rotation.y = ang * 0.35;
     pillow.castShadow = true;
     g.add(pillow);
+  }
+  // Separate seat cushions (soft, not boxy)
+  for (const [u] of [[0.2], [0.5], [0.8]] as const) {
+    const ang = -0.45 + u * 0.9;
+    const px = Math.sin(ang) * 0.85;
+    const pz = 0.02 + Math.cos(ang) * 0.08;
+    const seatPad = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), cush);
+    seatPad.scale.set(1.35, 0.22, 1.05);
+    seatPad.position.set(px, 0.44, pz);
+    seatPad.rotation.y = ang * 0.25;
+    seatPad.castShadow = true;
+    g.add(seatPad);
   }
 
   for (const [x, z] of [[-1.05, 0.12], [1.05, 0.12], [0, -0.28], [-0.7, -0.16], [0.7, -0.16]] as const) {

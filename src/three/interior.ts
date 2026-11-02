@@ -357,20 +357,20 @@ export function createInterior(): Interior {
             // Warm mid-grey ceiling (not pitch black) + curved recessed soffit
             const ceil = new THREE.Mesh(
               new THREE.BoxGeometry(w - 0.2, 0.28, d - 0.2),
-              new THREE.MeshStandardMaterial({ color: '#6e7680', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 }),
+              new THREE.MeshStandardMaterial({ color: '#8a929c', roughness: 0.88, metalness: 0.02, envMapIntensity: 0.18 }),
             );
             ceil.position.set(0, coveY + 0.12, 0);
             ceil.receiveShadow = true;
             fg.add(ceil);
             // Oval recessed soffit (scaled cylinder) with warm LED ring
-            const soffitMat = new THREE.MeshStandardMaterial({ color: '#5a626c', roughness: 0.88, metalness: 0.02 });
+            const soffitMat = new THREE.MeshStandardMaterial({ color: '#7a848e', roughness: 0.86, metalness: 0.02 });
             const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.16, 48), soffitMat);
             soffit.scale.set(w * 0.38, 1, d * 0.28);
             soffit.position.set(0, coveY - 0.04, -d * 0.04);
             fg.add(soffit);
             const soffitWell = new THREE.Mesh(
               new THREE.CylinderGeometry(0.92, 0.92, 0.08, 48),
-              new THREE.MeshStandardMaterial({ color: '#4a525c', roughness: 0.9, metalness: 0.02 }),
+              new THREE.MeshStandardMaterial({ color: '#6a727c', roughness: 0.9, metalness: 0.02 }),
             );
             soffitWell.scale.set(w * 0.38, 1, d * 0.28);
             soffitWell.position.set(0, coveY - 0.14, -d * 0.04);
@@ -410,7 +410,7 @@ export function createInterior(): Interior {
             mkStrip(w - inset * 2, ledD, 0, d / 2 - inset);
             mkStrip(ledD, d - inset * 2, -w / 2 + inset, 0);
             mkStrip(ledD, d - inset * 2, w / 2 - inset, 0);
-            const area = new THREE.RectAreaLight('#ffe8d0', 9.5, w * 0.55, d * 0.4);
+            const area = new THREE.RectAreaLight('#ffe8d0', 12.5, w * 0.5, d * 0.35);
             area.position.set(0, coveY - 0.12, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
             fg.add(area);
@@ -456,15 +456,15 @@ export function createInterior(): Interior {
             table.position.set(-2.4, y0, 2.65);
             living.add(table);
           }
-          // Holo wall on LEFT side wall (≈2.5×1.4 m), facing into room — clearly visible
+          // Holo wall ≈2.5×1.4 m on left of window bay (back wall), facing into room
           if (house.style === 'moderne') {
             const tw = 2.5;
             const th = 1.4;
-            const hx = -w / 2 + 0.18;
-            const hz = 0.35; // mid living, left of sofa
-            const hy = y0 + 1.85;
+            const hx = -5.2; // left of centre window — clearly in default cam
+            const hz = -d / 2 + 0.42;
+            const hy = y0 + 2.05;
             const holoFrame = new THREE.Mesh(
-              new THREE.BoxGeometry(0.1, th + 0.18, tw + 0.18),
+              new THREE.BoxGeometry(tw + 0.16, th + 0.16, 0.1),
               new THREE.MeshStandardMaterial({ color: '#121820', metalness: 0.7, roughness: 0.25 }),
             );
             holoFrame.position.set(hx, hy, hz);
@@ -487,7 +487,6 @@ export function createInterior(): Interior {
             }
             hx2.fillStyle = '#3ecbff';
             for (let i = 0; i < 16; i++) hx2.fillRect(48 + i * 58, 500, 36, 10 + (i * 17) % 40);
-            // Circular data viz (concept)
             hx2.strokeStyle = '#7ef0ff'; hx2.lineWidth = 3;
             hx2.beginPath(); hx2.arc(780, 280, 110, 0, Math.PI * 2); hx2.stroke();
             hx2.beginPath(); hx2.arc(780, 280, 70, 0, Math.PI * 1.4); hx2.stroke();
@@ -497,48 +496,45 @@ export function createInterior(): Interior {
               new THREE.PlaneGeometry(tw, th),
               new THREE.MeshBasicMaterial({ map: htex, toneMapped: false }),
             );
-            holo.rotation.y = Math.PI / 2; // face +X into room
-            holo.position.set(hx + 0.08, hy, hz);
+            holo.position.set(hx, hy, hz + 0.08);
             living.add(holo);
             const holoHalo = new THREE.Mesh(
-              new THREE.PlaneGeometry(tw + 0.2, th + 0.2),
-              new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.22, toneMapped: false, depthWrite: false }),
+              new THREE.PlaneGeometry(tw + 0.22, th + 0.22),
+              new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.25, toneMapped: false, depthWrite: false }),
             );
-            holoHalo.rotation.y = Math.PI / 2;
-            holoHalo.position.set(hx + 0.05, hy, hz);
+            holoHalo.position.set(hx, hy, hz + 0.05);
             living.add(holoHalo);
-            const holoLight = new THREE.PointLight('#3a7cff', 2.4, 12, 2);
-            holoLight.position.set(hx + 1.6, hy, hz);
+            const holoLight = new THREE.PointLight('#3a7cff', 2.6, 12, 2);
+            holoLight.position.set(hx, hy, hz + 1.6);
             living.add(holoLight);
-            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.0, th * 0.9, tw * 0.85);
-            holoArea.position.set(hx + 0.4, hy, hz);
-            holoArea.lookAt(hx + 2, hy, hz);
+            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.2, tw * 0.95, th * 0.85);
+            holoArea.position.set(hx, hy, hz + 0.4);
             living.add(holoArea);
-            // Lit shelves + plants flanking holo on left wall
-            for (const sz of [-1, 1] as const) {
+            // Lit shelves + plants flanking holo
+            for (const sx of [-1, 1] as const) {
               const shelf = buildFurniture('bookshelf', '#c4a078');
-              shelf.position.set(hx + 0.35, y0, hz + sz * (tw / 2 + 0.55));
-              shelf.rotation.y = Math.PI / 2;
+              shelf.position.set(hx + sx * (tw / 2 + 0.55), y0, hz + 0.15);
+              shelf.rotation.y = sx > 0 ? -0.12 : 0.12;
               living.add(shelf);
               for (const ly of [0.9, 1.4, 1.9, 2.35] as const) {
                 const led = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.05, 0.035, 0.55),
+                  new THREE.BoxGeometry(0.55, 0.035, 0.05),
                   new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
                 );
-                led.position.set(hx + 0.55, y0 + ly, hz + sz * (tw / 2 + 0.55));
+                led.position.set(hx + sx * (tw / 2 + 0.55), y0 + ly, hz + 0.42);
                 living.add(led);
               }
-              const plantId = sz < 0 ? 'plant' : 'plant2';
+              const plantId = sx < 0 ? 'plant' : 'plant2';
               const plant = buildFurniture(plantId, '#5a8f5a');
-              plant.position.set(hx + 0.7, y0, hz + sz * (tw / 2 + 0.75));
+              plant.position.set(hx + sx * (tw / 2 + 0.7), y0, hz + 0.7);
               living.add(plant);
             }
             // Bedroom doorway frame (right) — readable opening + warm lintel so pod peeks through
             {
-              const gx = w / 2 - 7;
-              const nx = gx - 6.0;
-              const nz = -d / 2 + 5.2;
-              const dx = (nx + gx) / 2;
+              const gx = w / 2 - 7; // ≈4
+              const nx = gx - 5.2; // tighter alcove pocket
+              const nz = -d / 2 + 4.6; // doorway further back so pod sits clearly inside
+              const dx = (nx + gx) / 2 + 0.6; // door bias right toward kitchen
               const frameMat = new THREE.MeshStandardMaterial({ color: '#7a848e', metalness: 0.4, roughness: 0.35 });
               const halfW = 1.35;
               for (const sx of [-1, 1] as const) {

@@ -27,7 +27,7 @@ async function prep(page) {
       createdAt: now,
       items: [
         // Pod only in left-back alcove (peeked through doorway) — living sofa is interior vignette
-        { uid: 'it1', itemId: 'seng', x: 1.0, z: -7.2, rot: 0, scale: 1.0, color: '#e8eef6', floor: 0 },
+        { uid: 'it1', itemId: 'seng', x: 2.2, z: -7.6, rot: 0, scale: 0.95, color: '#e8eef6', floor: 0 },
         // Kitchen dining (not living) so ensureStarterFurniture won't drop a table in the bay
         { uid: 'it2', itemId: 'spisebord', x: 9.5, z: 0.5, rot: 0, scale: 1.0, color: '#2a3344', floor: 0 },
       ],
