@@ -1429,25 +1429,23 @@ export class Game {
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       this.ensureAvatarStudio();
-      // Full-body ~70% of open studio; glass panel overlays the right
+      // Teleport BEFORE framing — avatarHolder was copied earlier this frame at the old world pos
       p.pos.set(0, 0, 0);
-      p.yaw = 0.15;
+      p.yaw = Math.PI; // face camera (cam sits at +Z)
       p.vy = 0;
-      if (this.avatarStudio) this.avatarStudio.position.copy(p.pos);
-      if (this.studioSoftShadow) this.studioSoftShadow.position.set(p.pos.x, 0.03, p.pos.z);
-      const fy = p.yaw;
+      this.avatarHolder.position.set(0, 0, 0);
+      this.avatarHolder.rotation.set(0, p.yaw, 0);
+      this.avatarHolder.visible = true;
+      this.avatarHolder.scale.setScalar(1);
+      if (this.avatarStudio) this.avatarStudio.position.set(0, 0, 0);
+      if (this.studioSoftShadow) this.studioSoftShadow.position.set(0, 0.03, 0);
+      // Cam in front at chest height ~2.4 m (fills ~70% height @ fov 55)
       const dist = 2.4;
-      // Cam behind figure at chest height
-      this.camera.position.set(
-        p.pos.x + Math.sin(fy) * dist,
-        p.pos.y + 1.05,
-        p.pos.z + Math.cos(fy) * dist,
-      );
-      this.camera.lookAt(p.pos.x, p.pos.y + 0.95, p.pos.z);
+      this.camera.position.set(0.15, 1.05, dist);
+      this.camera.lookAt(-0.35, 0.95, 0); // bias left so panel (right) doesn't cover
       this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
-      // Positive offset → figure reads on the left; panel covers empty right
-      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.18, 0, vw, vh);
+      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.1, 0, vw, vh);
     } else {
       this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);
