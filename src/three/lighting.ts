@@ -80,9 +80,10 @@ export function createLighting(
     tex.mapping = THREE.EquirectangularReflectionMapping;
     const env = pmrem.fromEquirectangular(tex).texture;
     scene.environment = env;
-    scene.background = env;
+    // Solid sky — HDRI as background blows to pure white behind tree silhouettes (reads as white canopies)
+    scene.background = new THREE.Color('#87b7e0');
     scene.backgroundBlurriness = 0.0;
-    scene.backgroundIntensity = 0.95;
+    scene.backgroundIntensity = 1.0;
     scene.environmentIntensity = 1.0;
     tex.dispose();
   })();
