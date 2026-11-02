@@ -35,15 +35,15 @@ Raw downloads (not shipped) are under `vendor/raw/` (gitignored if large).
 
 | File(s) | Source | License | Notes |
 |---|---|---|---|
-| `nature/ez/*.glb` (oak/aspen/pine) | Offline bake of [@dgreenheck/ez-tree](https://github.com/dgreenheck/ez-tree) via `scripts/bake-ez-trees.mjs` | **MIT** | Preloaded; city canopies currently **procedural green** (ez leaf cards wash white under ACES/SwiftShader) |
+| `nature/ez/*.glb` (oak/aspen/pine) | Offline bake of [@dgreenheck/ez-tree](https://github.com/dgreenheck/ez-tree) via `scripts/bake-ez-trees.mjs` | **MIT** | Lit MeshStandard leaf cards + dark under-fill; integer kind indexing |
 | `nature/tree_*.glb`, bushes, flowers | [Kenney Nature Kit](https://kenney.nl/assets/nature-kit) | CC0 | Bushes/flowers only; Kenney trees no longer used for canopy |
 
 ## Furniture (interiors)
 
 | File(s) | Source | License | Notes |
 |---|---|---|---|
-| `furniture/*.glb` | Quaternius Ultimate House Interior Pack (June 2020) | CC0 | Sofas, beds, kitchen, plants, lights |
-| `furniture2/*.glb` | Quaternius Furniture Pack (March 2019) | CC0 | Extra sofa/table/closet variants |
+| `furniture/*.glb` | Quaternius Ultimate House Interior Pack (June 2020) | CC0 | Living vignette: `couch-l`, `table-roundlarge`, `carpet-1`, `houseplant-*`, `shelf-large`, `chair-1` (Draco) |
+| `furniture2/*.glb` | Quaternius Furniture Pack (March 2019) | CC0 | Extra sofa/table/closet variants; armchair |
 | `scifi/props-*.glb` | Quaternius Ultimate Modular Sci-Fi | CC0 | Computer / pod accents |
 
 ## Runtime

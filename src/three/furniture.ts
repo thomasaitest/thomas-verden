@@ -5,20 +5,22 @@ import { loadModel } from './assets.ts';
 type B = (g: THREE.Group, c: string) => void;
 
 const FURN_GLB: Record<string, string> = {
-  sofa: 'furniture2/sofa.glb',
-  sofalong: 'furniture2/sofa3.glb',
+  sofa: 'furniture/couch-medium1.glb',
+  sofalong: 'furniture/couch-l.glb',
   armchair: 'furniture2/sofa2.glb',
-  // procedural pod beds read better than Quaternius boxes for concept
-  // bed: 'furniture/bed-single.glb',
-  // bedwide: 'furniture/bed-king.glb',
-  coffeetable: 'furniture/table-roundsmall.glb',
+  // procedural capsule pod beds (concept) — not Quaternius boxes
+  coffeetable: 'furniture/table-roundlarge.glb',
   table: 'furniture2/table.glb',
-  chair: 'furniture2/chair.glb',
-  bookshelf: 'furniture/bookshelf.glb',
+  chair: 'furniture/chair-1.glb',
+  bookshelf: 'furniture/shelf-large.glb',
   fridge: 'furniture/kitchen-fridge.glb',
   stove: 'furniture/kitchen-oven.glb',
   counter: 'furniture/kitchen-2drawers.glb',
   dresser: 'furniture2/closet.glb',
+  plant: 'furniture/houseplant-1.glb',
+  plant2: 'furniture/houseplant-3.glb',
+  plant3: 'furniture/houseplant-5.glb',
+  carpet: 'furniture/carpet-1.glb',
 };
 
 const glbReady = new Map<string, THREE.Group>();
@@ -95,12 +97,15 @@ const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
   rim.rotation.x = Math.PI / 2;
   rim.position.set(0, 0.7, d * 0.18);
   g.add(rim);
-  const glow = new THREE.PointLight('#5ad4ff', 0.7, 5, 2);
+  const glow = new THREE.PointLight('#5ad4ff', 1.35, 6, 2);
   glow.position.set(0, 0.9, 0.35);
   g.add(glow);
+  const glow2 = new THREE.PointLight('#7ef0ff', 0.55, 4, 2);
+  glow2.position.set(0, 1.15, -0.1);
+  g.add(glow2);
   const wash = new THREE.Mesh(
     new THREE.PlaneGeometry(w * 0.7, d * 0.45),
-    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.28, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.4, toneMapped: false }),
   );
   wash.rotation.x = -Math.PI / 2;
   wash.position.set(0, 0.44, 0.2);
@@ -658,28 +663,37 @@ export function buildFurniture(model: string, color: string): THREE.Group {
     });
     return g;
   }
-  if (model === 'sofalong') {
-    const g = new THREE.Group();
-    buildCurvedWhiteSofa(g, color || '#d5dde6');
-    g.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
-      }
-    });
-    return g;
-  }
   const path = FURN_GLB[model];
   if (path && glbReady.has(path)) {
     const g = glbReady.get(path)!.clone(true);
-    // Quaternius furniture is roughly metre-scale; bump slightly
-    g.scale.setScalar(model === 'sofalong' ? 1.35 : 1.2);
+    const scale =
+      model === 'sofalong' ? 1.55 :
+      model === 'sofa' ? 1.35 :
+      model === 'coffeetable' ? 1.25 :
+      model === 'carpet' ? 2.2 :
+      model.startsWith('plant') ? 1.4 :
+      model === 'bookshelf' ? 1.15 :
+      1.2;
+    g.scale.setScalar(scale);
+    // Tint seating fabric toward light grey when a color is provided
+    const tint = color && (model === 'sofalong' || model === 'sofa' || model === 'armchair');
     g.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.castShadow = true;
-        m.receiveShadow = true;
+      if (!m.isMesh) return;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      if (tint && m.material) {
+        const mats = Array.isArray(m.material) ? m.material : [m.material];
+        for (const mat of mats) {
+          const std = mat as THREE.MeshStandardMaterial;
+          if (!std?.color) continue;
+          const c = std.color;
+          const bright = (c.r + c.g + c.b) / 3;
+          // Recolor soft/bright surfaces (cushions/fabric), leave dark legs
+          if (bright > 0.35) std.color.set(color || '#d0d6de');
+          std.roughness = Math.max(std.roughness ?? 0.6, 0.55);
+          std.metalness = Math.min(std.metalness ?? 0.05, 0.08);
+        }
       }
     });
     return g;
