@@ -176,8 +176,15 @@ await page.evaluate(async () => {
   g.cam.dist = 7.2;
   g.camShown = 7.2;
   g.rebuildAvatar?.();
-  // Hide any leftover vehicle mesh that could sit on plaza
+  // Hide player vehicle + any ambient cars that still read as "on plaza" in this framing
   if (g.vehicleMesh) g.vehicleMesh.visible = false;
+  g.town?.group?.traverse?.((o) => {
+    if (!o.name) return;
+    if (o.name.startsWith('traffic-') || o.name.startsWith('parked-')) {
+      const x = o.position.x, z = o.position.z;
+      if (Math.hypot(x, z) < 22) o.visible = false;
+    }
+  });
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
@@ -297,7 +304,23 @@ await page.evaluate(async () => {
     el.style.visibility = 'hidden';
   });
 });
-await shot(page, '04-avatar', 2400);
+// Keep the avatar-edit sheet (shot() strips .sheet-wrap by default)
+await page.waitForTimeout(1800);
+await page.evaluate(() => {
+  const g = window.__hv;
+  // Strip only non-avatar chrome
+  document.querySelectorAll('.toast,.modal,.prompt').forEach((el) => el.remove());
+  document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.tasks,.speedo').forEach((el) => {
+    el.style.visibility = 'hidden';
+  });
+  // Ensure sheet is present
+  if (!document.querySelector('.sheet-wrap.avatar-edit')) {
+    g.panels?.openAvatar?.();
+  }
+});
+await page.waitForTimeout(2200);
+await page.screenshot({ path: `${out}/04-avatar.png`, timeout: 180000, animations: 'disabled' });
+console.log('saved', '04-avatar');
 
 await browser.close();
 

@@ -443,6 +443,14 @@ export class Game {
     floor.position.y = 0.02;
     floor.receiveShadow = true;
     g.add(floor);
+    // Soft side fills so the studio doesn't read as a hard room corner
+    const sideMat = new THREE.MeshBasicMaterial({ map: tex, depthWrite: false });
+    for (const s of [-1, 1]) {
+      const side = new THREE.Mesh(new THREE.PlaneGeometry(10, 11), sideMat);
+      side.position.set(s * 6.5, 3.4, 0.5);
+      side.rotation.y = -s * 0.95;
+      g.add(side);
+    }
     this.scene.add(g);
     this.avatarStudio = g;
     const key = new THREE.DirectionalLight('#fff4e8', 1.45);
@@ -461,6 +469,7 @@ export class Game {
     if (this.town?.group) this.town.group.visible = false;
     if (this.interior?.group) this.interior.group.visible = false;
     if (this.vehicleMesh) this.vehicleMesh.visible = false;
+    if (this.avatarShadow) this.avatarShadow.visible = false;
   }
 
   private teardownAvatarStudio() {
@@ -485,6 +494,7 @@ export class Game {
     if (this.mode === 'town' && this.town?.group) this.town.group.visible = true;
     if (this.mode === 'house' && this.interior?.group) this.interior.group.visible = true;
     if (this.vehicleMesh) this.vehicleMesh.visible = true;
+    if (this.avatarShadow) this.avatarShadow.visible = true;
   }
 
 

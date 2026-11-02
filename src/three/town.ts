@@ -816,6 +816,7 @@ export function buildTown(): Town {
       { id: 'bil-bla', x: -1.7, z: 62.0, yaw: Math.PI },
     ];
     for (const c of parked) {
+      if (Math.hypot(c.x, c.z) < PLAZA_R + 6) continue;
       // asphalt bay pad under each car
       const bay = new THREE.Mesh(
         new THREE.BoxGeometry(3.2, 0.05, 5.2),
@@ -898,20 +899,22 @@ export function buildTown(): Town {
       });
     }
     // Road traffic on asphalt — never on plaza; leave chase spawn z≈36 clear ahead (−Z)
+    // Road traffic on asphalt ONLY — hard ban inside PLAZA_R+6 (reads as "on plaza" in gate cam)
     const traffic = [
       { id: 'bil-rosa', x: 1.55, z: 48, yaw: 0 },
       { id: 'bil-lilla', x: -1.55, z: 54, yaw: Math.PI },
-      // Keep clear of plaza pavers (PLAZA_R≈13) — only asphalt outside the ring
-      { id: 'bil-gul', x: 1.55, z: 22, yaw: 0 },
-      { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
+      { id: 'bil-gul', x: 1.55, z: 26, yaw: 0 },
+      { id: 'bil-gronn', x: -1.55, z: -30, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
-      { id: 'bil-rosa', x: -1.55, z: 28, yaw: Math.PI },
-      { id: 'bil-lilla', x: 1.55, z: -22, yaw: 0 },
-      { id: 'bil-gronn', x: 19.5, z: -2.0, yaw: Math.PI / 2 },
-      { id: 'bil-bla', x: -19.5, z: 3.0, yaw: -Math.PI / 2 },
-      { id: 'bil-gul', x: 1.55, z: 48, yaw: 0 },
+      { id: 'bil-rosa', x: -1.55, z: 32, yaw: Math.PI },
+      { id: 'bil-lilla', x: 1.55, z: -26, yaw: 0 },
+      // Cross streets well outside plaza ring (was ±19.5 — still read as plaza-left in gate)
+      { id: 'bil-gronn', x: 24.0, z: -4.0, yaw: Math.PI / 2 },
+      { id: 'bil-bla', x: -24.0, z: 5.0, yaw: -Math.PI / 2 },
+      { id: 'bil-gul', x: 1.55, z: 42, yaw: 0 },
     ];
     for (const c of traffic) {
+      if (Math.hypot(c.x, c.z) < PLAZA_R + 6) continue; // never on / next-to plaza pavers
       const car = buildCar(c.id);
       car.position.set(c.x, 0, c.z);
       car.rotation.y = c.yaw;

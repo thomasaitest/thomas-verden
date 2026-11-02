@@ -284,22 +284,22 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     skirtLike ||
     a.hat === 'hjelm';
   if (wantEdges) {
+    // Thin collar + zipper pip only — long side bars floated off Quaternius proportions
     const edgeCol = '#3ecbff';
     const edge = new THREE.MeshBasicMaterial({ color: edgeCol, toneMapped: false });
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.012, 6, 24), edge);
-    collar.rotation.x = Math.PI / 2;
-    collar.position.set(0, 1.55, 0.02);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.01, 6, 24), edge);
+    collar.rotation.x = Math.PI / 2.4;
+    collar.position.set(0, 1.52, 0.08);
     gear.add(collar);
+    // Center zipper glow line on torso
+    const zip = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.42, 0.014), edge);
+    zip.position.set(0, 1.28, 0.2);
+    gear.add(zip);
+    // Shoulder pips
     for (const s of [-1, 1]) {
-      const seam = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.55, 0.018), edge);
-      seam.position.set(s * 0.32, 1.25, 0.12);
-      gear.add(seam);
-    }
-    for (const s of [-1, 1]) {
-      const cuff = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.01, 6, 16), edge);
-      cuff.rotation.z = Math.PI / 2;
-      cuff.position.set(s * 0.58, 1.05, 0.02);
-      gear.add(cuff);
+      const pip = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), edge);
+      pip.position.set(s * 0.28, 1.5, 0.05);
+      gear.add(pip);
     }
   }
 
