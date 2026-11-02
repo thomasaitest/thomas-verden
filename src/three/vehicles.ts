@@ -87,18 +87,18 @@ export function buildCar(carId: string): THREE.Group {
     chrome,
   );
   hull.rotation.z = Math.PI / 2;
-  hull.scale.set(1, 0.42, 0.82);
-  hull.position.set(0, hoverY + 0.22, 0);
+  hull.scale.set(1, 0.38, 0.78);
+  hull.position.set(0, hoverY + 0.2, -0.08);
   hull.castShadow = true;
   hull.receiveShadow = true;
   g.add(hull);
 
-  // Lower belly / chassis — tapered, shorter aft so rear isn't a black deck
+  // Lower belly / chassis — narrow keel, not a rear deck
   const belly = new THREE.Mesh(
-    new THREE.BoxGeometry(bodyW * 0.58, 0.11, bodyLen * 0.62),
+    new THREE.BoxGeometry(bodyW * 0.48, 0.09, bodyLen * 0.5),
     darkMat,
   );
-  belly.position.set(0, hoverY + 0.07, -0.06);
+  belly.position.set(0, hoverY + 0.06, -0.12);
   belly.castShadow = true;
   g.add(belly);
 
@@ -117,8 +117,8 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.SphereGeometry(0.5, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
     chrome,
   );
-  rear.scale.set(bodyW * 0.42, 0.22, 0.36);
-  rear.position.set(0, hoverY + 0.2, bodyLen * 0.3);
+  rear.scale.set(bodyW * 0.36, 0.18, 0.28);
+  rear.position.set(0, hoverY + 0.18, bodyLen * 0.26);
   g.add(rear);
 
   // Slim fender arches over each hover pod (low — not rear thruster pipes)
@@ -182,8 +182,8 @@ export function buildCar(carId: string): THREE.Group {
   cm.roughness = 0.04;
   cm.metalness = 0.08;
   cm.envMapIntensity = 1.6;
-  canopy.position.set(0, hoverY + 0.42, -0.05);
-  canopy.scale.set(bodyW * 0.46, 0.62, 0.8);
+  canopy.position.set(0, hoverY + 0.4, -0.18);
+  canopy.scale.set(bodyW * 0.46, 0.62, 0.72);
   canopy.castShadow = true;
   g.add(canopy);
 
@@ -193,20 +193,20 @@ export function buildCar(carId: string): THREE.Group {
     new THREE.MeshStandardMaterial({ color: '#c8d0d8', metalness: 0.95, roughness: 0.15 }),
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, hoverY + 0.4, -0.05);
+  rim.position.set(0, hoverY + 0.38, -0.18);
   rim.scale.set(bodyW * 0.48, 0.9, 1);
   g.add(rim);
 
   // Cabin seat + dash
-  rbox(g, '#1a2230', [0, hoverY + 0.35, -0.05], [bodyW * 0.32, 0.08, 0.4]);
-  rbox(g, '#121820', [0, hoverY + 0.5, 0.15], [bodyW * 0.3, 0.2, 0.06]);
+  rbox(g, '#1a2230', [0, hoverY + 0.32, -0.18], [bodyW * 0.28, 0.07, 0.32]);
+  rbox(g, '#121820', [0, hoverY + 0.48, -0.02], [bodyW * 0.26, 0.16, 0.05]);
   const dash = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.03), glowMat('#4de0ff', 1.4));
   dash.position.set(0, hoverY + 0.52, -0.32);
   g.add(dash);
 
   // Compact rear taillights (not giant thruster rings)
   for (const s of [-1, 1] as const) {
-    rbox(g, '#ff4b6a', [s * bodyW * 0.22, hoverY + 0.32, bodyLen * 0.38], [0.16, 0.04, 0.03], undefined, 0.9);
+    rbox(g, '#ff4b6a', [s * bodyW * 0.18, hoverY + 0.28, bodyLen * 0.32], [0.14, 0.035, 0.03], undefined, 0.9);
   }
   // Small rear cyan vents
   for (const s of [-1, 1] as const) {
@@ -214,7 +214,7 @@ export function buildCar(carId: string): THREE.Group {
       new THREE.CircleGeometry(0.045, 12),
       glowMat('#3ecbff', 1.5),
     );
-    vent.position.set(s * 0.2, hoverY + 0.25, bodyLen * 0.4);
+    vent.position.set(s * 0.16, hoverY + 0.22, bodyLen * 0.34);
     g.add(vent);
   }
 
