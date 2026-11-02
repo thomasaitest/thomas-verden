@@ -362,15 +362,6 @@ export function createInterior(): Interior {
             mkStrip(w - inset * 2, ledD, 0, d / 2 - inset);
             mkStrip(ledD, d - inset * 2, -w / 2 + inset, 0);
             mkStrip(ledD, d - inset * 2, w / 2 - inset, 0);
-            // Curved soffit LED (thin tube radius ~2.5cm) above living vignette
-            {
-              const oval = new THREE.EllipseCurve(0, 0, w * 0.22, d * 0.16, 0, Math.PI * 2, false, 0);
-              const pts = oval.getPoints(72).map((p) => new THREE.Vector3(p.x, 0, p.y));
-              const curve = new THREE.CatmullRomCurve3(pts, true);
-              const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.025, 6, true), coveMat);
-              tube.position.set(-1.2, y0 + WALL_H - 0.2, 0.4);
-              fg.add(tube);
-            }
             const area = new THREE.RectAreaLight('#ffe8d0', 4.5, w * 0.5, d * 0.35);
             area.position.set(0, coveY - 0.08, -d * 0.05);
             area.rotation.x = -Math.PI / 2;
@@ -450,20 +441,20 @@ export function createInterior(): Interior {
               sofa.add(pillow);
             }
             sofa.rotation.y = Math.PI; // back + pillows face door/cam
-            sofa.scale.set(1.35, 1.15, 1.25); // bigger curved sofa
-            sofa.position.set(-2.4, y0, 1.35); // closer to cam, left like concept
+            sofa.scale.set(1.55, 1.2, 1.35); // concept-scale curved sofa
+            sofa.position.set(-2.8, y0, 1.85); // left + closer to default cam
             living.add(sofa);
             const rug = new THREE.Mesh(
               new THREE.CylinderGeometry(2.15, 2.15, 0.03, 48),
               new THREE.MeshStandardMaterial({ color: '#7a8694', roughness: 0.88, metalness: 0.02 }),
             );
-            rug.position.set(-2.2, y0 + 0.02, 2.2);
+            rug.position.set(-2.6, y0 + 0.02, 2.7);
             living.add(rug);
             const rugIn = new THREE.Mesh(
               new THREE.CylinderGeometry(1.35, 1.35, 0.032, 48),
               new THREE.MeshStandardMaterial({ color: '#dce2ea', roughness: 0.9, metalness: 0.02 }),
             );
-            rugIn.position.set(-2.2, y0 + 0.025, 2.2);
+            rugIn.position.set(-2.6, y0 + 0.025, 2.7);
             living.add(rugIn);
           }
           // Round coffee table on rug
@@ -481,7 +472,7 @@ export function createInterior(): Interior {
             );
             stem.position.y = 0.2;
             table.add(stem);
-            table.position.set(-2.15, y0, 2.35);
+            table.position.set(-2.55, y0, 2.85);
             living.add(table);
           }
           // Holo-screen LEFT of window bay (default cam sees it) + lit shelves/plants
@@ -561,7 +552,7 @@ export function createInterior(): Interior {
               const nz = -d / 2 + 5.2;
               const dx = (nx + gx) / 2;
               const frameMat = new THREE.MeshStandardMaterial({ color: '#7a848e', metalness: 0.4, roughness: 0.35 });
-              const halfW = 1.15;
+              const halfW = 1.35;
               for (const sx of [-1, 1] as const) {
                 const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.45, 0.12), frameMat);
                 post.position.set(dx + sx * halfW, y0 + 1.25, nz + 0.08);

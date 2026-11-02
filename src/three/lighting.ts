@@ -136,9 +136,9 @@ export function createLighting(
       sun.intensity = on ? 0.12 : (hq ? 2.2 : 1.7);
       hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
       if (bloom) {
-        // Outdoor bloom was bleaching tree canopies to white blobs in SwiftShader
-        bloom.strength = on ? 0.28 : (hq ? 0.08 : 0.0);
-        bloom.threshold = on ? 0.75 : (hq ? 0.95 : 1.0);
+        // Outdoor bloom OFF — any bloom was bleaching MeshBasic greens to white blobs
+        bloom.strength = on ? 0.28 : 0.0;
+        bloom.threshold = on ? 0.75 : 1.0;
       }
     },
     applyQuality(high) {
@@ -152,9 +152,8 @@ export function createLighting(
       }
       renderer.toneMappingExposure = high ? 0.62 : 0.72;
       if (bloom) {
-        // Outdoor: tiny bloom + high threshold (greens were bleaching to white)
-        bloom.strength = high ? (indoor ? 0.28 : 0.08) : 0.0;
-        bloom.threshold = high ? (indoor ? 0.75 : 0.95) : 1.0;
+        bloom.strength = high ? (indoor ? 0.28 : 0.0) : 0.0;
+        bloom.threshold = high ? (indoor ? 0.75 : 1.0) : 1.0;
         bloom.radius = 0.4;
       }
       if (n8) (n8 as any).enabled = high;
