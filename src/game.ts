@@ -434,7 +434,9 @@ export class Game {
       new THREE.PlaneGeometry(16, 11),
       new THREE.MeshBasicMaterial({ map: tex, depthWrite: false }),
     );
-    back.position.set(0, 3.4, -3.4);
+    // Cam sits on −Z looking +Z — backdrop behind the figure (+Z)
+    back.position.set(0, 3.4, 3.6);
+    back.rotation.y = Math.PI;
     g.add(back);
     const floor = new THREE.Mesh(
       new THREE.CircleGeometry(6.2, 48),
@@ -453,8 +455,8 @@ export class Game {
     const sideMat = new THREE.MeshBasicMaterial({ map: tex, depthWrite: false });
     for (const s of [-1, 1]) {
       const side = new THREE.Mesh(new THREE.PlaneGeometry(10, 11), sideMat);
-      side.position.set(s * 6.5, 3.4, 0.5);
-      side.rotation.y = -s * 0.95;
+      side.position.set(s * 5.5, 3.4, 1.2);
+      side.rotation.y = s * 0.85;
       g.add(side);
     }
     this.scene.add(g);
@@ -1288,7 +1290,7 @@ export class Game {
     else if (mlen > 0.05) pose = 'walk';
     const seat = this.using ? this.town.seatWorld(this.using.id, this.time - this.using.since) : null;
     if (seat) pose = seat.pose as AvatarPose;
-    if (this.editingAvatar) pose = 'wave';
+    if (this.editingAvatar) pose = 'idle';
     this.avatarHolder.position.copy(p.pos);
     if (this.driving) {
       this.avatarHolder.position.y = CAR_SEAT_Y;
@@ -1431,7 +1433,8 @@ export class Game {
       this.ensureAvatarStudio();
       // Teleport BEFORE framing — avatarHolder was copied earlier this frame at the old world pos
       p.pos.set(0, 0, 0);
-      p.yaw = Math.PI; // face camera (cam sits at +Z)
+      // Three-quarter front toward cam on −Z
+      p.yaw = Math.PI + 0.4;
       p.vy = 0;
       this.avatarHolder.position.set(0, 0, 0);
       this.avatarHolder.rotation.set(0, p.yaw, 0);
@@ -1439,10 +1442,9 @@ export class Game {
       this.avatarHolder.scale.setScalar(1);
       if (this.avatarStudio) this.avatarStudio.position.set(0, 0, 0);
       if (this.studioSoftShadow) this.studioSoftShadow.position.set(0, 0.03, 0);
-      // Cam in front at chest height ~2.4 m (fills ~70% height @ fov 55)
-      const dist = 2.4;
-      this.camera.position.set(0.15, 1.05, dist);
-      this.camera.lookAt(-0.35, 0.95, 0); // bias left so panel (right) doesn't cover
+      const dist = 2.35;
+      this.camera.position.set(0.55, 1.1, -dist);
+      this.camera.lookAt(0.15, 1.0, 0);
       this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
       if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.1, 0, vw, vh);
