@@ -21,9 +21,13 @@ const BUSH_PATH = 'nature/plant_bushDetailed.glb';
 const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
+function leafKind(kind: number): number {
+  return Math.abs(Math.floor(kind)) % LEAF_HEX.length;
+}
+
 function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
   void src;
-  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+  const hex = LEAF_HEX[leafKind(kind)]!;
   return new THREE.MeshBasicMaterial({
     color: hex,
     side: THREE.DoubleSide,
@@ -108,9 +112,10 @@ export async function preloadNaturalTrees(): Promise<void> {
 function proceduralTree(kind: number): THREE.Group {
   const g = new THREE.Group();
   const trunkMat = new THREE.MeshStandardMaterial({ color: '#6a4a32', roughness: 0.92, metalness: 0.02, envMapIntensity: 0.2 });
-  const h = 2.6 + (kind % 3) * 0.5;
+  const pk = leafKind(kind);
+  const h = 2.6 + (pk % 3) * 0.5;
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12 + (kind % 3) * 0.03, 0.2 + (kind % 3) * 0.04, h, 10),
+    new THREE.CylinderGeometry(0.12 + (pk % 3) * 0.03, 0.2 + (pk % 3) * 0.04, h, 10),
     trunkMat,
   );
   trunk.position.y = h / 2;
@@ -128,7 +133,7 @@ function proceduralTree(kind: number): THREE.Group {
     g.add(limb);
   }
   const leafMat = new THREE.MeshBasicMaterial({
-    color: LEAF_HEX[kind % LEAF_HEX.length],
+    color: LEAF_HEX[leafKind(kind)],
     side: THREE.DoubleSide,
     toneMapped: false,
   });
@@ -145,9 +150,9 @@ function proceduralTree(kind: number): THREE.Group {
     [0, h + 1.55, 0, 0.55],
   ] as const;
   for (const [x, y, z, r] of blobs) {
-    const leaf = new THREE.Mesh(new THREE.SphereGeometry(r * (0.9 + (kind % 3) * 0.05), 14, 12), leafMat);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(r * (0.9 + (pk % 3) * 0.05), 14, 12), leafMat);
     leaf.position.set(x, y, z);
-    leaf.scale.set(1.1, 0.8 + (kind % 2) * 0.12, 1.05);
+    leaf.scale.set(1.1, 0.8 + (pk % 2) * 0.12, 1.05);
     leaf.castShadow = true;
     leaf.receiveShadow = true;
     g.add(leaf);
@@ -157,19 +162,20 @@ function proceduralTree(kind: number): THREE.Group {
 
 export function buildNaturalTree(kind = 0): THREE.Group {
   const g = new THREE.Group();
-  const path = TREE_PATHS[Math.abs(kind) % TREE_PATHS.length]!;
+  const ki = leafKind(kind);
+  const path = TREE_PATHS[ki % TREE_PATHS.length]!;
   const cached = treeCache.get(path);
   if (cached) {
     const model = cached.clone(true);
     model.name = `ez-${path.split('/').pop()}`;
     model.userData.ezTree = true;
-    hardenEzTree(model, kind);
-    const s = 0.95 + (kind % 3) * 0.08;
+    hardenEzTree(model, ki);
+    const s = 0.95 + (ki % 3) * 0.08;
     model.scale.setScalar(s);
-    model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
+    model.rotation.y = ((ki * 47) % 360) * (Math.PI / 180);
     g.add(model);
     // Dense green under-fill so sky cannot read as a white canopy blob through sparse cards
-    const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
+    const hex = LEAF_HEX[ki]!;
     const fillMat = new THREE.MeshBasicMaterial({ color: hex, toneMapped: false });
     for (const [y, sx, sy, sz] of [
       [2.9, 1.55, 1.05, 1.45],
@@ -183,12 +189,12 @@ export function buildNaturalTree(kind = 0): THREE.Group {
       g.add(fill);
     }
     g.userData.ezTree = true;
-    g.userData.treeKind = kind;
+    g.userData.treeKind = ki;
     return g;
   }
-  const proc = proceduralTree(kind);
+  const proc = proceduralTree(ki);
   proc.userData.ezTree = false;
-  proc.userData.treeKind = kind;
+  proc.userData.treeKind = ki;
   return proc;
 }
 

@@ -296,7 +296,7 @@ function homeExterior(style: HouseStyle, locked = false): THREE.Group {
 }
 
 function tree(visualParent: THREE.Group, x: number, z: number, s: number, kind: number, collide = false, colliderParent?: THREE.Group) {
-  const t0 = buildNaturalTree(kind % 6);
+  const t0 = buildNaturalTree(Math.floor(Math.abs(kind)) % 6);
   t0.position.set(x, 0, z);
   t0.scale.setScalar(s);
   visualParent.add(t0);
@@ -665,7 +665,7 @@ export function buildTown(): Town {
     }
     // extra trees in southern approach (camera side) so skyline isn't a wall
     for (const [x, z] of [[-8, -16], [8, -16], [-12, -12], [12, -12], [0, -18]] as const) {
-      tree(group, x, z, 1.1, Math.abs(x + z) % 3, true, stat);
+      tree(group, x, z, 1.1, Math.floor(Math.abs(x + z)) % 3, true, stat);
     }
   }
 
@@ -772,7 +772,7 @@ export function buildTown(): Town {
       [-9, 26], [9, 26], [-9, 32], [9, 32], [-9, 38], [9, 38],
       [-10, 45], [10, 45], [-10, 55], [10, 55], [-26, 48], [26, 48],
     ] as const) {
-      tree(group, x, z, 1.05, Math.abs(x + z) % 3, true, stat);
+      tree(group, x, z, 1.05, Math.floor(Math.abs(x + z)) % 3, true, stat);
     }
   }
 
