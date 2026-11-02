@@ -616,31 +616,30 @@ export function buildFurniture(model: string, color: string): THREE.Group {
       model === 'armchair' ? 1.0 :
       1.15;
     g.scale.setScalar(scale);
-    // Tint seating toward light grey (clone mats — Quaternius sofas ship brown shared mats)
+    // Quaternius sofas ship brown — replace with light grey fabric Standard mats
     const tint = !!(color && (model === 'sofalong' || model === 'sofa' || model === 'armchair'));
+    const fabricMat = new THREE.MeshStandardMaterial({
+      color: color || '#d4dae2',
+      roughness: 0.62,
+      metalness: 0.03,
+      envMapIntensity: 0.5,
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+      color: '#2a3340',
+      roughness: 0.45,
+      metalness: 0.25,
+      envMapIntensity: 0.4,
+    });
     g.traverse((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh) return;
       m.castShadow = true;
       m.receiveShadow = true;
-      if (!tint || !m.material) return;
-      const mats = Array.isArray(m.material) ? m.material : [m.material];
-      const next = mats.map((mat) => {
-        const std = (mat as THREE.MeshStandardMaterial).clone();
-        if (std.color) {
-          const bright = (std.color.r + std.color.g + std.color.b) / 3;
-          if (bright > 0.08) {
-            std.color.set(color || '#d0d6de');
-            std.map = null;
-            std.normalMap = null;
-            std.roughness = 0.6;
-            std.metalness = 0.03;
-            std.envMapIntensity = 0.5;
-          }
-        }
-        return std;
-      });
-      m.material = next.length === 1 ? next[0]! : next;
+      if (!tint) return;
+      // Legs/frames tend to be thin cylinders or very dark; default to fabric
+      const geo = m.geometry?.type || '';
+      const isLeg = geo.includes('Cylinder') || geo.includes('Capsule');
+      m.material = isLeg ? darkMat : fabricMat;
     });
     return g;
   }
