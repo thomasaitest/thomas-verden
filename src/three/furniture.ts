@@ -40,10 +40,6 @@ export async function preloadFurnitureModels(): Promise<void> {
   );
 }
 
-
-
-
-
 const WOOD = '#c98a55';
 const DARK = '#555a75';
 const WHITE = '#ffffff';
@@ -573,62 +569,6 @@ export const MODELS: Record<string, B> = {
 
 const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
-function buildCurvedWhiteSofa(g: THREE.Group, color: string) {
-  const mat = new THREE.MeshStandardMaterial({
-    color: color || '#dfe6ee',
-    roughness: 0.62,
-    metalness: 0.03,
-    envMapIntensity: 0.6,
-  });
-  const cushMat = new THREE.MeshStandardMaterial({
-    color: '#f4f7fb',
-    roughness: 0.78,
-    metalness: 0.02,
-  });
-  const accentMat = new THREE.MeshStandardMaterial({
-    color: '#3ecbff',
-    roughness: 0.55,
-    metalness: 0.08,
-    emissive: '#1a6080',
-    emissiveIntensity: 0.15,
-  });
-  const dark = new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.4, metalness: 0.35 });
-  // Soft arc sectional with rounded cushions
-  const n = 7;
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1);
-    const ang = -0.95 + t * 1.9;
-    const r = 1.55;
-    const x = Math.sin(ang) * r;
-    const z = Math.cos(ang) * r - 0.4;
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.28, 0.85), mat);
-    seat.position.set(x, 0.42, z);
-    seat.rotation.y = ang;
-    g.add(seat);
-    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), cushMat);
-    pillow.scale.set(1.1, 0.45, 1.0);
-    pillow.position.set(x, 0.64, z + 0.05);
-    pillow.rotation.y = ang;
-    g.add(pillow);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.22), mat);
-    back.position.set(x - Math.sin(ang) * 0.35, 0.86, z - Math.cos(ang) * 0.35);
-    back.rotation.y = ang;
-    g.add(back);
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.28, 8), dark);
-    leg.position.set(x, 0.14, z);
-    g.add(leg);
-  }
-  for (const sx of [-0.55, 0.55] as const) {
-    const throwC = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.32, 0.12), accentMat);
-    throwC.position.set(sx, 0.95, -0.05);
-    throwC.rotation.z = sx * 0.15;
-    g.add(throwC);
-  }
-  const accent = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 0.42), cushMat);
-  accent.position.set(0, 0.66, 0.2);
-  g.add(accent);
-}
-
 export function buildFurniture(model: string, color: string): THREE.Group {
   if (model === 'counter') {
     const g = new THREE.Group();
