@@ -22,10 +22,8 @@ const treeCache = new Map<string, THREE.Group>();
 let bushCached: THREE.Group | null = null;
 let ready: Promise<void> | null = null;
 function leafBasicFrom(src?: THREE.Material | null, kind = 0): THREE.MeshBasicMaterial {
-  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
-  // Solid opaque green cards — alphaTest+mips opened sky holes that read as white blobs.
-  // Keep ez leaf-card geometry; color only. (Maps can return once a mip-safe atlas exists.)
-  void src;
+  void src; void kind;
+  // Solid opaque green cards — keep ez leaf-card geometry; color only.
   return new THREE.MeshBasicMaterial({
     color: '#2ecc40',
     side: THREE.DoubleSide,
@@ -161,7 +159,6 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   const g = new THREE.Group();
   const path = TREE_PATHS[Math.abs(kind) % TREE_PATHS.length]!;
   const cached = treeCache.get(path);
-  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   if (cached) {
     const model = cached.clone(true);
     model.name = `ez-${path.split('/').pop()}`;
