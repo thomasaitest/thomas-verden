@@ -1433,8 +1433,8 @@ export class Game {
       this.ensureAvatarStudio();
       // Snap into studio (holder was copied earlier this frame at the old world pos)
       p.pos.set(0, 0, 0);
-      // Front ¾: face −Z (toward cam), slight yaw so both eyes + shoulder read
-      p.yaw = 0.38;
+      // Front ¾ toward cam on −Z (Quaternius faces +Z at yaw 0 → use π ±)
+      p.yaw = Math.PI - 0.42;
       p.vy = 0;
       this.avatarHolder.position.set(0, 0, 0);
       this.avatarHolder.rotation.set(0, p.yaw, 0);
