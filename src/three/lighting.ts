@@ -138,7 +138,7 @@ export function createLighting(
       hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
       if (bloom) {
         // Outdoor: high threshold (~0.9) so MeshBasic greens never bloom; thrusters/holos do
-        bloom.strength = on ? 0.32 : 0.26;
+        bloom.strength = on ? 0.34 : 0.32;
         bloom.threshold = on ? 0.78 : 0.85;
       }
     },
@@ -153,7 +153,7 @@ export function createLighting(
       }
       renderer.toneMappingExposure = high ? 0.62 : 0.72;
       if (bloom) {
-        bloom.strength = high ? (indoor ? 0.32 : 0.26) : 0.0;
+        bloom.strength = high ? (indoor ? 0.34 : 0.32) : 0.0;
         bloom.threshold = high ? (indoor ? 0.78 : 0.85) : 1.0;
         bloom.radius = 0.45;
       }

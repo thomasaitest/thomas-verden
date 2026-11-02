@@ -430,25 +430,27 @@ export function createInterior(): Interior {
             backRest.position.set(0, 0.42, 0);
             backRest.castShadow = true;
             sofa.add(backRest);
-            // Soft cushions nestled against the backrest
+            // Soft cushions nestled against the backrest (back is -Z after extrude)
             for (const [u, mat, sy] of [
-              [0.2, pillowMat, 0.5],
-              [0.5, accentPillow, 0.55],
-              [0.8, pillowMat, 0.5],
+              [0.18, pillowMat, 0.48],
+              [0.5, accentPillow, 0.52],
+              [0.82, pillowMat, 0.48],
             ] as const) {
-              const ang = -Math.PI * 0.22 + u * Math.PI * 0.44;
-              const px = Math.sin(ang) * 1.55;
-              const pz = -0.55 - Math.cos(ang) * 0.15;
-              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), mat);
-              pillow.scale.set(1.35, sy, 0.85);
-              pillow.position.set(px, 0.78, pz);
-              pillow.rotation.y = ang;
+              const ang = -Math.PI * 0.2 + u * Math.PI * 0.4;
+              const px = Math.sin(ang) * 1.5;
+              // against curved back (−Z), slightly above seat
+              const pz = -0.72 + Math.cos(ang) * 0.08;
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), mat);
+              pillow.scale.set(1.4, sy, 0.75);
+              pillow.position.set(px, 0.72, pz);
+              pillow.rotation.y = ang * 0.5;
               pillow.castShadow = true;
               sofa.add(pillow);
             }
-            sofa.rotation.y = Math.PI; // back + pillows face door/cam
-            sofa.scale.set(1.55, 1.25, 1.35);
-            sofa.position.set(-2.8, y0, 1.85);
+            // Open seat faces +Z (door/cam); curved back at −Z
+            sofa.rotation.y = 0;
+            sofa.scale.set(1.55, 1.3, 1.35);
+            sofa.position.set(-2.8, y0, 2.0);
             living.add(sofa);
             const rug = new THREE.Mesh(
               new THREE.CylinderGeometry(2.15, 2.15, 0.03, 48),
