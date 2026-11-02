@@ -42,7 +42,7 @@ Raw downloads (not shipped) are under `vendor/raw/` (gitignored if large).
 
 | File(s) | Source | License | Notes |
 |---|---|---|---|
-| `furniture/*.glb` | Quaternius Ultimate House Interior Pack (June 2020) | CC0 | Living vignette: `couch-l`, `table-roundlarge`, `carpet-1`, `houseplant-*`, `shelf-large`, `chair-1` (Draco) |
+| `furniture/*.glb` | Quaternius Ultimate House Interior Pack (June 2020) | CC0 | Shelves/plants still used; living sofa/table/rug/stools are **procedural** (no CC0 curved sectional on Poly Haven / Quaternius) |
 | `furniture2/*.glb` | Quaternius Furniture Pack (March 2019) | CC0 | Extra sofa/table/closet variants; armchair |
 | `scifi/props-*.glb` | Quaternius Ultimate Modular Sci-Fi | CC0 | Computer / pod accents |
 

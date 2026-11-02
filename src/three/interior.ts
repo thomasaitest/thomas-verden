@@ -4,7 +4,13 @@ import { roomSize, type House } from '../logic/house.ts';
 import { blocked, type CircleCollider, type Colliders, type RectCollider } from '../logic/collision.ts';
 import { FLOOR_H, FLOORS, floorColliders, houseLayout, type HouseLayout } from '../logic/layout.ts';
 import { footprintOf } from './colliders.ts';
-import { buildFurniture } from './furniture.ts';
+import {
+  buildFurniture,
+  buildCurvedSectional,
+  buildSlimCoffeeTable,
+  buildRoundRug,
+  buildBarStool,
+} from './furniture.ts';
 import { box, G, glowMat, mat, rbox, textTexture } from './kit.ts';
 import { SharedMats, physicalGlass } from './pbrTextures.ts';
 import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
@@ -348,32 +354,48 @@ export function createInterior(): Interior {
             toneMapped: false,
           });
           if (house.style === 'moderne' && f === 0) {
-            // Darker ceiling slab so warm cove reads
+            // Warm mid-grey ceiling (not pitch black) + curved recessed soffit
             const ceil = new THREE.Mesh(
               new THREE.BoxGeometry(w - 0.2, 0.28, d - 0.2),
-              new THREE.MeshStandardMaterial({ color: '#2e343c', roughness: 0.92, metalness: 0.02, envMapIntensity: 0.08 }),
+              new THREE.MeshStandardMaterial({ color: '#6e7680', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 }),
             );
             ceil.position.set(0, coveY + 0.12, 0);
             ceil.receiveShadow = true;
             fg.add(ceil);
-            // Curved soffit band (inner drop) with warm light line
-            const soffit = new THREE.Mesh(
-              new THREE.BoxGeometry(w * 0.72, 0.14, d * 0.55),
-              new THREE.MeshStandardMaterial({ color: '#3a424c', roughness: 0.88, metalness: 0.02 }),
-            );
-            soffit.position.set(0, coveY - 0.02, -d * 0.04);
+            // Oval recessed soffit (scaled cylinder) with warm LED ring
+            const soffitMat = new THREE.MeshStandardMaterial({ color: '#5a626c', roughness: 0.88, metalness: 0.02 });
+            const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.16, 48), soffitMat);
+            soffit.scale.set(w * 0.38, 1, d * 0.28);
+            soffit.position.set(0, coveY - 0.04, -d * 0.04);
             fg.add(soffit);
-            const soffitLed = new THREE.Mesh(
-              new THREE.BoxGeometry(w * 0.68, 0.03, 0.06),
+            const soffitWell = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.92, 0.92, 0.08, 48),
+              new THREE.MeshStandardMaterial({ color: '#4a525c', roughness: 0.9, metalness: 0.02 }),
+            );
+            soffitWell.scale.set(w * 0.38, 1, d * 0.28);
+            soffitWell.position.set(0, coveY - 0.14, -d * 0.04);
+            fg.add(soffitWell);
+            // Warm LED line around soffit lip
+            const ledRing = new THREE.Mesh(
+              new THREE.TorusGeometry(1, 0.018, 8, 64),
               new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
             );
-            soffitLed.position.set(0, coveY - 0.1, -d * 0.04 + d * 0.275);
+            ledRing.rotation.x = Math.PI / 2;
+            ledRing.scale.set(w * 0.38, d * 0.28, 1);
+            ledRing.position.set(0, coveY - 0.12, -d * 0.04);
+            fg.add(ledRing);
+            // Cross LED lines for extra warmth
+            const soffitLed = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.55, 0.025, 0.05),
+              new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
+            );
+            soffitLed.position.set(0, coveY - 0.18, -d * 0.04);
             fg.add(soffitLed);
             const soffitLed2 = new THREE.Mesh(
-              new THREE.BoxGeometry(w * 0.68, 0.03, 0.06),
+              new THREE.BoxGeometry(0.05, 0.025, d * 0.4),
               new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
             );
-            soffitLed2.position.set(0, coveY - 0.1, -d * 0.04 - d * 0.275);
+            soffitLed2.position.set(0, coveY - 0.18, -d * 0.04);
             fg.add(soffitLed2);
             const ledH = 0.03;
             const ledD = 0.05;
@@ -419,36 +441,33 @@ export function createInterior(): Interior {
         // Living-room composition (concept 2-hus-inne): sofa/table/rug, left holo+shelves, right island, pod via right doorway
         if (f === 0) {
           const living = new THREE.Group();
-          // Living set — Quaternius CC0 GLBs (3-seater sofa, round table, carpet)
+          // Living set — procedural curved sectional + slim disc table + soft round rug
+          // (no Quaternius rustic table/chairs/orange carpet; no CC0 curved sofa on Poly Haven)
           // Default cam at ~z=3.2 looking −Z: sofa open face toward +Z (toward cam)
           {
-            const sofa = buildFurniture('sofalong', '#d8dee6');
-            sofa.position.set(-2.8, y0, 1.55);
+            const sofa = buildCurvedSectional('#d4dae2');
+            sofa.position.set(-2.6, y0, 1.35);
             sofa.rotation.y = 0;
             living.add(sofa);
-            // Accent armchair — left of sofa, not in cam foreground
-            const chair = buildFurniture('armchair', '#c8d0d8');
-            chair.position.set(-5.0, y0, 2.4);
-            chair.rotation.y = Math.PI * 0.35;
-            living.add(chair);
-            const rug = buildFurniture('carpet', '#7a8694');
-            rug.position.set(-2.5, y0, 2.75);
+            const rug = buildRoundRug('#c8d0d8');
+            rug.position.set(-2.4, y0, 2.55);
             living.add(rug);
-            const table = buildFurniture('coffeetable', '#c8b79a');
-            table.position.set(-2.5, y0, 2.85);
+            const table = buildSlimCoffeeTable();
+            table.position.set(-2.4, y0, 2.65);
             living.add(table);
           }
-          // Holo-screen LEFT of window bay (default cam sees it) + lit shelves/plants
+          // Holo wall on LEFT side wall (≈2.5×1.4 m), facing into room — clearly visible
           if (house.style === 'moderne') {
-            const tw = 3.2;
-            const th = 2.15;
-            const hx = -6.2;
-            const hz = -d / 2 + 0.55;
+            const tw = 2.5;
+            const th = 1.4;
+            const hx = -w / 2 + 0.18;
+            const hz = 0.35; // mid living, left of sofa
+            const hy = y0 + 1.85;
             const holoFrame = new THREE.Mesh(
-              new THREE.BoxGeometry(tw + 0.2, th + 0.2, 0.1),
+              new THREE.BoxGeometry(0.1, th + 0.18, tw + 0.18),
               new THREE.MeshStandardMaterial({ color: '#121820', metalness: 0.7, roughness: 0.25 }),
             );
-            holoFrame.position.set(hx, y0 + 2.15, hz);
+            holoFrame.position.set(hx, hy, hz);
             living.add(holoFrame);
             const hc = document.createElement('canvas');
             hc.width = 1024; hc.height = 576;
@@ -468,44 +487,50 @@ export function createInterior(): Interior {
             }
             hx2.fillStyle = '#3ecbff';
             for (let i = 0; i < 16; i++) hx2.fillRect(48 + i * 58, 500, 36, 10 + (i * 17) % 40);
+            // Circular data viz (concept)
+            hx2.strokeStyle = '#7ef0ff'; hx2.lineWidth = 3;
+            hx2.beginPath(); hx2.arc(780, 280, 110, 0, Math.PI * 2); hx2.stroke();
+            hx2.beginPath(); hx2.arc(780, 280, 70, 0, Math.PI * 1.4); hx2.stroke();
             const htex = new THREE.CanvasTexture(hc);
             htex.colorSpace = THREE.SRGBColorSpace;
             const holo = new THREE.Mesh(
               new THREE.PlaneGeometry(tw, th),
               new THREE.MeshBasicMaterial({ map: htex, toneMapped: false }),
             );
-            holo.position.set(hx, y0 + 2.15, hz + 0.08);
+            holo.rotation.y = Math.PI / 2; // face +X into room
+            holo.position.set(hx + 0.08, hy, hz);
             living.add(holo);
-            // Blue holo glow (selective bloom)
             const holoHalo = new THREE.Mesh(
-              new THREE.PlaneGeometry(tw + 0.25, th + 0.25),
+              new THREE.PlaneGeometry(tw + 0.2, th + 0.2),
               new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.22, toneMapped: false, depthWrite: false }),
             );
-            holoHalo.position.set(hx, y0 + 2.15, hz + 0.05);
+            holoHalo.rotation.y = Math.PI / 2;
+            holoHalo.position.set(hx + 0.05, hy, hz);
             living.add(holoHalo);
-            const holoLight = new THREE.PointLight('#3a7cff', 2.2, 11, 2);
-            holoLight.position.set(hx, y0 + 2.15, hz + 1.5);
+            const holoLight = new THREE.PointLight('#3a7cff', 2.4, 12, 2);
+            holoLight.position.set(hx + 1.6, hy, hz);
             living.add(holoLight);
-            const holoArea = new THREE.RectAreaLight('#4a9cff', 3.5, tw * 0.9, th * 0.7);
-            holoArea.position.set(hx, y0 + 2.15, hz + 0.35);
+            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.0, th * 0.9, tw * 0.85);
+            holoArea.position.set(hx + 0.4, hy, hz);
+            holoArea.lookAt(hx + 2, hy, hz);
             living.add(holoArea);
-            // Lit shelves (GLB) + plants flanking holo
-            for (const sx of [-1, 1] as const) {
+            // Lit shelves + plants flanking holo on left wall
+            for (const sz of [-1, 1] as const) {
               const shelf = buildFurniture('bookshelf', '#c4a078');
-              shelf.position.set(hx + sx * (tw / 2 + 0.55), y0, hz + 0.15);
-              shelf.rotation.y = sx > 0 ? -0.15 : 0.15;
+              shelf.position.set(hx + 0.35, y0, hz + sz * (tw / 2 + 0.55));
+              shelf.rotation.y = Math.PI / 2;
               living.add(shelf);
               for (const ly of [0.9, 1.4, 1.9, 2.35] as const) {
                 const led = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.55, 0.035, 0.05),
+                  new THREE.BoxGeometry(0.05, 0.035, 0.55),
                   new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
                 );
-                led.position.set(hx + sx * (tw / 2 + 0.55), y0 + ly, hz + 0.42);
+                led.position.set(hx + 0.55, y0 + ly, hz + sz * (tw / 2 + 0.55));
                 living.add(led);
               }
-              const plantId = sx < 0 ? 'plant' : 'plant2';
+              const plantId = sz < 0 ? 'plant' : 'plant2';
               const plant = buildFurniture(plantId, '#5a8f5a');
-              plant.position.set(hx + sx * (tw / 2 + 0.7), y0, hz + 0.7);
+              plant.position.set(hx + 0.7, y0, hz + sz * (tw / 2 + 0.75));
               living.add(plant);
             }
             // Bedroom doorway frame (right) — readable opening + warm lintel so pod peeks through
@@ -594,10 +619,8 @@ export function createInterior(): Interior {
             kitLight.position.set(4.4, y0 + 0.25, 0.2);
             living.add(kitLight);
             for (const sx of [-0.7, 0.7]) {
-              const stool = buildFurniture('chair', '#2a3340');
+              const stool = buildBarStool();
               stool.position.set(4.4 + sx, y0, 1.35);
-              stool.rotation.y = Math.PI;
-              stool.scale.multiplyScalar(0.85);
               living.add(stool);
             }
           }

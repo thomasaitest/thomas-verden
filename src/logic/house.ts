@@ -63,9 +63,11 @@ export function starterSpots(style: HouseStyle): { bed: { x: number; z: number; 
   const tableAt = style === 'moderne' ? kitchen : live;
   // Moderne alcove doorway faces +Z into living — open pod lip toward cam
   const bedRot = style === 'moderne' ? 0 : Math.PI / 2;
-  const bedZ = style === 'moderne' ? sleep.z + 0.6 : sleep.z;
+  // Moderne: keep pod in alcove centre (not glassX≈island X — that read as white dome on island)
+  const bedX = style === 'moderne' ? sleep.x : sleep.x;
+  const bedZ = style === 'moderne' ? Math.min(sleep.z - 0.4, -6.8) : sleep.z;
   return {
-    bed: { x: sleep.x, z: bedZ, rot: bedRot },
+    bed: { x: bedX, z: bedZ, rot: bedRot },
     table: { x: tableAt.x, z: tableAt.z, rot: 0 },
   };
 }

@@ -59,8 +59,8 @@ const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
     new THREE.SphereGeometry(1.0, 28, 18, Math.PI * 0.15, Math.PI * 1.7, 0, Math.PI * 0.55),
     shellMat,
   );
-  hood.scale.set(w * 0.45, 0.88, d * 0.36);
-  hood.position.set(0, 1.05, -0.35);
+  hood.scale.set(w * 0.38, 0.72, d * 0.28);
+  hood.position.set(0, 0.95, -0.45);
   hood.castShadow = true;
   g.add(hood);
   // Side rails
@@ -566,6 +566,203 @@ export const MODELS: Record<string, B> = {
     for (let x = 0; x < 4; x++) for (let z = 0; z < 4; z++) box(g, cols[(x + z) % 4], [-1.5 + x, 0.05, -1.5 + z], [0.98, 0.1, 0.98], undefined, 0.45);
   },
 };
+
+
+
+/** Sleek curved sectional — ExtrudeGeometry arc profile, soft light-grey fabric. */
+export function buildCurvedSectional(color = '#d4dae2'): THREE.Group {
+  const g = new THREE.Group();
+  const fabric = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.58,
+    metalness: 0.03,
+    envMapIntensity: 0.55,
+  });
+  const cush = new THREE.MeshStandardMaterial({
+    color: '#e4eaf0',
+    roughness: 0.72,
+    metalness: 0.02,
+    envMapIntensity: 0.4,
+  });
+  const accent = new THREE.MeshStandardMaterial({
+    color: '#9aa8b6',
+    roughness: 0.65,
+    metalness: 0.04,
+  });
+  const dark = new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.4, metalness: 0.35 });
+
+  // Seat footprint as a curved U (open toward +Z / cam). Seat top ≈ 0.42 m.
+  const seatShape = new THREE.Shape();
+  seatShape.moveTo(-1.55, 0.42);
+  seatShape.quadraticCurveTo(-1.7, -0.02, -0.9, -0.42);
+  seatShape.quadraticCurveTo(0, -0.62, 0.9, -0.42);
+  seatShape.quadraticCurveTo(1.7, -0.02, 1.55, 0.42);
+  seatShape.lineTo(1.15, 0.42);
+  seatShape.quadraticCurveTo(1.12, 0.05, 0.65, -0.1);
+  seatShape.quadraticCurveTo(0, -0.22, -0.65, -0.1);
+  seatShape.quadraticCurveTo(-1.12, 0.05, -1.15, 0.42);
+  seatShape.lineTo(-1.55, 0.42);
+  const seatGeo = new THREE.ExtrudeGeometry(seatShape, {
+    depth: 0.34,
+    bevelEnabled: true,
+    bevelThickness: 0.045,
+    bevelSize: 0.05,
+    bevelSegments: 4,
+    curveSegments: 64,
+  });
+  seatGeo.rotateX(-Math.PI / 2);
+  const seat = new THREE.Mesh(seatGeo, fabric);
+  seat.position.y = 0.08; // top ≈ 0.08+0.34 ≈ 0.42
+  seat.castShadow = true;
+  seat.receiveShadow = true;
+  g.add(seat);
+
+  // Thin curved backrest — total height ≈ 0.75 m
+  const backShape = new THREE.Shape();
+  backShape.moveTo(-1.48, -0.32);
+  backShape.quadraticCurveTo(-0.8, -0.6, 0, -0.68);
+  backShape.quadraticCurveTo(0.8, -0.6, 1.48, -0.32);
+  backShape.lineTo(1.32, -0.2);
+  backShape.quadraticCurveTo(0.72, -0.45, 0, -0.52);
+  backShape.quadraticCurveTo(-0.72, -0.45, -1.32, -0.2);
+  backShape.lineTo(-1.48, -0.32);
+  const backGeo = new THREE.ExtrudeGeometry(backShape, {
+    depth: 0.3,
+    bevelEnabled: true,
+    bevelThickness: 0.035,
+    bevelSize: 0.035,
+    bevelSegments: 4,
+    curveSegments: 64,
+  });
+  backGeo.rotateX(-Math.PI / 2);
+  const back = new THREE.Mesh(backGeo, fabric);
+  back.position.set(0, 0.45, 0); // top ≈ 0.45+0.3 ≈ 0.75
+  back.castShadow = true;
+  g.add(back);
+
+  // Soft rounded cushions against the back
+  for (const [u, mat] of [[0.18, cush], [0.5, accent], [0.82, cush]] as const) {
+    const ang = -0.5 + u * 1.0;
+    const px = Math.sin(ang) * 1.05;
+    const pz = -0.36 + Math.cos(ang) * 0.04;
+    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), mat);
+    pillow.scale.set(1.2, 0.4, 0.78);
+    pillow.position.set(px, 0.58, pz);
+    pillow.rotation.y = ang * 0.35;
+    pillow.castShadow = true;
+    g.add(pillow);
+  }
+
+  for (const [x, z] of [[-1.05, 0.12], [1.05, 0.12], [0, -0.28], [-0.7, -0.16], [0.7, -0.16]] as const) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.1, 8), dark);
+    leg.position.set(x, 0.05, z);
+    g.add(leg);
+  }
+
+  g.scale.set(1.55, 1.0, 1.35);
+  g.userData.curvedSectional = true;
+  return g;
+}
+
+/** Low round coffee table — light stone disc, thin chrome pedestal (Lathe profile). */
+export function buildSlimCoffeeTable(): THREE.Group {
+  const g = new THREE.Group();
+  const stone = new THREE.MeshStandardMaterial({
+    color: '#e8ecf0',
+    roughness: 0.28,
+    metalness: 0.12,
+    envMapIntensity: 0.9,
+  });
+  const chrome = new THREE.MeshStandardMaterial({
+    color: '#a8b4c0',
+    roughness: 0.18,
+    metalness: 0.92,
+    envMapIntensity: 1.4,
+  });
+  // Lathe: foot → slim stem → disc top with soft bevel lip
+  const pts = [
+    new THREE.Vector2(0.0, 0.0),
+    new THREE.Vector2(0.26, 0.0),
+    new THREE.Vector2(0.28, 0.028),
+    new THREE.Vector2(0.07, 0.035),
+    new THREE.Vector2(0.045, 0.30),
+    new THREE.Vector2(0.58, 0.315),
+    new THREE.Vector2(0.62, 0.335),
+    new THREE.Vector2(0.62, 0.355),
+    new THREE.Vector2(0.58, 0.37),
+    new THREE.Vector2(0.0, 0.37),
+  ];
+  const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), chrome);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  g.add(body);
+  // Stone top cap (readable light surface)
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.022, 48), stone);
+  top.position.y = 0.36;
+  top.castShadow = true;
+  top.receiveShadow = true;
+  g.add(top);
+  g.userData.slimCoffeeTable = true;
+  return g;
+}
+
+/** Round soft light-grey rug. */
+export function buildRoundRug(color = '#c8d0d8'): THREE.Group {
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.85, 1.85, 0.025, 48),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.92, metalness: 0.02 }),
+  );
+  outer.position.y = 0.012;
+  outer.receiveShadow = true;
+  g.add(outer);
+  const inner = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.15, 1.15, 0.028, 48),
+    new THREE.MeshStandardMaterial({ color: '#dde3ea', roughness: 0.9, metalness: 0.02 }),
+  );
+  inner.position.y = 0.015;
+  g.add(inner);
+  return g;
+}
+
+/** Slim modern bar stool — dark seat on chrome pole. */
+export function buildBarStool(): THREE.Group {
+  const g = new THREE.Group();
+  const chrome = new THREE.MeshStandardMaterial({
+    color: '#b0bcc8',
+    roughness: 0.2,
+    metalness: 0.9,
+    envMapIntensity: 1.3,
+  });
+  const seatMat = new THREE.MeshStandardMaterial({
+    color: '#1a2230',
+    roughness: 0.45,
+    metalness: 0.15,
+    envMapIntensity: 0.5,
+  });
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.72, 12), chrome);
+  pole.position.y = 0.36;
+  pole.castShadow = true;
+  g.add(pole);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.03, 24), chrome);
+  foot.position.y = 0.015;
+  g.add(foot);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.012, 8, 24), chrome);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.28;
+  g.add(ring);
+  const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.06, 24), seatMat);
+  seat.position.y = 0.75;
+  seat.castShadow = true;
+  g.add(seat);
+  const pad = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.45), seatMat);
+  pad.scale.set(1, 0.35, 1);
+  pad.position.y = 0.78;
+  g.add(pad);
+  return g;
+}
+
+
 
 const furnCache = new Map<string, THREE.Group>();
 /** A fresh copy of a furniture model (geometry and materials are shared). */
