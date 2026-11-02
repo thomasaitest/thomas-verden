@@ -176,14 +176,10 @@ await page.evaluate(async () => {
   g.cam.dist = 7.2;
   g.camShown = 7.2;
   g.rebuildAvatar?.();
-  // Hide player vehicle + any ambient cars that still read as "on plaza" in this framing
+  // No vehicles in plaza gate framing (concept road cars only appear in car shot)
   if (g.vehicleMesh) g.vehicleMesh.visible = false;
   g.town?.group?.traverse?.((o) => {
-    if (!o.name) return;
-    if (o.name.startsWith('traffic-') || o.name.startsWith('parked-')) {
-      const x = o.position.x, z = o.position.z;
-      if (Math.hypot(x, z) < 22) o.visible = false;
-    }
+    if (o.name?.startsWith('traffic-') || o.name?.startsWith('parked-')) o.visible = false;
   });
   await new Promise((r) => setTimeout(r, 2800));
   if (g.avatarHolder) g.avatarHolder.visible = true;
@@ -199,6 +195,10 @@ await page.evaluate(() => {
   const g = window.__hv;
   g.freezeCam = null;
   g.editingAvatar = false;
+  // Restore ambient road cars hidden during plaza gate
+  g.town?.group?.traverse?.((o) => {
+    if (o.name?.startsWith('traffic-') || o.name?.startsWith('parked-')) o.visible = true;
+  });
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());
   const bag = { ...g.save.bag };
   for (const k of Object.keys(bag)) if (k.startsWith('bil-')) delete bag[k];
