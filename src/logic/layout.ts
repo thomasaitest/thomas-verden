@@ -184,7 +184,7 @@ function planModerne(w: number, d: number): Built {
   const glassX = w / 2 - 3.5; // ≈3.5 when w=14
   const nookX = glassX - 3.2; // alcove ~3.2 m wide
   const nookZ = -d / 2 + 3.0; // ≈-2.5 when d=11 → living depth ~6.5 m
-  const stairs = mkStairs(-w / 2 + 1.6, 0.95, nookZ + 0.6, 4.0);
+  const stairs = mkStairs(glassX + 1.15, 0.95, -d / 2 + 2.8, 3.4); // kitchen strip — out of living frame
   const f0: RectCollider[] = [];
   const f1: RectCollider[] = [];
   wallX(f0, glassX, -d / 2 + 0.8, d / 2 - 0.8, [-d / 3, 0, d / 3]);

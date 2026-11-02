@@ -536,13 +536,13 @@ export class Game {
     this.town.group.visible = false;
     this.interior.group.visible = true;
     // Shoulder cam ~1.6 m: avatar left third, living fills frame (concept 2-hus-inne)
-    this.player.pos.set(-1.35, 0, Math.max(1.6, this.interior.door.z - 3.2));
+    this.player.pos.set(-0.95, 0, Math.max(1.7, this.interior.door.z - 3.0));
     this.player.vy = 0;
-    this.player.yaw = 0.18;
-    this.cam.yaw = 0.22;
-    this.cam.pitch = 0.05;
-    this.cam.dist = 2.85;
-    this.camShown = 2.85;
+    this.player.yaw = 0.1;
+    this.cam.yaw = 0.1;
+    this.cam.pitch = 0.04;
+    this.cam.dist = 3.15;
+    this.camShown = 3.15;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#7a828c');
     this.scene.fog = null;

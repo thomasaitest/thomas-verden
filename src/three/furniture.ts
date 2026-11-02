@@ -595,21 +595,23 @@ export function buildCurvedSectional(color = '#d4dae2'): THREE.Group {
   const mods = 7;
   const halfW = 1.75;
   const seatH = 0.42;
-  const backTop = 0.75;
+  const backTop = 0.82;
   for (let i = 0; i < mods; i++) {
     const u = i / (mods - 1);
     const x = -halfW + u * halfW * 2;
     const z = (1 - Math.cos((u - 0.5) * Math.PI)) * 0.55; // curve depth
     const yaw = (u - 0.5) * 0.7;
-    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.2, 0.95), fabric);
-    seat.position.set(x, seatH - 0.1, z);
+    const seat = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.45, 6, 10), fabric);
+    seat.scale.set(1.05, 0.55, 1.55);
+    seat.position.set(x, seatH - 0.06, z);
     seat.rotation.y = -yaw;
     seat.castShadow = true;
     seat.receiveShadow = true;
     g.add(seat);
     // Thick vertical backrest (reads from shoulder cam)
-    const back = new THREE.Mesh(new THREE.BoxGeometry(0.56, backTop - seatH + 0.08, 0.22), fabric);
-    back.position.set(x, (seatH + backTop) / 2, z - 0.38);
+    const back = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, backTop - seatH, 6, 10), fabric);
+    back.scale.set(1.55, 1, 1.1);
+    back.position.set(x, (seatH + backTop) / 2, z - 0.36);
     back.rotation.y = -yaw;
     back.castShadow = true;
     g.add(back);

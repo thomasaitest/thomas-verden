@@ -344,7 +344,8 @@ export function createInterior(): Interior {
             // Dropped warm mid-grey ceiling at ~3.05 m (fills top of shoulder cam — not pitch-black void)
             const dropY = y0 + 2.85;
             const ceilMat = new THREE.MeshStandardMaterial({
-              color: '#b4bcc6', roughness: 0.78, metalness: 0.04, envMapIntensity: 0.45,
+              color: '#d0d6de', roughness: 0.75, metalness: 0.02, envMapIntensity: 0.3,
+              emissive: '#9aa3ad', emissiveIntensity: 0.55,
             });
             const ceil = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, 0.22, d - 0.15), ceilMat);
             ceil.position.set(0, dropY + 0.08, 0);
@@ -353,12 +354,12 @@ export function createInterior(): Interior {
             // Keep upper slab too (above drop) so no black leaks past edges
             const upper = new THREE.Mesh(
               new THREE.BoxGeometry(w - 0.1, 0.35, d - 0.1),
-              new THREE.MeshStandardMaterial({ color: '#8a929c', roughness: 0.9, metalness: 0.02 }),
+              new THREE.MeshStandardMaterial({ color: '#c0c8d0', roughness: 0.88, metalness: 0.02, emissive: '#8a929c', emissiveIntensity: 0.4 }),
             );
             upper.position.set(0, coveY + 0.05, 0);
             fg.add(upper);
             // Curved recessed soffit well + warm LED ring (visible in top band)
-            const soffitMat = new THREE.MeshStandardMaterial({ color: '#8e97a1', roughness: 0.84, metalness: 0.03 });
+            const soffitMat = new THREE.MeshStandardMaterial({ color: '#c8d0d8', roughness: 0.8, metalness: 0.03, emissive: '#9aa3ad', emissiveIntensity: 0.45 });
             const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.14, 48), soffitMat);
             soffit.scale.set(w * 0.32, 1, d * 0.3);
             soffit.position.set(-0.4, dropY - 0.05, -0.2);
@@ -452,15 +453,15 @@ export function createInterior(): Interior {
           // Cam over left-third shoulder: sofa L-fg, rug+table centre, window back, island R, pod doorway far R
           {
             const sofa = buildCurvedSectional('#d4dae2');
-            sofa.position.set(-1.65, y0, 0.55);
-            sofa.rotation.y = 0.08;
+            sofa.position.set(-1.35, y0, 0.35);
+            sofa.rotation.y = 0.05;
             living.add(sofa);
             const rug = buildRoundRug('#c8d0d8');
-            rug.scale.set(0.85, 1, 0.85);
-            rug.position.set(-0.85, y0, 1.55);
+            rug.scale.set(0.9, 1, 0.9);
+            rug.position.set(-0.55, y0, 1.45);
             living.add(rug);
             const table = buildSlimCoffeeTable();
-            table.position.set(-0.85, y0, 1.55);
+            table.position.set(-0.55, y0, 1.45);
             living.add(table);
           }
           // Holo on LEFT wall facing into room; shelves flanking (nothing in front of screen)
@@ -545,7 +546,7 @@ export function createInterior(): Interior {
               const gx = w / 2 - 3.5; // kitchen glass
               const nx = gx - 3.2;
               const nz = -d / 2 + 3.0;
-              const dx = (nx + gx) / 2 + 0.35;
+              const dx = (nx + gx) / 2 + 0.55;
               const frameMat = new THREE.MeshStandardMaterial({ color: '#8a929c', metalness: 0.35, roughness: 0.4 });
               const halfW = 1.05;
               for (const sx of [-1, 1] as const) {
@@ -581,12 +582,18 @@ export function createInterior(): Interior {
               podBlue.position.set(dx, y0 + 1.1, nz - 1.5);
               living.add(podBlue);
               const alcoveWall = new THREE.MeshStandardMaterial({ color: '#555c66', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 });
-              const side = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.7, Math.max(0.8, nz - (-d / 2) + 0.15)), alcoveWall);
-              side.position.set(nx, y0 + 1.35, (-d / 2 + nz) / 2);
+              const side = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.85, Math.max(1.0, nz - (-d / 2) + 0.2)), alcoveWall);
+              side.position.set(nx, y0 + 1.4, (-d / 2 + nz) / 2);
               living.add(side);
-              const backW = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.5, gx - nx), 2.7, 0.16), alcoveWall);
-              backW.position.set((nx + gx) / 2, y0 + 1.35, -d / 2 + 0.12);
+              const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.85, Math.max(1.0, nz - (-d / 2) + 0.2)), alcoveWall);
+              sideR.position.set(gx - 0.05, y0 + 1.4, (-d / 2 + nz) / 2);
+              living.add(sideR);
+              const backW = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.5, gx - nx), 2.85, 0.2), alcoveWall);
+              backW.position.set((nx + gx) / 2, y0 + 1.4, -d / 2 + 0.12);
               living.add(backW);
+              const roof = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.5, gx - nx), 0.12, Math.max(0.8, nz - (-d / 2))), alcoveWall);
+              roof.position.set((nx + gx) / 2, y0 + 2.75, (-d / 2 + nz) / 2);
+              living.add(roof);
             }
           }
           // Kitchen island right-middle + chrome stools
@@ -616,14 +623,14 @@ export function createInterior(): Interior {
             );
             glowSoft.position.y = 0.01;
             island.add(glowSoft);
-            island.position.set(2.35, y0, 0.35);
+            island.position.set(2.55, y0, 0.55);
             living.add(island);
             const kitLight = new THREE.PointLight('#ffcc88', 0.9, 7, 2);
-            kitLight.position.set(2.35, y0 + 0.22, 0.35);
+            kitLight.position.set(2.55, y0 + 0.22, 0.55);
             living.add(kitLight);
             for (const sx of [-0.55, 0.55]) {
               const stool = buildBarStool();
-              stool.position.set(2.35 + sx, y0, 1.25);
+              stool.position.set(2.55 + sx, y0, 1.45);
               living.add(stool);
             }
           }

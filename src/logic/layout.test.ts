@@ -301,7 +301,7 @@ describe('house styles differ inside', () => {
     expect(stairsMidX(houseLayout('hytte').stairs)).toBeLessThan(-6);
     expect(stairsMidX(houseLayout('villa').stairs)).toBeLessThan(-4);
     expect(stairsMidX(houseLayout('gard').stairs)).toBeGreaterThan(4);
-    expect(stairsMidX(houseLayout('moderne').stairs)).toBeLessThan(-5);
+    expect(stairsMidX(houseLayout('moderne').stairs)).toBeGreaterThan(3); // kitchen strip
     expect(stairsMidX(houseLayout('slott').stairs)).toBeGreaterThan(4);
     expect(houseLayout('hytte').stairs.zBottom - houseLayout('hytte').stairs.zTop).toBeLessThan(7.2);
     expect(houseLayout('trehus').stairs.zBottom - houseLayout('trehus').stairs.zTop).toBeLessThan(7.2);
