@@ -1429,24 +1429,25 @@ export class Game {
     else if (this.camera.view?.enabled) this.camera.clearViewOffset();
     if (this.editingAvatar) {
       this.ensureAvatarStudio();
-      // Character fills ~70% height; cam ~2.5 m at chest; panel on right
-      p.pos.set(-0.85, 0, 0);
-      p.yaw = 0.28;
+      // Full-body ~70% of open studio; glass panel overlays the right
+      p.pos.set(0, 0, 0);
+      p.yaw = 0.15;
       p.vy = 0;
       if (this.avatarStudio) this.avatarStudio.position.copy(p.pos);
       if (this.studioSoftShadow) this.studioSoftShadow.position.set(p.pos.x, 0.03, p.pos.z);
       const fy = p.yaw;
-      const dist = 2.45;
+      const dist = 2.4;
+      // Cam behind figure at chest height
       this.camera.position.set(
-        p.pos.x + Math.sin(fy) * dist + Math.cos(fy) * 0.35,
-        p.pos.y + 1.15, // chest height
-        p.pos.z + Math.cos(fy) * dist - Math.sin(fy) * 0.35,
+        p.pos.x + Math.sin(fy) * dist,
+        p.pos.y + 1.05,
+        p.pos.z + Math.cos(fy) * dist,
       );
-      this.camera.lookAt(p.pos.x, p.pos.y + 1.05, p.pos.z);
+      this.camera.lookAt(p.pos.x, p.pos.y + 0.95, p.pos.z);
       this.scene.background = new THREE.Color('#c8c2d4');
       this.scene.fog = null;
-      // Nudge left so glass panel (right) doesn't cover the figure
-      if (vw > 0) this.camera.setViewOffset(vw, vh, -vw * 0.16, 0, vw, vh);
+      // Positive offset → figure reads on the left; panel covers empty right
+      if (vw > 0) this.camera.setViewOffset(vw, vh, vw * 0.18, 0, vw, vh);
     } else {
       this.teardownAvatarStudio();
       const cp = Math.cos(this.cam.pitch);

@@ -731,8 +731,8 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
         render();
       }, `tab ${tab === id ? 'on' : ''}`))),
       content,
-      descCard(),
       el('div', { class: 'row avatar-foot' }, button('🎲 Tilfeldig', () => set(randomAvatar(Math.random)), 'btn purple')),
+      descCard(),
     );
   };
   render();

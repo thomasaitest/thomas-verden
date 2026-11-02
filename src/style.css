@@ -508,15 +508,24 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
   font-size: 11px;
   line-height: 1.15;
 }
+.sheet-wrap.avatar-edit .sheet-body {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 8px;
+}
 .sheet-wrap.avatar-edit .avatar-desc {
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-top: 14px;
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
   padding: 12px 14px;
   border-radius: 14px;
-  background: rgba(20, 30, 48, 0.85);
-  border: 1px solid rgba(120, 200, 255, 0.22);
+  background: rgba(16, 24, 38, 0.95);
+  border: 1px solid rgba(120, 200, 255, 0.28);
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.35);
+  z-index: 2;
 }
 .sheet-wrap.avatar-edit .avatar-desc-ico {
   width: 44px; height: 44px; border-radius: 12px;
