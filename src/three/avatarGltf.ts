@@ -275,32 +275,25 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     gear.add(wingHold);
   }
 
-  // Suit edge accents — emissive lines selective bloom picks up (tech / neon looks)
+  // Quiet tech accent — was a loud cyan chest arc/zip HUD
   const wantEdges =
     a.print === 'lyn' ||
     a.print === 'stjerne' ||
-    acc.startsWith('sekk') ||
     acc.includes('vinger') ||
-    skirtLike ||
     a.hat === 'hjelm';
   if (wantEdges) {
-    // Thin collar + zipper pip only — long side bars floated off Quaternius proportions
-    const edgeCol = '#3ecbff';
-    const edge = new THREE.MeshBasicMaterial({ color: edgeCol, toneMapped: false });
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.01, 6, 24), edge);
-    collar.rotation.x = Math.PI / 2.4;
-    collar.position.set(0, 1.52, 0.08);
-    gear.add(collar);
-    // Center zipper glow line on torso
-    const zip = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.42, 0.014), edge);
-    zip.position.set(0, 1.28, 0.2);
-    gear.add(zip);
-    // Shoulder pips
-    for (const s of [-1, 1]) {
-      const pip = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), edge);
-      pip.position.set(s * 0.28, 1.5, 0.05);
-      gear.add(pip);
-    }
+    const pip = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 10, 8),
+      new THREE.MeshStandardMaterial({
+        color: '#3ecbff',
+        emissive: '#1a6a88',
+        emissiveIntensity: 0.55,
+        roughness: 0.35,
+        metalness: 0.4,
+      }),
+    );
+    pip.position.set(0, 1.46, 0.2);
+    gear.add(pip);
   }
 
   // jewellery only when selected (avoid glowing bead wash on every tech look)
@@ -340,18 +333,175 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     gear.add(halo);
   }
 
-  // Subtle collar LED pip only — flat cyan chest bar read as a name-tag clipping the torso
-  if (!skirtLike && (a.print === 'lyn' || a.print === 'stjerne' || acc.startsWith('sekk') || acc.includes('vinger'))) {
-    const pip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), glow('#3ecbff', 1.1));
-    pip.position.set(0, 1.48, 0.22);
-    gear.add(pip);
-  }
-
   gear.scale.setScalar(0.95);
   root.add(gear);
 }
 
 
+
+
+/** Soft stylized head overlay — hides angular Quaternius head/hair, adds eyes + volume hair. */
+function softFaceMap(face: Avatar['face'], skinHex: string): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 256;
+  const ctx = c.getContext('2d')!;
+  // Skin wash
+  const g = ctx.createRadialGradient(128, 140, 20, 128, 140, 150);
+  g.addColorStop(0, skinHex);
+  g.addColorStop(1, skinHex);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  const ink = '#2a2438';
+  ctx.fillStyle = ink;
+  ctx.strokeStyle = ink;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 7;
+  const eye = (x: number, y: number) => {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 14, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = ink;
+    ctx.beginPath();
+    ctx.ellipse(x + 1, y + 1, 7, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x + 4, y - 3, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  const brow = (x: number, y: number, flip = 1) => {
+    ctx.beginPath();
+    ctx.moveTo(x - 12 * flip, y + 2);
+    ctx.quadraticCurveTo(x, y - 6, x + 12 * flip, y);
+    ctx.stroke();
+  };
+  const smile = () => {
+    ctx.beginPath();
+    ctx.arc(128, 158, 28, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+  };
+  // Default soft smil; a few variants
+  eye(96, 118);
+  eye(160, 118);
+  brow(96, 96, 1);
+  brow(160, 96, -1);
+  if (face === 'glad' || face === 'smil' || face === 'rodme') smile();
+  else if (face === 'blunk') {
+    ctx.beginPath();
+    ctx.moveTo(148, 118);
+    ctx.lineTo(176, 118);
+    ctx.stroke();
+    smile();
+  } else smile();
+  // Soft blush
+  ctx.fillStyle = 'rgba(255,120,150,0.28)';
+  for (const x of [72, 184]) {
+    ctx.beginPath();
+    ctx.ellipse(x, 148, 18, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function attachSoftHead(root: THREE.Object3D, a: Avatar) {
+  const headMeshes: THREE.Mesh[] = [];
+  root.updateWorldMatrix(true, true);
+  const rootBox = new THREE.Box3().setFromObject(root);
+  const y0 = rootBox.min.y;
+  const span = Math.max(0.01, rootBox.max.y - y0);
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const name = `${(m.material as THREE.Material)?.name || ''} ${m.name || ''}`.toLowerCase();
+    const box = new THREE.Box3().setFromObject(m);
+    const midY = (box.min.y + box.max.y) * 0.5;
+    const band = (midY - y0) / span;
+    const isHead = /head|face|hair|ponytail|bun|bangs|skull/.test(name) || (band > 0.88 && !/shirt|torso|body|chest|arm|hand/.test(name));
+    if (isHead) headMeshes.push(m);
+  });
+  // Hide angular Quaternius head/hair (keep neck/shoulders)
+  for (const m of headMeshes) {
+    m.visible = false;
+  }
+  // Head centre in ROOT local space (Box3 is world — convert)
+  const worldTop = new THREE.Vector3(
+    (rootBox.min.x + rootBox.max.x) * 0.5,
+    rootBox.max.y - 0.11,
+    (rootBox.min.z + rootBox.max.z) * 0.5,
+  );
+  if (headMeshes.length) {
+    const hb = new THREE.Box3();
+    for (const m of headMeshes) hb.expandByObject(m);
+    hb.getCenter(worldTop);
+  }
+  const local = root.worldToLocal(worldTop.clone());
+  const soft = new THREE.Group();
+  soft.name = 'softHead';
+  soft.position.copy(local);
+  const skinHex = a.skin || '#f0c7a0';
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: skinHex,
+    roughness: 0.55,
+    metalness: 0.0,
+    envMapIntensity: 0.75,
+    emissive: new THREE.Color('#3a2214'),
+    emissiveIntensity: 0.06,
+  });
+  // Smooth head (high segment sphere, slight squash)
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.155, 32, 24), skinMat);
+  skull.scale.set(0.95, 1.05, 0.92);
+  soft.add(skull);
+  // Neck stub
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.1, 16), skinMat);
+  neck.position.y = -0.16;
+  soft.add(neck);
+  // Face decal (eyes + brows + smile)
+  const faceTex = softFaceMap(a.face, skinHex);
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.22, 0.22),
+    new THREE.MeshStandardMaterial({
+      map: faceTex,
+      transparent: true,
+      roughness: 0.6,
+      metalness: 0,
+      depthWrite: false,
+    }),
+  );
+  face.position.set(0, 0.02, 0.14);
+  soft.add(face);
+  // Soft hair volumes
+  if (a.hair && a.hair !== 'ingen') {
+    const hairMat = new THREE.MeshStandardMaterial({
+      color: a.hairColor,
+      roughness: 0.62,
+      metalness: 0.04,
+      envMapIntensity: 0.55,
+    });
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.17, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), hairMat);
+    cap.position.y = 0.06;
+    soft.add(cap);
+    const back = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 14), hairMat);
+    back.scale.set(0.95, 1.1, 0.7);
+    back.position.set(0, -0.02, -0.1);
+    soft.add(back);
+    if (a.hair === 'lang' || a.hair === 'hestehale' || a.hair === 'fletter') {
+      const fall = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.28, 6, 10), hairMat);
+      fall.position.set(0, -0.22, -0.12);
+      soft.add(fall);
+    }
+    if (a.hair === 'kort' || a.hair === 'piggete' || a.hair === 'lugg') {
+      const fringe = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 12), hairMat);
+      fringe.scale.set(1.6, 0.55, 0.7);
+      fringe.position.set(0, 0.08, 0.12);
+      soft.add(fringe);
+    }
+  }
+  root.add(soft);
+}
 
 /** Standalone Quaternius preview root for outfit thumbnails (offscreen Thumbs). */
 export async function buildAvatarPreviewRoot(a: Avatar): Promise<THREE.Group> {
@@ -365,6 +515,7 @@ export async function buildAvatarPreviewRoot(a: Avatar): Promise<THREE.Group> {
   model.position.set(0, -raw.min.y * (targetH / rawH), 0);
   tintMeshes(model, a);
   addHairVolume(model, a);
+  attachSoftHead(model, a);
   attachFuturisticGear(model, a);
   root.add(model);
   return root;
@@ -383,6 +534,7 @@ export async function attachGltfAvatar(rig: AvatarRig, a: Avatar): Promise<void>
     model.userData.camIgnore = true;
     tintMeshes(model, a);
     addHairVolume(model, a);
+    attachSoftHead(model, a);
     attachFuturisticGear(model, a);
     // swap in only after successful load
     while (rig.body.children.length) rig.body.remove(rig.body.children[0]!);

@@ -646,31 +646,30 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
   };
   const chips = <T extends { id: string; name: string }>(field: Field, list: readonly T[], cur: string, on: (id: T['id']) => void) =>
     el('div', { class: 'opts' }, ...list.map((o) => button(el('span', { class: 'opt-in' }, el('img', { class: 'opt-img', src: optThumb(field, o.id), alt: '' }), el('b', {}, o.name)), () => on(o.id), `opt ${o.id === cur ? 'on' : ''}`)));
+  /** Concept shows ~4 large Topp tiles — featured first four presets. */
+  const FEATURED_OUTFITS = OUTFIT_PRESETS.slice(0, 4);
   const fillOutfitThumbs = (grid: HTMLElement) => {
-    for (const o of OUTFIT_PRESETS) {
+    for (const o of FEATURED_OUTFITS) {
       const preview = { ...a, ...o.patch } as Avatar;
-      const key = `outfit-gltf|${o.id}|${JSON.stringify(o.patch)}`;
+      const key = `outfit-gltf|hi|${o.id}|${JSON.stringify(o.patch)}`;
       const img = el('img', { class: 'opt-img', src: '', alt: '' }) as HTMLImageElement;
-      // procedural placeholder until Quaternius render lands
-      img.src = game.thumbs.get(`outfit-ph|${o.id}`, () => buildAvatar(preview).root, {
-        yaw: 0.28,
-        pitch: 0.06,
-        focus: { y: 1.15, r: 1.35 },
-        size: 192,
+      img.src = game.thumbs.get(`outfit-ph|hi|${o.id}`, () => buildAvatar(preview).root, {
+        yaw: 0.32,
+        pitch: 0.05,
+        focus: { y: 1.2, r: 1.25 },
+        size: 256,
       });
       void game.thumbs
         .getAsync(key, () => buildAvatarPreviewRoot(preview), {
-          yaw: 0.28,
-          pitch: 0.06,
-          focus: { y: 1.15, r: 1.35 },
-          size: 192,
+          yaw: 0.32,
+          pitch: 0.05,
+          focus: { y: 1.2, r: 1.25 },
+          size: 256,
         })
         .then((url) => {
           img.src = url;
         })
-        .catch(() => {
-          /* keep procedural placeholder */
-        });
+        .catch(() => {});
       const on = Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v);
       grid.append(
         button(el('span', { class: 'opt-in' }, img, el('b', {}, o.name)), () => set(o.patch), `opt outfit-opt ${on ? 'on' : ''}`),
@@ -684,13 +683,10 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
       case 'klaer': {
         const grid = el('div', { class: 'opts outfit-grid' });
         fillOutfitThumbs(grid);
-        content = el(
-          'div',
-          {},
-          el('h4', {}, 'Topp'),
-          grid,
-          el('h4', {}, 'Farge'),
-          swatches(CLOTH_COLORS, a.shirt, (c) => set({ shirt: c })),
+        const more = el(
+          'details',
+          { class: 'avatar-more' },
+          el('summary', {}, 'Underdel & mer'),
           el('h4', {}, 'Underdel'),
           chips('bottom', BOTTOMS, a.bottom, (id) => set({ bottom: id })),
           swatches(CLOTH_COLORS, a.pants, (c) => set({ pants: c })),
@@ -701,6 +697,24 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
           swatches(SKIN, a.skin, (c) => set({ skin: c })),
           el('h4', {}, 'Ansikt'),
           chips('face', FACES, a.face, (id) => set({ face: id })),
+          el('h4', {}, 'Flere antrekk'),
+          el(
+            'div',
+            { class: 'opts outfit-grid outfit-grid-more' },
+            ...OUTFIT_PRESETS.slice(4).map((o) => {
+              const on = Object.entries(o.patch).every(([k, v]) => (a as unknown as Record<string, unknown>)[k] === v);
+              return button(o.name, () => set(o.patch), `opt ${on ? 'on' : ''}`);
+            }),
+          ),
+        );
+        content = el(
+          'div',
+          {},
+          el('h4', {}, 'Topp'),
+          grid,
+          el('h4', {}, 'Farge'),
+          swatches(CLOTH_COLORS, a.shirt, (c) => set({ shirt: c })),
+          more,
         );
         break;
       }

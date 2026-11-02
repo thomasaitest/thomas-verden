@@ -494,20 +494,47 @@ body.building .jump, body.building .pet-bar, body.building .tasks, body.building
   font-size: 12px;
 }
 .sheet-wrap.avatar-edit .outfit-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.sheet-wrap.avatar-edit .outfit-grid .opt {
+  padding: 6px;
 }
 .sheet-wrap.avatar-edit .outfit-grid .opt-img {
   width: 100%;
   height: auto;
   aspect-ratio: 1;
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(30, 40, 58, 0.65);
+  image-rendering: auto;
 }
 .sheet-wrap.avatar-edit .outfit-grid .opt b {
-  font-size: 11px;
-  line-height: 1.15;
+  font-size: 13px;
+  line-height: 1.2;
+  margin-top: 4px;
 }
+.sheet-wrap.avatar-edit .outfit-grid-more {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.sheet-wrap.avatar-edit .avatar-more {
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(120, 200, 255, 0.18);
+  background: rgba(16, 24, 38, 0.55);
+  padding: 4px 10px 10px;
+}
+.sheet-wrap.avatar-edit .avatar-more > summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 10px 4px;
+  list-style: none;
+}
+.sheet-wrap.avatar-edit .avatar-more > summary::-webkit-details-marker { display: none; }
+.sheet-wrap.avatar-edit .avatar-more[open] > summary { color: #c8e8ff; }
 .sheet-wrap.avatar-edit .sheet-body {
   display: flex;
   flex-direction: column;
