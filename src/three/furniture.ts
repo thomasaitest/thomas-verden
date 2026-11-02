@@ -569,109 +569,87 @@ export const MODELS: Record<string, B> = {
 
 
 
-/** Sleek curved sectional — ExtrudeGeometry arc profile, soft light-grey fabric. */
+/** Sleek curved sectional — thick backrest (~0.75 m), ≈3.5 m arc, soft cushions. */
 export function buildCurvedSectional(color = '#d4dae2'): THREE.Group {
   const g = new THREE.Group();
   const fabric = new THREE.MeshStandardMaterial({
     color,
-    roughness: 0.58,
+    roughness: 0.55,
     metalness: 0.03,
     envMapIntensity: 0.55,
   });
   const cush = new THREE.MeshStandardMaterial({
-    color: '#e4eaf0',
-    roughness: 0.72,
+    color: '#e8eef4',
+    roughness: 0.7,
     metalness: 0.02,
     envMapIntensity: 0.4,
   });
   const accent = new THREE.MeshStandardMaterial({
     color: '#9aa8b6',
-    roughness: 0.65,
+    roughness: 0.62,
     metalness: 0.04,
   });
   const dark = new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.4, metalness: 0.35 });
 
-  // Seat footprint as a curved U (open toward +Z / cam). Seat top ≈ 0.42 m.
-  const seatShape = new THREE.Shape();
-  seatShape.moveTo(-1.55, 0.42);
-  seatShape.quadraticCurveTo(-1.7, -0.02, -0.9, -0.42);
-  seatShape.quadraticCurveTo(0, -0.62, 0.9, -0.42);
-  seatShape.quadraticCurveTo(1.7, -0.02, 1.55, 0.42);
-  seatShape.lineTo(1.15, 0.42);
-  seatShape.quadraticCurveTo(1.12, 0.05, 0.65, -0.1);
-  seatShape.quadraticCurveTo(0, -0.22, -0.65, -0.1);
-  seatShape.quadraticCurveTo(-1.12, 0.05, -1.15, 0.42);
-  seatShape.lineTo(-1.55, 0.42);
-  const seatGeo = new THREE.ExtrudeGeometry(seatShape, {
-    depth: 0.34,
-    bevelEnabled: true,
-    bevelThickness: 0.045,
-    bevelSize: 0.05,
-    bevelSegments: 4,
-    curveSegments: 64,
-  });
-  seatGeo.rotateX(-Math.PI / 2);
-  const seat = new THREE.Mesh(seatGeo, fabric);
-  seat.position.y = 0.08; // top ≈ 0.08+0.34 ≈ 0.42
-  seat.castShadow = true;
-  seat.receiveShadow = true;
-  g.add(seat);
-
-  // Thin curved backrest — total height ≈ 0.75 m
-  const backShape = new THREE.Shape();
-  backShape.moveTo(-1.48, -0.32);
-  backShape.quadraticCurveTo(-0.8, -0.6, 0, -0.68);
-  backShape.quadraticCurveTo(0.8, -0.6, 1.48, -0.32);
-  backShape.lineTo(1.32, -0.2);
-  backShape.quadraticCurveTo(0.72, -0.45, 0, -0.52);
-  backShape.quadraticCurveTo(-0.72, -0.45, -1.32, -0.2);
-  backShape.lineTo(-1.48, -0.32);
-  const backGeo = new THREE.ExtrudeGeometry(backShape, {
-    depth: 0.3,
-    bevelEnabled: true,
-    bevelThickness: 0.035,
-    bevelSize: 0.035,
-    bevelSegments: 4,
-    curveSegments: 64,
-  });
-  backGeo.rotateX(-Math.PI / 2);
-  const back = new THREE.Mesh(backGeo, fabric);
-  back.position.set(0, 0.45, 0); // top ≈ 0.45+0.3 ≈ 0.75
-  back.castShadow = true;
-  g.add(back);
-
-  // Soft rounded cushions against the back
-  for (const [u, mat] of [[0.15, cush], [0.5, accent], [0.85, cush]] as const) {
-    const ang = -0.52 + u * 1.04;
-    const px = Math.sin(ang) * 1.05;
-    const pz = -0.36 + Math.cos(ang) * 0.04;
-    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 12), mat);
-    pillow.scale.set(1.25, 0.42, 0.8);
-    pillow.position.set(px, 0.58, pz);
-    pillow.rotation.y = ang * 0.35;
+  // Arc ≈3.5 m wide, open toward +Z (cam). Modules make back thickness readable.
+  const mods = 7;
+  const halfW = 1.75;
+  const seatH = 0.42;
+  const backTop = 0.75;
+  for (let i = 0; i < mods; i++) {
+    const u = i / (mods - 1);
+    const x = -halfW + u * halfW * 2;
+    const z = (1 - Math.cos((u - 0.5) * Math.PI)) * 0.55; // curve depth
+    const yaw = (u - 0.5) * 0.7;
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.2, 0.95), fabric);
+    seat.position.set(x, seatH - 0.1, z);
+    seat.rotation.y = -yaw;
+    seat.castShadow = true;
+    seat.receiveShadow = true;
+    g.add(seat);
+    // Thick vertical backrest (reads from shoulder cam)
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.56, backTop - seatH + 0.08, 0.22), fabric);
+    back.position.set(x, (seatH + backTop) / 2, z - 0.38);
+    back.rotation.y = -yaw;
+    back.castShadow = true;
+    g.add(back);
+    // Soft top roll on back
+    const roll = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.38, 4, 8), fabric);
+    roll.rotation.z = Math.PI / 2;
+    roll.position.set(x, backTop - 0.02, z - 0.38);
+    roll.rotation.y = -yaw;
+    g.add(roll);
+    // Seat cushion
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.78), cush);
+    pad.position.set(x, seatH + 0.02, z + 0.02);
+    pad.rotation.y = -yaw;
+    pad.castShadow = true;
+    g.add(pad);
+  }
+  // Back pillows
+  for (const [u, mat] of [[0.18, cush], [0.5, accent], [0.82, cush]] as const) {
+    const x = -halfW + u * halfW * 2;
+    const z = (1 - Math.cos((u - 0.5) * Math.PI)) * 0.55;
+    const yaw = (u - 0.5) * 0.7;
+    const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), mat);
+    pillow.scale.set(1.15, 0.55, 0.7);
+    pillow.position.set(x, 0.58, z - 0.18);
+    pillow.rotation.y = -yaw;
     pillow.castShadow = true;
     g.add(pillow);
   }
-  // Separate seat cushions (soft, not boxy)
-  for (const [u] of [[0.2], [0.5], [0.8]] as const) {
-    const ang = -0.45 + u * 0.9;
-    const px = Math.sin(ang) * 0.85;
-    const pz = 0.02 + Math.cos(ang) * 0.08;
-    const seatPad = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), cush);
-    seatPad.scale.set(1.35, 0.22, 1.05);
-    seatPad.position.set(px, 0.44, pz);
-    seatPad.rotation.y = ang * 0.25;
-    seatPad.castShadow = true;
-    g.add(seatPad);
+  // Arms
+  for (const s of [-1, 1] as const) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.38, 0.9), fabric);
+    arm.position.set(s * (halfW + 0.05), 0.52, 0.15);
+    arm.castShadow = true;
+    g.add(arm);
   }
-
-  for (const [x, z] of [[-1.05, 0.12], [1.05, 0.12], [0, -0.28], [-0.7, -0.16], [0.7, -0.16]] as const) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.1, 8), dark);
-    leg.position.set(x, 0.05, z);
+  for (const [x, z] of [[-1.5, 0.2], [1.5, 0.2], [0, -0.15], [-0.8, -0.05], [0.8, -0.05]] as const) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.12, 8), dark);
+    leg.position.set(x, 0.06, z);
     g.add(leg);
   }
-
-  g.scale.set(1.55, 1.0, 1.35);
   g.userData.curvedSectional = true;
   return g;
 }

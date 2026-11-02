@@ -34,8 +34,9 @@ describe.each(styles)('house layout (%s)', (style) => {
 
   it('is big, has two floors with several rooms each, and the stairs sit inside the house', () => {
     const base = HOUSES.find((h) => h.style === style)!;
-    expect(L.w).toBeGreaterThanOrEqual(22);
-    expect(L.d).toBeGreaterThanOrEqual(18);
+    // Moderne is intentionally compact (~concept 7×6 living); others stay large
+    expect(L.w).toBeGreaterThanOrEqual(style === 'moderne' ? 12 : 22);
+    expect(L.d).toBeGreaterThanOrEqual(style === 'moderne' ? 10 : 18);
     expect(base.w).toBe(L.w);
     expect(L.rooms.filter((r) => r.floor === 0).length).toBeGreaterThanOrEqual(3);
     expect(L.rooms.filter((r) => r.floor === 1).length).toBeGreaterThanOrEqual(3);

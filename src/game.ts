@@ -535,14 +535,14 @@ export class Game {
     this.interior.build(house);
     this.town.group.visible = false;
     this.interior.group.visible = true;
-    // Spawn near door looking into living (−Z): sofa L, window C, kitchen R, pod doorway far R
-    this.player.pos.set(0.2, 0, Math.max(1.8, this.interior.door.z - 5.0));
+    // Shoulder cam ~1.6 m: avatar left third, living fills frame (concept 2-hus-inne)
+    this.player.pos.set(-1.35, 0, Math.max(1.6, this.interior.door.z - 3.2));
     this.player.vy = 0;
-    this.player.yaw = 0.12;
-    this.cam.yaw = 0.12;
-    this.cam.pitch = 0.12;
-    this.cam.dist = 6.2;
-    this.camShown = 6.2;
+    this.player.yaw = 0.18;
+    this.cam.yaw = 0.22;
+    this.cam.pitch = 0.05;
+    this.cam.dist = 2.85;
+    this.camShown = 2.85;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#7a828c');
     this.scene.fog = null;
@@ -1323,8 +1323,8 @@ export class Game {
         const baseY = this.playerFloor() * 6.6;
         desired.x = Math.max(-halfW, Math.min(halfW, desired.x));
         desired.z = Math.max(-halfD, Math.min(halfD, desired.z));
-        desired.y = Math.max(baseY + 1.45, Math.min(baseY + 4.6, desired.y));
-        if (this.cam.dist > 11) dist = Math.min(dist, 11);
+        desired.y = Math.max(baseY + 1.45, Math.min(baseY + 2.15, desired.y));
+        if (this.cam.dist > 5.5) dist = Math.min(dist, 5.5);
       }
       const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);

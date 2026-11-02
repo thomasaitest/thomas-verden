@@ -180,31 +180,18 @@ export function createInterior(): Interior {
           // Replace solid back wall with open panoramic window wall (no floating trim leftovers)
           back.clear();
           walls = walls.filter((wl) => wl.mesh !== back);
-          const panW = Math.min(w * 0.88, 16);
-          const panH = 4.1;
+          const panW = Math.min(w * 0.78, 9.5);
+          const panH = 2.55;
           const zBack = -d / 2;
           const frameMat = new THREE.MeshStandardMaterial({ color: '#6a727c', metalness: 0.4, roughness: 0.35 });
           const darkMat = new THREE.MeshStandardMaterial({ color: '#2a3340', metalness: 0.45, roughness: 0.35 });
-          // slim side returns (thick posts read as indoor pillars)
-          for (const sx of [-1, 1]) {
-            const ret = new THREE.Mesh(new THREE.BoxGeometry(0.1, panH + 0.4, 0.12), frameMat);
-            ret.position.set(sx * (panW / 2 + 0.08), y0 + 3.15, zBack);
-            ret.receiveShadow = true;
-            back.add(ret);
-          }
-          // header + sill
-          const header = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.8, 0.55, 0.35), frameMat);
-          header.position.set(0, y0 + 5.35, zBack);
+          // Clean panoramic open — no mullions/poles in front of the window
+          const header = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.4, 0.28, 0.22), frameMat);
+          header.position.set(0, y0 + panH + 1.15, zBack);
           back.add(header);
-          const sill = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.6, 0.2, 0.45), darkMat);
+          const sill = new THREE.Mesh(new THREE.BoxGeometry(panW + 0.3, 0.12, 0.28), darkMat);
           sill.position.set(0, y0 + 1.05, zBack + 0.05);
           back.add(sill);
-          // Side mullions only — no centre post (read as black pillar in window)
-          for (const mx of [-panW * 0.32, panW * 0.32]) {
-            const mull = new THREE.Mesh(new THREE.BoxGeometry(0.06, panH, 0.08), frameMat);
-            mull.position.set(mx, y0 + 3.15, zBack + 0.08);
-            back.add(mull);
-          }
           // skyline backdrop (outside)
           {
             const sky = document.createElement('canvas');
@@ -228,7 +215,7 @@ export function createInterior(): Interior {
               new THREE.MeshBasicMaterial({ map: stex, side: THREE.DoubleSide }),
             );
             // Just outside the glass so it reads through translucent pane
-            card.position.set(0, y0 + 3.15, zBack - 0.55);
+            card.position.set(0, y0 + 2.35, zBack - 0.55);
             back.add(card);
             // (no outdoor tower boxes — they read as indoor pillars through glass)
           }
@@ -246,7 +233,7 @@ export function createInterior(): Interior {
               envMapIntensity: 1.1,
             }),
           );
-          glass.position.set(0, y0 + 3.15, zBack + 0.14);
+          glass.position.set(0, y0 + 2.35, zBack + 0.14);
           back.add(glass);
           walls.push({ mesh: back, axis: 'z', at: -d / 2, sign: -1 });
         } else {
@@ -354,53 +341,60 @@ export function createInterior(): Interior {
             toneMapped: false,
           });
           if (house.style === 'moderne' && f === 0) {
-            // Warm mid-grey ceiling (not pitch black) + curved recessed soffit
-            const ceil = new THREE.Mesh(
-              new THREE.BoxGeometry(w - 0.2, 0.28, d - 0.2),
-              new THREE.MeshStandardMaterial({ color: '#8a929c', roughness: 0.88, metalness: 0.02, envMapIntensity: 0.18 }),
-            );
-            ceil.position.set(0, coveY + 0.12, 0);
+            // Dropped warm mid-grey ceiling at ~3.05 m (fills top of shoulder cam — not pitch-black void)
+            const dropY = y0 + 3.05;
+            const ceilMat = new THREE.MeshStandardMaterial({
+              color: '#9aa3ad', roughness: 0.82, metalness: 0.04, envMapIntensity: 0.35,
+            });
+            const ceil = new THREE.Mesh(new THREE.BoxGeometry(w - 0.15, 0.22, d - 0.15), ceilMat);
+            ceil.position.set(0, dropY + 0.08, 0);
             ceil.receiveShadow = true;
             fg.add(ceil);
-            // Oval recessed soffit (scaled cylinder) with warm LED ring
-            const soffitMat = new THREE.MeshStandardMaterial({ color: '#7a848e', roughness: 0.86, metalness: 0.02 });
-            const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.16, 48), soffitMat);
-            soffit.scale.set(w * 0.38, 1, d * 0.28);
-            soffit.position.set(0, coveY - 0.04, -d * 0.04);
+            // Keep upper slab too (above drop) so no black leaks past edges
+            const upper = new THREE.Mesh(
+              new THREE.BoxGeometry(w - 0.1, 0.35, d - 0.1),
+              new THREE.MeshStandardMaterial({ color: '#8a929c', roughness: 0.9, metalness: 0.02 }),
+            );
+            upper.position.set(0, coveY + 0.05, 0);
+            fg.add(upper);
+            // Curved recessed soffit well + warm LED ring (visible in top band)
+            const soffitMat = new THREE.MeshStandardMaterial({ color: '#8e97a1', roughness: 0.84, metalness: 0.03 });
+            const soffit = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.14, 48), soffitMat);
+            soffit.scale.set(w * 0.32, 1, d * 0.3);
+            soffit.position.set(-0.4, dropY - 0.05, -0.2);
             fg.add(soffit);
             const soffitWell = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.92, 0.92, 0.08, 48),
-              new THREE.MeshStandardMaterial({ color: '#6a727c', roughness: 0.9, metalness: 0.02 }),
+              new THREE.CylinderGeometry(0.9, 0.9, 0.06, 48),
+              new THREE.MeshStandardMaterial({ color: '#7a848e', roughness: 0.88, metalness: 0.02 }),
             );
-            soffitWell.scale.set(w * 0.38, 1, d * 0.28);
-            soffitWell.position.set(0, coveY - 0.14, -d * 0.04);
+            soffitWell.scale.set(w * 0.32, 1, d * 0.3);
+            soffitWell.position.set(-0.4, dropY - 0.14, -0.2);
             fg.add(soffitWell);
-            // Warm LED line around soffit lip
             const ledRing = new THREE.Mesh(
-              new THREE.TorusGeometry(1, 0.018, 8, 64),
-              new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
+              new THREE.TorusGeometry(1, 0.022, 8, 64),
+              new THREE.MeshBasicMaterial({ color: '#ffe8c8', toneMapped: false }),
             );
             ledRing.rotation.x = Math.PI / 2;
-            ledRing.scale.set(w * 0.38, d * 0.28, 1);
-            ledRing.position.set(0, coveY - 0.12, -d * 0.04);
+            ledRing.scale.set(w * 0.32, d * 0.3, 1);
+            ledRing.position.set(-0.4, dropY - 0.12, -0.2);
             fg.add(ledRing);
-            // Cross LED lines for extra warmth
             const soffitLed = new THREE.Mesh(
-              new THREE.BoxGeometry(w * 0.55, 0.025, 0.05),
-              new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
+              new THREE.BoxGeometry(w * 0.5, 0.03, 0.055),
+              new THREE.MeshBasicMaterial({ color: '#ffe8c8', toneMapped: false }),
             );
-            soffitLed.position.set(0, coveY - 0.18, -d * 0.04);
+            soffitLed.position.set(-0.4, dropY - 0.16, -0.2);
             fg.add(soffitLed);
-            const soffitLed2 = new THREE.Mesh(
-              new THREE.BoxGeometry(0.05, 0.025, d * 0.4),
+            // Perimeter cove LED at drop lip (warm, bloomable)
+            const peri = new THREE.Mesh(
+              new THREE.BoxGeometry(w * 0.92, 0.04, 0.06),
               new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
             );
-            soffitLed2.position.set(0, coveY - 0.18, -d * 0.04);
-            fg.add(soffitLed2);
+            peri.position.set(0, dropY - 0.02, -d / 2 + 0.35);
+            fg.add(peri);
             const ledH = 0.03;
             const ledD = 0.05;
             const inset = 0.18;
-            const yLed = coveY - 0.04;
+            const yLed = dropY - 0.02;
             const mkStrip = (sx: number, sz: number, px: number, pz: number) => {
               const c = new THREE.Mesh(new THREE.BoxGeometry(sx, ledH, sz), coveMat);
               c.position.set(px, yLed, pz);
@@ -410,12 +404,12 @@ export function createInterior(): Interior {
             mkStrip(w - inset * 2, ledD, 0, d / 2 - inset);
             mkStrip(ledD, d - inset * 2, -w / 2 + inset, 0);
             mkStrip(ledD, d - inset * 2, w / 2 - inset, 0);
-            const area = new THREE.RectAreaLight('#ffe8d0', 12.5, w * 0.5, d * 0.35);
-            area.position.set(0, coveY - 0.12, -d * 0.05);
+            const area = new THREE.RectAreaLight('#ffe8d0', 14, w * 0.55, d * 0.4);
+            area.position.set(0, dropY - 0.2, -0.15);
             area.rotation.x = -Math.PI / 2;
             fg.add(area);
-            const soft = new THREE.PointLight('#ffe0b0', 0.85, 26, 2);
-            soft.position.set(0, coveY - 0.55, 0);
+            const soft = new THREE.PointLight('#ffe0b0', 1.15, 18, 2);
+            soft.position.set(0, dropY - 0.55, 0.2);
             fg.add(soft);
           } else {
             const mkCove = (sx: number, sz: number, px: number, pz: number) => {
@@ -441,30 +435,30 @@ export function createInterior(): Interior {
         // Living-room composition (concept 2-hus-inne): sofa/table/rug, left holo+shelves, right island, pod via right doorway
         if (f === 0) {
           const living = new THREE.Group();
-          // Living set — procedural curved sectional + slim disc table + soft round rug
-          // (no Quaternius rustic table/chairs/orange carpet; no CC0 curved sofa on Poly Haven)
-          // Default cam at ~z=3.2 looking −Z: sofa open face toward +Z (toward cam)
+          // Living set — tight concept composition (~7×6 feel)
+          // Cam over left-third shoulder: sofa L-fg, rug+table centre, window back, island R, pod doorway far R
           {
             const sofa = buildCurvedSectional('#d4dae2');
-            sofa.position.set(-2.6, y0, 1.35);
-            sofa.rotation.y = 0;
+            sofa.position.set(-1.65, y0, 0.55);
+            sofa.rotation.y = 0.08;
             living.add(sofa);
             const rug = buildRoundRug('#c8d0d8');
-            rug.position.set(-2.4, y0, 2.55);
+            rug.scale.set(0.85, 1, 0.85);
+            rug.position.set(-0.85, y0, 1.55);
             living.add(rug);
             const table = buildSlimCoffeeTable();
-            table.position.set(-2.4, y0, 2.65);
+            table.position.set(-0.85, y0, 1.55);
             living.add(table);
           }
-          // Holo wall ≈2.5×1.4 m on left of window bay (back wall), facing into room
+          // Holo on LEFT wall facing into room; shelves flanking (nothing in front of screen)
           if (house.style === 'moderne') {
             const tw = 2.5;
             const th = 1.4;
-            const hx = -5.2; // left of centre window — clearly in default cam
-            const hz = -d / 2 + 0.42;
-            const hy = y0 + 2.05;
+            const hx = -w / 2 + 0.16;
+            const hz = 0.15;
+            const hy = y0 + 1.75;
             const holoFrame = new THREE.Mesh(
-              new THREE.BoxGeometry(tw + 0.16, th + 0.16, 0.1),
+              new THREE.BoxGeometry(0.1, th + 0.16, tw + 0.16),
               new THREE.MeshStandardMaterial({ color: '#121820', metalness: 0.7, roughness: 0.25 }),
             );
             holoFrame.position.set(hx, hy, hz);
@@ -496,127 +490,127 @@ export function createInterior(): Interior {
               new THREE.PlaneGeometry(tw, th),
               new THREE.MeshBasicMaterial({ map: htex, toneMapped: false }),
             );
-            holo.position.set(hx, hy, hz + 0.08);
+            holo.rotation.y = Math.PI / 2;
+            holo.position.set(hx + 0.08, hy, hz);
             living.add(holo);
             const holoHalo = new THREE.Mesh(
-              new THREE.PlaneGeometry(tw + 0.22, th + 0.22),
-              new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.25, toneMapped: false, depthWrite: false }),
+              new THREE.PlaneGeometry(tw + 0.2, th + 0.2),
+              new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.24, toneMapped: false, depthWrite: false }),
             );
-            holoHalo.position.set(hx, hy, hz + 0.05);
+            holoHalo.rotation.y = Math.PI / 2;
+            holoHalo.position.set(hx + 0.05, hy, hz);
             living.add(holoHalo);
-            const holoLight = new THREE.PointLight('#3a7cff', 2.6, 12, 2);
-            holoLight.position.set(hx, hy, hz + 1.6);
+            const holoLight = new THREE.PointLight('#3a7cff', 2.8, 10, 2);
+            holoLight.position.set(hx + 1.4, hy, hz);
             living.add(holoLight);
-            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.2, tw * 0.95, th * 0.85);
-            holoArea.position.set(hx, hy, hz + 0.4);
+            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.5, th * 0.95, tw * 0.9);
+            holoArea.position.set(hx + 0.35, hy, hz);
+            holoArea.lookAt(hx + 2, hy, hz);
             living.add(holoArea);
-            // Lit shelves + plants flanking holo
-            for (const sx of [-1, 1] as const) {
+            // Shelves flanking along left wall (ahead/behind screen) — not in front of holo
+            for (const sz of [-1, 1] as const) {
               const shelf = buildFurniture('bookshelf', '#c4a078');
-              shelf.position.set(hx + sx * (tw / 2 + 0.55), y0, hz + 0.15);
-              shelf.rotation.y = sx > 0 ? -0.12 : 0.12;
+              shelf.position.set(hx + 0.4, y0, hz + sz * (tw / 2 + 0.55));
+              shelf.rotation.y = Math.PI / 2;
+              shelf.scale.multiplyScalar(0.85);
               living.add(shelf);
-              for (const ly of [0.9, 1.4, 1.9, 2.35] as const) {
+              for (const ly of [0.85, 1.3, 1.75, 2.15] as const) {
                 const led = new THREE.Mesh(
-                  new THREE.BoxGeometry(0.55, 0.035, 0.05),
+                  new THREE.BoxGeometry(0.05, 0.03, 0.48),
                   new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
                 );
-                led.position.set(hx + sx * (tw / 2 + 0.55), y0 + ly, hz + 0.42);
+                led.position.set(hx + 0.55, y0 + ly, hz + sz * (tw / 2 + 0.55));
                 living.add(led);
               }
-              const plantId = sx < 0 ? 'plant' : 'plant2';
-              const plant = buildFurniture(plantId, '#5a8f5a');
-              plant.position.set(hx + sx * (tw / 2 + 0.7), y0, hz + 0.7);
+              const plant = buildFurniture(sz < 0 ? 'plant' : 'plant2', '#5a8f5a');
+              plant.position.set(hx + 0.65, y0, hz + sz * (tw / 2 + 0.85));
+              plant.scale.multiplyScalar(0.8);
               living.add(plant);
             }
-            // Bedroom doorway frame (right) — readable opening + warm lintel so pod peeks through
+            // Bedroom doorway frame (right) — capsule pod peeks with blue glow
             {
-              const gx = w / 2 - 7; // ≈4
-              const nx = gx - 5.2; // tighter alcove pocket
-              const nz = -d / 2 + 4.6; // doorway further back so pod sits clearly inside
-              const dx = (nx + gx) / 2 + 0.6; // door bias right toward kitchen
-              const frameMat = new THREE.MeshStandardMaterial({ color: '#7a848e', metalness: 0.4, roughness: 0.35 });
-              const halfW = 1.35;
+              const gx = w / 2 - 3.5; // kitchen glass
+              const nx = gx - 3.2;
+              const nz = -d / 2 + 3.0;
+              const dx = (nx + gx) / 2 + 0.35;
+              const frameMat = new THREE.MeshStandardMaterial({ color: '#8a929c', metalness: 0.35, roughness: 0.4 });
+              const halfW = 1.05;
               for (const sx of [-1, 1] as const) {
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.45, 0.12), frameMat);
-                post.position.set(dx + sx * halfW, y0 + 1.25, nz + 0.08);
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.35, 0.14), frameMat);
+                post.position.set(dx + sx * halfW, y0 + 1.2, nz + 0.06);
                 living.add(post);
               }
-              const lintel = new THREE.Mesh(new THREE.BoxGeometry(halfW * 2 + 0.2, 0.12, 0.14), frameMat);
-              lintel.position.set(dx, y0 + 2.5, nz + 0.08);
+              const lintel = new THREE.Mesh(new THREE.BoxGeometry(halfW * 2 + 0.24, 0.14, 0.16), frameMat);
+              lintel.position.set(dx, y0 + 2.4, nz + 0.06);
               living.add(lintel);
-              // Door frame depth (reads as real opening into alcove)
-              const jambDepth = 0.35;
+              const jambDepth = 0.4;
               for (const sx of [-1, 1] as const) {
-                const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.45, jambDepth), frameMat);
-                jamb.position.set(dx + sx * halfW, y0 + 1.25, nz - 0.05);
+                const jamb = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.35, jambDepth), frameMat);
+                jamb.position.set(dx + sx * halfW, y0 + 1.2, nz - 0.08);
                 living.add(jamb);
               }
               const glow = new THREE.Mesh(
-                new THREE.BoxGeometry(halfW * 2 - 0.15, 0.06, 0.06),
+                new THREE.BoxGeometry(halfW * 2 - 0.1, 0.05, 0.05),
                 new THREE.MeshBasicMaterial({ color: '#ffe6c4', toneMapped: false }),
               );
-              glow.position.set(dx, y0 + 2.48, nz + 0.16);
+              glow.position.set(dx, y0 + 2.38, nz + 0.14);
               living.add(glow);
               const thresh = new THREE.Mesh(
-                new THREE.BoxGeometry(halfW * 1.7, 0.03, 0.35),
+                new THREE.BoxGeometry(halfW * 1.6, 0.03, 0.32),
                 new THREE.MeshBasicMaterial({ color: '#7ef0ff', toneMapped: false }),
               );
-              thresh.position.set(dx, y0 + 0.03, nz + 0.2);
+              thresh.position.set(dx, y0 + 0.03, nz + 0.15);
               living.add(thresh);
-              const alcoveLight = new THREE.PointLight('#ffe8d0', 0.55, 7, 2);
-              alcoveLight.position.set(dx, y0 + 1.6, nz - 1.2);
+              const alcoveLight = new THREE.PointLight('#ffe8d0', 0.5, 5, 2);
+              alcoveLight.position.set(dx, y0 + 1.5, nz - 0.9);
               living.add(alcoveLight);
-              // Blue pod wash in alcove
-              const podBlue = new THREE.PointLight('#5ad4ff', 1.1, 6, 2);
-              podBlue.position.set(dx + 1.2, y0 + 1.3, nz - 2.0);
+              const podBlue = new THREE.PointLight('#5ad4ff', 1.4, 5, 2);
+              podBlue.position.set(dx, y0 + 1.1, nz - 1.5);
               living.add(podBlue);
-              // Alcove enclosure (right-back) — warm-grey walls, not pillars
-              const alcoveWall = new THREE.MeshStandardMaterial({ color: '#4e555e', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 });
-              const side = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.8, nz - (-d / 2) + 0.2), alcoveWall);
-              side.position.set(nx, y0 + 1.4, (-d / 2 + nz) / 2);
+              const alcoveWall = new THREE.MeshStandardMaterial({ color: '#555c66', roughness: 0.9, metalness: 0.02, envMapIntensity: 0.12 });
+              const side = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.7, Math.max(0.8, nz - (-d / 2) + 0.15)), alcoveWall);
+              side.position.set(nx, y0 + 1.35, (-d / 2 + nz) / 2);
               living.add(side);
-              const back = new THREE.Mesh(new THREE.BoxGeometry(gx - nx, 2.8, 0.18), alcoveWall);
-              back.position.set((nx + gx) / 2, y0 + 1.4, -d / 2 + 0.15);
-              living.add(back);
+              const backW = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.5, gx - nx), 2.7, 0.16), alcoveWall);
+              backW.position.set((nx + gx) / 2, y0 + 1.35, -d / 2 + 0.12);
+              living.add(backW);
             }
           }
-          // Kitchen island right with warm under-glow + bar stools
+          // Kitchen island right-middle + chrome stools
           if (house.style === 'moderne') {
             const island = new THREE.Group();
             const base = new THREE.Mesh(
-              new THREE.BoxGeometry(2.6, 0.95, 1.15),
+              new THREE.BoxGeometry(2.1, 0.9, 1.0),
               new THREE.MeshStandardMaterial({ color: '#e4e8ee', roughness: 0.4, metalness: 0.08 }),
             );
-            base.position.y = 0.48;
+            base.position.y = 0.45;
             island.add(base);
             const top = new THREE.Mesh(
-              new THREE.BoxGeometry(2.75, 0.08, 1.25),
+              new THREE.BoxGeometry(2.25, 0.07, 1.1),
               new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.25, metalness: 0.4 }),
             );
-            top.position.y = 1.0;
+            top.position.y = 0.94;
             island.add(top);
-            // Warm under-glow strip (bloom-capable)
             const glow = new THREE.Mesh(
-              new THREE.BoxGeometry(2.45, 0.06, 1.05),
+              new THREE.BoxGeometry(2.0, 0.05, 0.92),
               new THREE.MeshBasicMaterial({ color: '#ffd7a0', toneMapped: false }),
             );
             glow.position.y = 0.04;
             island.add(glow);
             const glowSoft = new THREE.Mesh(
-              new THREE.BoxGeometry(2.55, 0.02, 1.15),
+              new THREE.BoxGeometry(2.1, 0.02, 1.0),
               glowMat('#ffe0b0', 2.8),
             );
             glowSoft.position.y = 0.01;
             island.add(glowSoft);
-            island.position.set(4.4, y0, 0.2);
+            island.position.set(2.35, y0, 0.35);
             living.add(island);
-            const kitLight = new THREE.PointLight('#ffcc88', 0.95, 9, 2);
-            kitLight.position.set(4.4, y0 + 0.25, 0.2);
+            const kitLight = new THREE.PointLight('#ffcc88', 0.9, 7, 2);
+            kitLight.position.set(2.35, y0 + 0.22, 0.35);
             living.add(kitLight);
-            for (const sx of [-0.7, 0.7]) {
+            for (const sx of [-0.55, 0.55]) {
               const stool = buildBarStool();
-              stool.position.set(4.4 + sx, y0, 1.35);
+              stool.position.set(2.35 + sx, y0, 1.25);
               living.add(stool);
             }
           }

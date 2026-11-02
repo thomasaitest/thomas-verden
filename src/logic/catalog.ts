@@ -159,7 +159,7 @@ export const HOUSES: { style: HouseStyle; name: string; price: number; w: number
   { style: 'hytte', name: 'Solcellehus', price: 0, w: 22, d: 18, wall: '#f2f6fb', roof: '#1a3358', text: 'Ditt første hjem: 2 etasjer og 6 rom' },
   { style: 'villa', name: 'Glassvilla', price: 600, w: 26, d: 20, wall: '#e8f0ff', roof: '#1a3358', text: 'Stor villa med glass og tre' },
   { style: 'gard', name: 'Teknogård', price: 900, w: 30, d: 22, wall: '#efe6d8', roof: '#1a3358', text: 'Plass til masse dyr, 2 etasjer' },
-  { style: 'moderne', name: 'Kurvehjem', price: 1200, w: 28, d: 20, wall: '#f8fafc', roof: '#1a3358', text: 'Hvite kurver og store vinduer' },
+  { style: 'moderne', name: 'Kurvehjem', price: 1200, w: 14, d: 11, wall: '#f8fafc', roof: '#1a3358', text: 'Hvite kurver og store vinduer' },
   { style: 'trehus', name: 'Trepanelhus', price: 750, w: 24, d: 18, wall: '#c4a574', roof: '#1a3358', text: 'Varmt trepanel med soltak' },
   { style: 'sjohus', name: 'Havkapsel', price: 1400, w: 26, d: 20, wall: '#d6ecff', roof: '#1a3358', text: 'Blått hus ved vannet' },
   { style: 'slott', name: 'Tårnkompleks', price: 1800, w: 34, d: 26, wall: '#eef2f8', roof: '#1a3358', text: 'Høye tårn med glassheis-følelse' },

@@ -27,9 +27,9 @@ async function prep(page) {
       createdAt: now,
       items: [
         // Pod only in left-back alcove (peeked through doorway) — living sofa is interior vignette
-        { uid: 'it1', itemId: 'seng', x: 2.2, z: -7.6, rot: 0, scale: 0.95, color: '#e8eef6', floor: 0 },
+        { uid: 'it1', itemId: 'seng', x: 1.6, z: -4.2, rot: 0, scale: 0.85, color: '#e8eef6', floor: 0 },
         // Kitchen dining (not living) so ensureStarterFurniture won't drop a table in the bay
-        { uid: 'it2', itemId: 'spisebord', x: 9.5, z: 0.5, rot: 0, scale: 1.0, color: '#2a3344', floor: 0 },
+        { uid: 'it2', itemId: 'spisebord', x: 5.2, z: 0.4, rot: 0, scale: 0.9, color: '#2a3344', floor: 0 },
       ],
     };
     const save = {
@@ -235,12 +235,12 @@ await page.evaluate(async () => {
   if (g.sun) g.sun.intensity = 0.12;
   for (const a of g.actors.values()) { a.rig.root.visible = false; a.shadow.visible = false; }
   // Default enterHouse framing: sofa L-C, window C, kitchen R, pod doorway far R
-  g.player.pos.set(0.2, 0, 3.2);
-  g.player.yaw = 0.12;
-  g.cam.yaw = 0.12;
-  g.cam.pitch = 0.12;
-  g.cam.dist = 6.2;
-  g.camShown = 6.2;
+  g.player.pos.set(-1.35, 0, 2.35);
+  g.player.yaw = 0.18;
+  g.cam.yaw = 0.22;
+  g.cam.pitch = 0.05;
+  g.cam.dist = 2.85;
+  g.camShown = 2.85;
   if (g.avatarHolder) g.avatarHolder.visible = true;
   await new Promise((r) => setTimeout(r, 600));
   document.querySelectorAll('.sheet,.sheet-wrap,.toast,.modal').forEach((el) => el.remove());

@@ -178,35 +178,32 @@ function planGard(w: number, d: number): Built {
   return { stairs, rooms, walls: [f0, f1], door: { x: (eX + w / 2) / 2, z: d / 2 - 1.4 } };
 }
 
-/** Moderne: open stue + kitchen glass; bedroom alcove back-RIGHT with doorway (pod peek). */
+/** Moderne: compact ~7×6 living + kitchen strip; bedroom alcove back-RIGHT (pod peek). */
 function planModerne(w: number, d: number): Built {
-  const glassX = w / 2 - 7;
-  // Alcove pocket on back-right of living (left of kitchen glass) — concept doorway on the right
-  const nookX = glassX - 6.0;
-  const nookZ = -d / 2 + 5.2;
-  // Stair on far left of open stue
-  const stairs = mkStairs(-w / 2 + 2.0, 1.05, nookZ + 1.2, 7.5);
+  // Living ~7 m wide: left wall → glass; kitchen strip on right
+  const glassX = w / 2 - 3.5; // ≈3.5 when w=14
+  const nookX = glassX - 3.2; // alcove ~3.2 m wide
+  const nookZ = -d / 2 + 3.0; // ≈-2.5 when d=11 → living depth ~6.5 m
+  const stairs = mkStairs(-w / 2 + 1.6, 0.95, nookZ + 0.6, 4.0);
   const f0: RectCollider[] = [];
   const f1: RectCollider[] = [];
-  // Glass wall to kitchen (many gaps) — thin, skipped visually on ground floor
-  wallX(f0, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, 0, d / 3]);
-  // Bedroom alcove: side wall + living-facing doorway (no left-side pillars)
+  wallX(f0, glassX, -d / 2 + 0.8, d / 2 - 0.8, [-d / 3, 0, d / 3]);
   wallX(f0, nookX, -d / 2, nookZ, []);
   wallZ(f0, nookZ, nookX, glassX, [(nookX + glassX) / 2]);
-  wallX(f1, glassX, -d / 2 + 1.2, d / 2 - 1.2, [-d / 3, d / 3]);
-  wallZ(f1, d / 2 - 6.5, -w / 2 + 5, glassX, [-w / 6]);
-  wallX(f1, 0, d / 2 - 6.5, d / 2, [d / 2 - 3.0]);
+  wallX(f1, glassX, -d / 2 + 0.8, d / 2 - 0.8, [-d / 3, d / 3]);
+  wallZ(f1, d / 2 - 4.2, -w / 2 + 2.5, glassX, [-w / 6]);
+  wallX(f1, 0, d / 2 - 4.2, d / 2, [d / 2 - 2.0]);
   const rooms: Room[] = [
     { id: 'f0-sove', name: 'Soverom', floor: 0, x0: nookX, x1: glassX, z0: -d / 2, z1: nookZ },
     { id: 'f0-stue', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: glassX, z0: nookZ, z1: d / 2 },
     { id: 'f0-stueb', name: 'Åpen stue', floor: 0, x0: -w / 2, x1: nookX, z0: -d / 2, z1: nookZ },
     { id: 'f0-kjokken', name: 'Kjøkken', floor: 0, x0: glassX, x1: w / 2, z0: -d / 2, z1: d / 2 },
-    { id: 'f1-kontor', name: 'Kontor', floor: 1, x0: -w / 2, x1: 0, z0: d / 2 - 6.5, z1: d / 2 },
-    { id: 'f1-media', name: 'Mediarom', floor: 1, x0: 0, x1: glassX, z0: d / 2 - 6.5, z1: d / 2 },
-    { id: 'f1-galleri', name: 'Galleri', floor: 1, x0: -w / 2, x1: glassX, z0: -d / 2, z1: d / 2 - 6.5 },
+    { id: 'f1-kontor', name: 'Kontor', floor: 1, x0: -w / 2, x1: 0, z0: d / 2 - 4.2, z1: d / 2 },
+    { id: 'f1-media', name: 'Mediarom', floor: 1, x0: 0, x1: glassX, z0: d / 2 - 4.2, z1: d / 2 },
+    { id: 'f1-galleri', name: 'Galleri', floor: 1, x0: -w / 2, x1: glassX, z0: -d / 2, z1: d / 2 - 4.2 },
     { id: 'f1-kjokken', name: 'Øvre kjøkken', floor: 1, x0: glassX, x1: w / 2, z0: -d / 2, z1: d / 2 },
   ];
-  return { stairs, rooms, walls: [f0, f1], door: { x: 0, z: d / 2 - 1.4 } };
+  return { stairs, rooms, walls: [f0, f1], door: { x: 0, z: d / 2 - 1.2 } };
 }
 
 /** Trehus: staggered rooms + steep ladder in the right mid-band (open strip). */
