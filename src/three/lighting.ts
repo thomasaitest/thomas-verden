@@ -82,7 +82,7 @@ export function createLighting(
     scene.environment = env;
     scene.background = env;
     scene.backgroundBlurriness = 0.0;
-    scene.backgroundIntensity = 1.15;
+    scene.backgroundIntensity = 0.95;
     scene.environmentIntensity = 1.0;
     tex.dispose();
   })();
@@ -157,7 +157,7 @@ export function createLighting(
       }
       if (n8) (n8 as any).enabled = high;
       if (fxaa) fxaa.enabled = high;
-      scene.backgroundIntensity = high ? 1.15 : 0.95;
+      scene.backgroundIntensity = high ? 0.95 : 0.85;
       scene.environmentIntensity = high ? 1.05 : 0.8;
     },
     resize(w, h) {

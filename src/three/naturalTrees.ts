@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
-const LEAF_HEX = ['#2f6e28', '#3a7a30', '#256820', '#3d8532', '#2c7028', '#387830'];
+const LEAF_HEX = ['#3d9a35', '#4aaa40', '#348a2c', '#55b848', '#3a9432', '#48a83c'];
 
 const TREE_PATHS = [
   'nature/ez/oak-a.glb',

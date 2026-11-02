@@ -875,14 +875,14 @@ export function buildTown(): Town {
     const traffic = [
       { id: 'bil-rosa', x: 1.55, z: 48, yaw: 0 },
       { id: 'bil-lilla', x: -1.55, z: 54, yaw: Math.PI },
-      { id: 'bil-gul', x: 1.55, z: 10, yaw: 0 },
+      // Keep clear of plaza pavers (PLAZA_R≈13) — only asphalt outside the ring
+      { id: 'bil-gul', x: 1.55, z: 22, yaw: 0 },
       { id: 'bil-gronn', x: -1.55, z: -24, yaw: Math.PI },
       { id: 'bil-bla', x: 1.55, z: 60, yaw: 0 },
-      // Road-only traffic (never plaza). Gate cam may not show a car — do not fake plaza cars.
-      { id: 'bil-rosa', x: -1.55, z: 18, yaw: Math.PI },
-      { id: 'bil-lilla', x: 1.55, z: -18, yaw: 0 },
-      { id: 'bil-gronn', x: 14.2, z: -2.0, yaw: Math.PI / 2 },
-      { id: 'bil-bla', x: -14.2, z: 3.0, yaw: -Math.PI / 2 },
+      { id: 'bil-rosa', x: -1.55, z: 28, yaw: Math.PI },
+      { id: 'bil-lilla', x: 1.55, z: -22, yaw: 0 },
+      { id: 'bil-gronn', x: 16.5, z: -2.0, yaw: Math.PI / 2 },
+      { id: 'bil-bla', x: -16.5, z: 3.0, yaw: -Math.PI / 2 },
       { id: 'bil-gul', x: 1.55, z: 48, yaw: 0 },
     ];
     for (const c of traffic) {
@@ -1102,16 +1102,24 @@ export function buildTown(): Town {
   const merged = mergeStatic(stat, { cast: true, receive: true });
   group.add(merged);
 
-  // clouds (separate so they can drift)
+  // clouds — unlit soft grey, high altitude (never read as white tree canopies)
   const clouds = new THREE.Group();
-  for (let i = 0; i < 12; i++) {
+  const cloudMat = new THREE.MeshBasicMaterial({ color: '#8fa3b8', toneMapped: false });
+  for (let i = 0; i < 10; i++) {
     const c = new THREE.Group();
-    for (let j = 0; j < 4; j++) sph(c, '#c5d2e0', [j * 2.4 - 3.6, Math.sin(j) * 0.8, (j % 2) * 1.2], [4 - Math.abs(j - 1.5), 3 - Math.abs(j - 1.5) * 0.6, 3]);
-    c.position.set((rnd() - 0.5) * SIZE * 1.2, 55 + rnd() * 18, (rnd() - 0.5) * SIZE * 1.2);
+    for (let j = 0; j < 4; j++) {
+      const s = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 10, 8),
+        cloudMat,
+      );
+      s.position.set(j * 1.8 - 2.5, Math.sin(j) * 0.5, (j % 2) * 0.9);
+      s.scale.set(2.2 - Math.abs(j - 1.5) * 0.35, 1.4, 1.6);
+      c.add(s);
+    }
+    c.position.set((rnd() - 0.5) * SIZE * 1.3, 70 + rnd() * 25, (rnd() - 0.5) * SIZE * 1.3);
     clouds.add(c);
   }
-  const mergedClouds = mergeStatic(clouds);
-  group.add(mergedClouds);
+  group.add(clouds);
 
   // drones — near plaza (gate-visible) + far sky
   const drones: THREE.Group[] = [];
@@ -1296,7 +1304,7 @@ export function buildTown(): Town {
         b.shell.left.visible = !inside || lx > -b.hw + 0.5;
         b.shell.right.visible = !inside || lx < b.hw - 0.5;
       }
-      mergedClouds.position.x = Math.sin(t * 0.02) * 20;
+      clouds.position.x = Math.sin(t * 0.02) * 20;
       if (equipUse) {
         const u = equipUse.u;
         if (equipUse.id.startsWith('swing')) swingGroups[Number(equipUse.id.slice(5)) - 1].rotation.x = -swingAngle(u);
