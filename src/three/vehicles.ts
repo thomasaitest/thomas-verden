@@ -36,7 +36,7 @@ function hoverPod(g: THREE.Group, x: number, y: number, z: number) {
   g.add(disc);
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(0.2, 0.025, 8, 24),
-    new THREE.MeshBasicMaterial({ color: '#3ecbff' }),
+    new THREE.MeshBasicMaterial({ color: '#c8ffff', toneMapped: false }),
   );
   ring.rotation.x = Math.PI / 2;
   ring.position.set(x, y - 0.02, z);
@@ -205,19 +205,49 @@ export function buildCar(carId: string): THREE.Group {
   dash.position.set(0, hoverY + 0.52, -0.32);
   g.add(dash);
 
-  // Compact rear taillights (not giant thruster rings)
+  // Compact red taillight strips
   for (const s of [-1, 1] as const) {
-    rbox(g, '#ff4b6a', [s * bodyW * 0.3, hoverY + 0.35, bodyLen * 0.44], [0.22, 0.05, 0.04], undefined, 0.9);
+    rbox(g, '#ff4b6a', [s * bodyW * 0.32, hoverY + 0.42, bodyLen * 0.445], [0.28, 0.045, 0.04], undefined, 1.1);
   }
-  // Small rear cyan vents
+  // Concept cyan glowing rear thruster rings (bloom targets — emissive > 1)
   for (const s of [-1, 1] as const) {
-    const vent = new THREE.Mesh(
-      new THREE.CircleGeometry(0.06, 12),
-      glowMat('#3ecbff', 1.5),
+    const tx = s * bodyW * 0.26;
+    const ty = hoverY + 0.26;
+    const tz = bodyLen * 0.455;
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.13, 0.028, 10, 28),
+      new THREE.MeshBasicMaterial({ color: '#d8ffff', toneMapped: false }),
     );
-    vent.position.set(s * 0.28, hoverY + 0.28, bodyLen * 0.46);
-    g.add(vent);
+    ring.position.set(tx, ty, tz);
+    g.add(ring);
+    const core = new THREE.Mesh(
+      new THREE.CircleGeometry(0.09, 20),
+      glowMat('#7ef0ff', 3.2),
+    );
+    core.position.set(tx, ty, tz + 0.01);
+    g.add(core);
+    const halo = new THREE.Mesh(
+      new THREE.CircleGeometry(0.16, 20),
+      new THREE.MeshBasicMaterial({ color: '#b8ffff', transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false }),
+    );
+    halo.position.set(tx, ty, tz + 0.005);
+    g.add(halo);
   }
+  // Side / rear cyan light strips
+  for (const s of [-1, 1] as const) {
+    const strip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.035, 0.03, bodyLen * 0.35),
+      glowMat('#3ecbff', 2.4),
+    );
+    strip.position.set(s * bodyW * 0.4, hoverY + 0.22, bodyLen * 0.05);
+    g.add(strip);
+  }
+  const rearBar = new THREE.Mesh(
+    new THREE.BoxGeometry(bodyW * 0.55, 0.03, 0.035),
+    glowMat('#5af0ff', 2.6),
+  );
+  rearBar.position.set(0, hoverY + 0.18, bodyLen * 0.46);
+  g.add(rearBar);
 
   g.userData.carId = carId;
   g.userData.seatY = CAR_SEAT_Y;

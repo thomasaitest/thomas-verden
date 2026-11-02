@@ -109,7 +109,8 @@ export function createLighting(
     } catch {
       n8 = null;
     }
-    bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.0, 0.4, 0.92);
+    // Selective bloom: high threshold so only emissive thrusters/holos/cyan edges glow; greens stay dark
+    bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.28, 0.45, 0.85);
     composer.addPass(bloom);
     fxaa = new ShaderPass(FXAAShader);
     fxaa.material.uniforms['resolution'].value.set(1 / w, 1 / h);
@@ -136,9 +137,9 @@ export function createLighting(
       sun.intensity = on ? 0.12 : (hq ? 2.2 : 1.7);
       hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
       if (bloom) {
-        // Outdoor bloom OFF — any bloom was bleaching MeshBasic greens to white blobs
-        bloom.strength = on ? 0.28 : 0.0;
-        bloom.threshold = on ? 0.75 : 1.0;
+        // Outdoor: high threshold (~0.9) so MeshBasic greens never bloom; thrusters/holos do
+        bloom.strength = on ? 0.32 : 0.26;
+        bloom.threshold = on ? 0.78 : 0.85;
       }
     },
     applyQuality(high) {
@@ -152,9 +153,9 @@ export function createLighting(
       }
       renderer.toneMappingExposure = high ? 0.62 : 0.72;
       if (bloom) {
-        bloom.strength = high ? (indoor ? 0.28 : 0.0) : 0.0;
-        bloom.threshold = high ? (indoor ? 0.75 : 1.0) : 1.0;
-        bloom.radius = 0.4;
+        bloom.strength = high ? (indoor ? 0.32 : 0.26) : 0.0;
+        bloom.threshold = high ? (indoor ? 0.78 : 0.85) : 1.0;
+        bloom.radius = 0.45;
       }
       if (n8) (n8 as any).enabled = high;
       if (fxaa) fxaa.enabled = high;

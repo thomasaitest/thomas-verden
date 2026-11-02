@@ -396,7 +396,7 @@ export function createInterior(): Interior {
           const whiteFabric = new THREE.MeshStandardMaterial({ color: '#f2f4f8', roughness: 0.55, metalness: 0.04, envMapIntensity: 0.45 });
           const pillowMat = new THREE.MeshStandardMaterial({ color: '#e8eef6', roughness: 0.7, metalness: 0.02 });
           const accentPillow = new THREE.MeshStandardMaterial({ color: '#9aa8b8', roughness: 0.65, metalness: 0.04 });
-          // Large curved white sofa with back + pillows (center, facing window)
+          // Large curved white sofa with tall backrest + soft cushions against the back
           {
             const sofa = new THREE.Group();
             const shape = new THREE.Shape();
@@ -409,40 +409,46 @@ export function createInterior(): Interior {
             shape.quadraticCurveTo(0, -0.4, -0.95, -0.2);
             shape.quadraticCurveTo(-1.65, 0.05, -1.75, 0.65);
             shape.lineTo(-2.35, 0.65);
-            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.45, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
+            const seatGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.42, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
             seatGeo.rotateX(-Math.PI / 2);
             const seat = new THREE.Mesh(seatGeo, whiteFabric);
-            seat.position.y = 0.2;
+            seat.position.y = 0.18;
             seat.castShadow = true;
             sofa.add(seat);
+            // Tall curved backrest (reads as sofa back, not a flat bench)
             const backShape = new THREE.Shape();
-            backShape.moveTo(-2.3, 0.15);
-            backShape.quadraticCurveTo(-2.4, -0.4, -1.25, -0.82);
-            backShape.quadraticCurveTo(0, -1.1, 1.25, -0.82);
-            backShape.quadraticCurveTo(2.4, -0.4, 2.3, 0.15);
-            backShape.lineTo(1.95, 0.15);
-            backShape.quadraticCurveTo(2.0, -0.25, 1.15, -0.55);
-            backShape.quadraticCurveTo(0, -0.75, -1.15, -0.55);
-            backShape.quadraticCurveTo(-2.0, -0.25, -1.95, 0.15);
-            backShape.lineTo(-2.3, 0.15);
-            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 0.85, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2, curveSegments: 56 });
+            backShape.moveTo(-2.25, -0.55);
+            backShape.quadraticCurveTo(-1.2, -0.95, 0, -1.05);
+            backShape.quadraticCurveTo(1.2, -0.95, 2.25, -0.55);
+            backShape.lineTo(2.05, -0.35);
+            backShape.quadraticCurveTo(1.1, -0.7, 0, -0.78);
+            backShape.quadraticCurveTo(-1.1, -0.7, -2.05, -0.35);
+            backShape.lineTo(-2.25, -0.55);
+            const backGeo = new THREE.ExtrudeGeometry(backShape, { depth: 1.15, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 3, curveSegments: 56 });
             backGeo.rotateX(-Math.PI / 2);
             const backRest = new THREE.Mesh(backGeo, whiteFabric);
-            backRest.position.y = 0.58;
+            backRest.position.set(0, 0.42, 0);
             backRest.castShadow = true;
             sofa.add(backRest);
-            for (const [u, mat] of [[0.18, pillowMat], [0.5, accentPillow], [0.82, pillowMat]] as const) {
-              const ang = -Math.PI * 0.2 + u * Math.PI * 0.4;
-              const px = Math.sin(ang) * 1.65;
-              const pz = 0.15 - Math.cos(ang) * 0.35;
-              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.28, 14, 10), mat);
-              pillow.scale.set(1.2, 0.55, 0.95);
-              pillow.position.set(px, 0.85, pz);
+            // Soft cushions nestled against the backrest
+            for (const [u, mat, sy] of [
+              [0.2, pillowMat, 0.5],
+              [0.5, accentPillow, 0.55],
+              [0.8, pillowMat, 0.5],
+            ] as const) {
+              const ang = -Math.PI * 0.22 + u * Math.PI * 0.44;
+              const px = Math.sin(ang) * 1.55;
+              const pz = -0.55 - Math.cos(ang) * 0.15;
+              const pillow = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 12), mat);
+              pillow.scale.set(1.35, sy, 0.85);
+              pillow.position.set(px, 0.78, pz);
+              pillow.rotation.y = ang;
+              pillow.castShadow = true;
               sofa.add(pillow);
             }
             sofa.rotation.y = Math.PI; // back + pillows face door/cam
-            sofa.scale.set(1.55, 1.2, 1.35); // concept-scale curved sofa
-            sofa.position.set(-2.8, y0, 1.85); // left + closer to default cam
+            sofa.scale.set(1.55, 1.25, 1.35);
+            sofa.position.set(-2.8, y0, 1.85);
             living.add(sofa);
             const rug = new THREE.Mesh(
               new THREE.CylinderGeometry(2.15, 2.15, 0.03, 48),
@@ -457,21 +463,25 @@ export function createInterior(): Interior {
             rugIn.position.set(-2.6, y0 + 0.025, 2.7);
             living.add(rugIn);
           }
-          // Round coffee table on rug
+          // Round low coffee table on pedestal (not a flat disc)
           {
             const table = new THREE.Group();
-            const top = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.62, 0.65, 0.05, 32),
-              new THREE.MeshStandardMaterial({ color: '#1a2230', roughness: 0.2, metalness: 0.65, envMapIntensity: 1.2 }),
-            );
-            top.position.y = 0.42;
+            const topMat = new THREE.MeshStandardMaterial({ color: '#c8b79a', roughness: 0.35, metalness: 0.15, envMapIntensity: 0.8 });
+            const metalMat = new THREE.MeshStandardMaterial({ color: '#8aa0b8', metalness: 0.85, roughness: 0.22, envMapIntensity: 1.1 });
+            const top = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.74, 0.06, 40), topMat);
+            top.position.y = 0.4;
+            top.castShadow = true;
             table.add(top);
-            const stem = new THREE.Mesh(
-              new THREE.CylinderGeometry(0.07, 0.12, 0.38, 12),
-              new THREE.MeshStandardMaterial({ color: '#8aa0b8', metalness: 0.8, roughness: 0.25 }),
-            );
+            const lip = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.02, 8, 40), metalMat);
+            lip.rotation.x = Math.PI / 2;
+            lip.position.y = 0.37;
+            table.add(lip);
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.32, 16), metalMat);
             stem.position.y = 0.2;
             table.add(stem);
+            const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.05, 32), metalMat);
+            foot.position.y = 0.03;
+            table.add(foot);
             table.position.set(-2.55, y0, 2.85);
             living.add(table);
           }
@@ -532,18 +542,34 @@ export function createInterior(): Interior {
                 led.position.set(hx + sx * (tw / 2 + 0.5), y0 + ly, hz + 0.38);
                 living.add(led);
               }
+              // Floor plant + shelf plant
               const pot = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.12, 0.1, 0.2, 10),
-                new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.5 }),
+                new THREE.CylinderGeometry(0.16, 0.13, 0.28, 12),
+                new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.45, metalness: 0.15 }),
               );
-              pot.position.set(hx + sx * (tw / 2 + 0.5), y0 + 2.2, hz + 0.25);
+              pot.position.set(hx + sx * (tw / 2 + 0.55), y0 + 0.14, hz + 0.55);
               living.add(pot);
-              const leaf = new THREE.Mesh(
-                new THREE.SphereGeometry(0.22, 10, 8),
+              for (const [oy, r, col] of [[0.45, 0.28, '#4e9a40'], [0.65, 0.22, '#5fa84a'], [0.55, 0.18, '#3d8a35']] as const) {
+                const leaf = new THREE.Mesh(
+                  new THREE.SphereGeometry(r, 12, 10),
+                  new THREE.MeshStandardMaterial({ color: col, roughness: 0.85 }),
+                );
+                leaf.scale.set(1.1, 0.75, 1.0);
+                leaf.position.set(hx + sx * (tw / 2 + 0.55) + (r - 0.2) * 0.3, y0 + oy, hz + 0.55);
+                living.add(leaf);
+              }
+              const shelfPot = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.1, 0.08, 0.16, 10),
+                new THREE.MeshStandardMaterial({ color: '#3a4550', roughness: 0.5 }),
+              );
+              shelfPot.position.set(hx + sx * (tw / 2 + 0.5), y0 + 2.15, hz + 0.25);
+              living.add(shelfPot);
+              const shelfLeaf = new THREE.Mesh(
+                new THREE.SphereGeometry(0.18, 10, 8),
                 new THREE.MeshStandardMaterial({ color: '#5a8f5a', roughness: 0.8 }),
               );
-              leaf.position.set(hx + sx * (tw / 2 + 0.5), y0 + 2.45, hz + 0.25);
-              living.add(leaf);
+              shelfLeaf.position.set(hx + sx * (tw / 2 + 0.5), y0 + 2.38, hz + 0.25);
+              living.add(shelfLeaf);
             }
             // Bedroom doorway frame (right) — readable opening + warm lintel so pod peeks through
             {
@@ -602,16 +628,23 @@ export function createInterior(): Interior {
             );
             top.position.y = 1.0;
             island.add(top);
+            // Warm under-glow strip (bloom-capable)
             const glow = new THREE.Mesh(
-              new THREE.BoxGeometry(2.5, 0.05, 1.0),
-              glowMat('#ffe0b0', 2.0),
+              new THREE.BoxGeometry(2.45, 0.06, 1.05),
+              new THREE.MeshBasicMaterial({ color: '#ffd7a0', toneMapped: false }),
             );
-            glow.position.y = 0.05;
+            glow.position.y = 0.04;
             island.add(glow);
+            const glowSoft = new THREE.Mesh(
+              new THREE.BoxGeometry(2.55, 0.02, 1.15),
+              glowMat('#ffe0b0', 2.8),
+            );
+            glowSoft.position.y = 0.01;
+            island.add(glowSoft);
             island.position.set(4.4, y0, 0.2);
             living.add(island);
-            const kitLight = new THREE.PointLight('#ffcc88', 0.55, 8, 2);
-            kitLight.position.set(4.4, y0 + 0.3, 0.2);
+            const kitLight = new THREE.PointLight('#ffcc88', 0.95, 9, 2);
+            kitLight.position.set(4.4, y0 + 0.25, 0.2);
             living.add(kitLight);
             for (const sx of [-0.55, 0.55]) {
               const stool = new THREE.Mesh(
