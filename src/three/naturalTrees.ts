@@ -161,24 +161,37 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   const g = new THREE.Group();
   const path = TREE_PATHS[Math.abs(kind) % TREE_PATHS.length]!;
   const cached = treeCache.get(path);
+  const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   if (cached) {
     const model = cached.clone(true);
     model.name = `ez-${path.split('/').pop()}`;
     model.userData.ezTree = true;
-    // Re-harden clones (shared mats from cache already hardened; clone(true) shares mats — OK)
     hardenEzTree(model, kind);
     const s = 0.95 + (kind % 3) * 0.08;
     model.scale.setScalar(s);
     model.rotation.y = ((kind * 47) % 360) * (Math.PI / 180);
     g.add(model);
+    // Dense green under-fill so sky cannot read as a white canopy blob through sparse cards
+    const fillMat = new THREE.MeshBasicMaterial({ color: hex, toneMapped: false });
+    for (const [y, sx, sy, sz] of [
+      [2.9, 1.55, 1.05, 1.45],
+      [3.6, 1.25, 0.9, 1.15],
+      [4.15, 0.85, 0.7, 0.85],
+    ] as const) {
+      const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), fillMat);
+      fill.position.y = y;
+      fill.scale.set(sx, sy, sz);
+      fill.castShadow = true;
+      g.add(fill);
+    }
     g.userData.ezTree = true;
     g.userData.treeKind = kind;
     return g;
   }
-  const p = proceduralTree(kind);
-  p.userData.ezTree = false;
-  p.userData.treeKind = kind;
-  return p;
+  const proc = proceduralTree(kind);
+  proc.userData.ezTree = false;
+  proc.userData.treeKind = kind;
+  return proc;
 }
 
 function grassClump(color: string, h: number): THREE.Group {
