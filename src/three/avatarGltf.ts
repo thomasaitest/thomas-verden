@@ -250,11 +250,11 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
     gear.add(halo);
   }
 
-  // chest tech stripe for hoodie/tech looks
+  // Subtle collar LED pip only — flat cyan chest bar read as a name-tag clipping the torso
   if (!skirtLike && (a.print === 'lyn' || a.print === 'stjerne' || acc.startsWith('sekk') || acc.includes('vinger'))) {
-    const chest = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.04), glow('#3ecbff', 1.3));
-    chest.position.set(0, 1.35, 0.28);
-    gear.add(chest);
+    const pip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), glow('#3ecbff', 1.1));
+    pip.position.set(0, 1.48, 0.22);
+    gear.add(pip);
   }
 
   gear.scale.setScalar(0.95);

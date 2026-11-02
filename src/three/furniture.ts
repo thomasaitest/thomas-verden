@@ -46,7 +46,7 @@ const WHITE = '#ffffff';
 const PILLOW = '#fff8f0';
 
 const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
-  // Capsule sleep pod — open clam shell toward +Z (living doorway), mattress + blue glow
+  // Capsule sleep pod — open clam toward +Z (doorway): blue interior + mattress readable through frame
   const shellMat = new THREE.MeshStandardMaterial({
     color: '#e8eef6',
     roughness: 0.28,
@@ -54,57 +54,70 @@ const bedBase = (g: THREE.Group, c: string, w: number, d: number) => {
     envMapIntensity: 1.0,
     side: THREE.DoubleSide,
   });
-  // Back hood (closed half) — not a full egg
+  const innerMat = new THREE.MeshStandardMaterial({
+    color: '#1a4060',
+    roughness: 0.55,
+    metalness: 0.15,
+    emissive: '#0a3060',
+    emissiveIntensity: 0.45,
+    side: THREE.BackSide,
+  });
+  // Outer hood (back + top) — open mouth toward +Z
   const hood = new THREE.Mesh(
-    new THREE.SphereGeometry(1.0, 28, 18, Math.PI * 0.15, Math.PI * 1.7, 0, Math.PI * 0.55),
+    new THREE.SphereGeometry(1.0, 32, 20, Math.PI * 0.22, Math.PI * 1.56, 0, Math.PI * 0.58),
     shellMat,
   );
-  hood.scale.set(w * 0.38, 0.72, d * 0.28);
-  hood.position.set(0, 0.95, -0.45);
+  hood.scale.set(w * 0.42, 0.78, d * 0.32);
+  hood.position.set(0, 0.92, -0.25);
   hood.castShadow = true;
   g.add(hood);
-  // Side rails
+  // Blue inner liner (reads through open mouth)
+  const liner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.92, 28, 18, Math.PI * 0.22, Math.PI * 1.56, 0, Math.PI * 0.55),
+    innerMat,
+  );
+  liner.scale.set(w * 0.42, 0.78, d * 0.32);
+  liner.position.set(0, 0.92, -0.25);
+  g.add(liner);
+  // Side rails framing the opening
   for (const s of [-1, 1] as const) {
-    const rail = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.08, d * 0.45, 4, 8),
-      shellMat,
-    );
+    const rail = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, d * 0.4, 4, 8), shellMat);
     rail.rotation.x = Math.PI / 2;
-    rail.position.set(s * w * 0.38, 0.55, 0.05);
+    rail.position.set(s * w * 0.36, 0.58, 0.15);
     g.add(rail);
   }
-  // Dark base plinth
-  rbox(g, '#1a2230', [0, 0.22, 0.1], [w * 0.92, 0.2, d * 0.72]);
-  // Mattress (readable from doorway)
+  // Dark floating plinth
+  rbox(g, '#1a2230', [0, 0.18, 0.05], [w * 0.88, 0.16, d * 0.65]);
+  // Mattress — light blue-white, clearly inside
   const mattress = new THREE.Mesh(
-    new THREE.BoxGeometry(w * 0.75, 0.16, d * 0.55),
-    new THREE.MeshStandardMaterial({ color: c, roughness: 0.72, metalness: 0.02 }),
+    new THREE.BoxGeometry(w * 0.7, 0.14, d * 0.48),
+    new THREE.MeshStandardMaterial({ color: c || '#c8e4ff', roughness: 0.7, metalness: 0.02, emissive: '#204060', emissiveIntensity: 0.15 }),
   );
-  mattress.position.set(0, 0.52, 0.2);
+  mattress.position.set(0, 0.48, 0.22);
   mattress.castShadow = true;
   g.add(mattress);
-  // Pillow at back
-  rbox(g, '#f4f7fb', [0, 0.68, -d * 0.08], [w * 0.45, 0.14, 0.35]);
-  // Cyan rim around open mouth
+  rbox(g, '#f4f7fb', [0, 0.62, -d * 0.05], [w * 0.4, 0.12, 0.3]);
+  // Oval cyan rim at open mouth
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(w * 0.36, 0.03, 8, 40, Math.PI * 1.05),
+    new THREE.TorusGeometry(w * 0.34, 0.035, 8, 40, Math.PI * 1.15),
     new THREE.MeshBasicMaterial({ color: '#4de0ff', toneMapped: false }),
   );
   rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, 0.7, d * 0.18);
+  rim.position.set(0, 0.72, d * 0.22);
   g.add(rim);
-  const glow = new THREE.PointLight('#5ad4ff', 1.35, 6, 2);
-  glow.position.set(0, 0.9, 0.35);
+  const glow = new THREE.PointLight('#5ad4ff', 1.8, 5.5, 2);
+  glow.position.set(0, 0.85, 0.4);
   g.add(glow);
-  const glow2 = new THREE.PointLight('#7ef0ff', 0.55, 4, 2);
-  glow2.position.set(0, 1.15, -0.1);
+  const glow2 = new THREE.PointLight('#7ef0ff', 0.7, 4, 2);
+  glow2.position.set(0, 1.05, -0.05);
   g.add(glow2);
+  // Interior blue wash plane under mattress
   const wash = new THREE.Mesh(
-    new THREE.PlaneGeometry(w * 0.7, d * 0.45),
-    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.4, toneMapped: false }),
+    new THREE.PlaneGeometry(w * 0.65, d * 0.4),
+    new THREE.MeshBasicMaterial({ color: '#3ecbff', transparent: true, opacity: 0.55, toneMapped: false }),
   );
   wash.rotation.x = -Math.PI / 2;
-  wash.position.set(0, 0.44, 0.2);
+  wash.position.set(0, 0.4, 0.22);
   g.add(wash);
 };
 

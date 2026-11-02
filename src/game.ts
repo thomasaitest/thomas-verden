@@ -9,7 +9,7 @@ import { canEdit, careItems, migrateFurnitureClearOfWalls, moveItem, newHouse, s
 import { NEED_INFO, stageOf, type CareWhere, type NeedKind, type PetState } from './logic/needs.ts';
 import { SPECIES_BY_ID } from './logic/pets.ts';
 import { loadSave, writeSave, type SaveData } from './logic/save.ts';
-import { cameraRelative, orbit } from './logic/camera.ts';
+import { cameraRelative, orbit, HOUSE_DIST_MIN, HOUSE_PITCH_MIN } from './logic/camera.ts';
 import { movePlayer, resolve, surfaceUnder, type Colliders } from './logic/collision.ts';
 import { afterJump, canJump, drainWalk, ENERGY_MAX, restEnergy } from './logic/energy.ts';
 import { nearestBed, shouldWakeFromBed, type SleepSpot } from './logic/sleep.ts';
@@ -535,14 +535,15 @@ export class Game {
     this.interior.build(house);
     this.town.group.visible = false;
     this.interior.group.visible = true;
-    // Shoulder cam ~1.6 m: avatar left third, living fills frame (concept 2-hus-inne)
-    this.player.pos.set(-0.95, 0, Math.max(1.7, this.interior.door.z - 3.0));
+    // Over-right-shoulder: avatar faces into room (−Z), cam behind toward door (+Z)
+    // Avatar lands in left third; room (window/island/pod) fills centre-right.
+    this.player.pos.set(-1.15, 0, Math.max(1.8, this.interior.door.z - 2.8));
     this.player.vy = 0;
-    this.player.yaw = 0.1;
-    this.cam.yaw = 0.1;
-    this.cam.pitch = 0.04;
-    this.cam.dist = 3.15;
-    this.camShown = 3.15;
+    this.player.yaw = Math.PI; // face window (−Z); cam.yaw≈0 sits behind and shows the back
+    this.cam.yaw = 0.08;
+    this.cam.pitch = 0.06;
+    this.cam.dist = 3.2;
+    this.camShown = 3.2;
     this.outdoorBgBackup = this.scene.background as THREE.Color | THREE.Texture;
     this.scene.background = new THREE.Color('#7a828c');
     this.scene.fog = null;
@@ -1039,8 +1040,9 @@ export class Game {
     }
 
     // camera input
-    const maxDist = this.building ? 30 : this.mode === 'house' ? 11 : 140;
-    this.cam = orbit(this.cam, inp.camDX, inp.camDY, inp.zoom, maxDist);
+    const maxDist = this.building ? 30 : this.mode === 'house' ? 8 : 140;
+    this.cam = orbit(this.cam, inp.camDX, inp.camDY, inp.zoom, maxDist,
+      this.mode === 'house' ? { minDist: HOUSE_DIST_MIN, minPitch: HOUSE_PITCH_MIN } : undefined);
 
     // movement
     const p = this.player;
@@ -1317,14 +1319,28 @@ export class Game {
       );
       if (desired.y < 0.6) desired.y = 0.6;
       // Dedicated interior camera: keep lens INSIDE the room (dollhouse cutaway), never outside blank walls
+      let look = target;
       if (this.mode === 'house') {
+        // ~0.6 m over the avatar's RIGHT shoulder (up × forward)
+        const fx = Math.sin(p.yaw);
+        const fz = Math.cos(p.yaw);
+        const rx = fz; // up × forward in XZ
+        const rz = -fx;
+        desired.x += rx * 0.6;
+        desired.z += rz * 0.6;
         const halfW = this.interior.w / 2 - 0.9;
         const halfD = this.interior.d / 2 - 0.9;
         const baseY = this.playerFloor() * 6.6;
         desired.x = Math.max(-halfW, Math.min(halfW, desired.x));
         desired.z = Math.max(-halfD, Math.min(halfD, desired.z));
-        desired.y = Math.max(baseY + 1.45, Math.min(baseY + 2.15, desired.y));
-        if (this.cam.dist > 5.5) dist = Math.min(dist, 5.5);
+        desired.y = Math.max(baseY + 1.5, Math.min(baseY + 2.05, desired.y));
+        if (this.cam.dist > 5.0) dist = Math.min(dist, 5.0);
+        // Look past the avatar into the room so the back reads and living fills the frame
+        look = new THREE.Vector3(
+          p.pos.x + fx * 1.8 + rx * 0.25,
+          p.pos.y + 1.45,
+          p.pos.z + fz * 1.8 + rz * 0.25,
+        );
       }
       const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
       if (this.vehicleMesh) ignore.add(this.vehicleMesh);
@@ -1332,7 +1348,7 @@ export class Game {
         ? desired
         : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 9.0 : 2.0 });
       this.camera.position.copy(coll);
-      this.camera.lookAt(target);
+      this.camera.lookAt(look);
       if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
     }
     } // end !freezeCam
