@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { loadModel } from './assets.ts';
 
-const LEAF_HEX = ['#3d8a32', '#4a9a3a', '#2f7a28', '#55a844', '#3a8530', '#4b9440'];
+const LEAF_HEX = ['#2f6e28', '#3a7a30', '#256820', '#3d8532', '#2c7028', '#387830'];
 
 /** Baked ez-tree presets (Draco GLB). */
 const TREE_PATHS = [
@@ -114,6 +114,7 @@ function proceduralTree(kind: number): THREE.Group {
   const leafMat = new THREE.MeshBasicMaterial({
     color: LEAF_HEX[kind % LEAF_HEX.length],
     side: THREE.DoubleSide,
+    toneMapped: false, // ACES was bleaching canopy tops to white
   });
   const blobs = [
     [0, h + 0.55, 0, 1.15],
@@ -154,7 +155,7 @@ export function buildNaturalTree(kind = 0): THREE.Group {
 function forceGreenCanopies(root: THREE.Object3D, kind: number) {
   const hex = LEAF_HEX[Math.abs(kind) % LEAF_HEX.length]!;
   // MeshBasic = unlit solid green (Standard+HDRI was washing canopies to white blobs)
-  const leafMat = new THREE.MeshBasicMaterial({ color: hex, side: THREE.DoubleSide });
+  const leafMat = new THREE.MeshBasicMaterial({ color: hex, side: THREE.DoubleSide, toneMapped: false });
   const trunkMat = new THREE.MeshStandardMaterial({
     color: '#5a3d28',
     roughness: 0.94,
