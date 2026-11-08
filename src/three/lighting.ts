@@ -1,15 +1,15 @@
 /**
- * Daytime HDRI + soft sun + HQ post (N8AO / SMAA / mild bloom).
+ * Daytime HDRI + soft sun. Bloom/FXAA only when the frame budget allows.
  * Whites must not clip: exposure tuned, wall albedo ≤ ~0.8, no emissive walls.
+ * N8AO is intentionally not used — a full-screen AO pass made the town unplayable.
  */
 import * as THREE from 'three';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
-import { N8AOPass } from 'n8ao';
 import { publicUrl } from '../util/publicUrl';
 
 export const HDRI_URL = publicUrl('env/kloofendal_43d_clear_puresky_1k.hdr');
@@ -21,8 +21,9 @@ export interface LightingRig {
   sun: THREE.DirectionalLight;
   envReady: Promise<void>;
   applyQuality: (high: boolean) => void;
+  applyView: (opts: { shadows: boolean; bloom: boolean; pixelRatio: number }) => void;
   resize: (w: number, h: number) => void;
-  render: (high: boolean) => void;
+  render: () => void;
   setExposure: (e: number) => void;
   setIndoor: (on: boolean) => void;
   dispose: () => void;
@@ -36,8 +37,8 @@ export function createLighting(
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.62;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   // Soft ambient fill — keep low so HDRI + sun do the work
   const hemi = new THREE.HemisphereLight('#c8dff8', '#6a8a58', 0.32);
@@ -45,15 +46,15 @@ export function createLighting(
 
   const sun = new THREE.DirectionalLight('#fff2dc', 2.4);
   sun.position.set(35, 55, 18);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.castShadow = false;
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.bias = -0.00025;
   sun.shadow.normalBias = 0.035;
   const sc = sun.shadow.camera;
-  sc.left = -55;
-  sc.right = 55;
-  sc.top = 55;
-  sc.bottom = -55;
+  sc.left = -28;
+  sc.right = 28;
+  sc.top = 28;
+  sc.bottom = -28;
   sc.near = 1;
   sc.far = 160;
   sc.updateProjectionMatrix();
@@ -63,7 +64,7 @@ export function createLighting(
   pmrem.compileEquirectangularShader();
 
   const envReady = (async () => {
-    const rgbe = new RGBELoader();
+    const rgbe = new HDRLoader();
     const tryUrl = async (url: string) =>
       new Promise<THREE.DataTexture>((resolve, reject) => {
         rgbe.load(url, resolve, undefined, reject);
@@ -89,42 +90,46 @@ export function createLighting(
     tex.dispose();
   })();
 
-  // Post stack (three EffectComposer + N8AOPass)
+  // Post stack is created only while bloom is on, so the default path is a single forward render.
   let composer: EffectComposer | null = null;
   let bloom: UnrealBloomPass | null = null;
-  let n8: InstanceType<typeof N8AOPass> | null = null;
   let fxaa: ShaderPass | null = null;
+  let useBloom = false;
 
   const setupComposer = (w: number, h: number) => {
     composer?.dispose();
     composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    try {
-      n8 = new N8AOPass(scene, camera, w, h);
-      // Tuned for soft contact AO without darkening whites too hard
-      (n8 as any).configuration.aoRadius = 1.8;
-      (n8 as any).configuration.distanceFalloff = 1.0;
-      (n8 as any).configuration.intensity = 1.35;
-      (n8 as any).configuration.color = new THREE.Color(0x000000);
-      composer.addPass(n8 as any);
-    } catch {
-      n8 = null;
-    }
-    // Selective bloom: high threshold so only emissive thrusters/holos/cyan edges glow; greens stay dark
-    bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.28, 0.45, 0.85);
+    bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.22, 0.4, 0.88);
     composer.addPass(bloom);
     fxaa = new ShaderPass(FXAAShader);
-    fxaa.material.uniforms['resolution'].value.set(1 / w, 1 / h);
+    fxaa.material.uniforms['resolution'].value.set(1 / Math.max(1, w), 1 / Math.max(1, h));
     composer.addPass(fxaa);
   };
 
-  setupComposer(
-    Math.max(1, renderer.domElement.clientWidth || 1280),
-    Math.max(1, renderer.domElement.clientHeight || 800),
-  );
-
-  let hq = true;
+  let hq = false;
   let indoor = false;
+
+  const syncBloom = () => {
+    if (!useBloom) {
+      composer?.dispose();
+      composer = null;
+      bloom = null;
+      fxaa = null;
+      return;
+    }
+    if (!composer) {
+      setupComposer(
+        Math.max(1, renderer.domElement.clientWidth || 1280),
+        Math.max(1, renderer.domElement.clientHeight || 800),
+      );
+    }
+    if (bloom) {
+      bloom.strength = indoor ? 0.28 : 0.22;
+      bloom.threshold = indoor ? 0.78 : 0.88;
+      bloom.radius = 0.4;
+    }
+  };
 
   return {
     hemi,
@@ -135,46 +140,40 @@ export function createLighting(
     },
     setIndoor(on) {
       indoor = on;
-      sun.intensity = on ? 0.12 : (hq ? 2.2 : 1.7);
-      hemi.intensity = on ? 0.08 : (hq ? 0.25 : 0.35);
-      if (bloom) {
-        // Outdoor: high threshold (~0.9) so MeshBasic greens never bloom; thrusters/holos do
-        bloom.strength = on ? 0.34 : 0.32;
-        bloom.threshold = on ? 0.78 : 0.85;
+      sun.intensity = on ? 0.12 : (hq ? 2.05 : 1.7);
+      hemi.intensity = on ? 0.08 : (hq ? 0.28 : 0.38);
+      syncBloom();
+    },
+    applyView(opts) {
+      hq = opts.shadows || opts.bloom;
+      useBloom = opts.bloom;
+      const cap = Math.max(0.7, Math.min(1.5, opts.pixelRatio));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, cap));
+      renderer.shadowMap.enabled = opts.shadows;
+      sun.castShadow = opts.shadows;
+      if (!indoor) {
+        sun.intensity = opts.shadows ? 2.05 : 1.7;
+        hemi.intensity = opts.shadows ? 0.28 : 0.38;
       }
+      renderer.toneMappingExposure = opts.shadows ? 0.62 : 0.72;
+      scene.backgroundIntensity = opts.shadows ? 0.95 : 0.85;
+      scene.environmentIntensity = opts.shadows ? 1.0 : 0.8;
+      syncBloom();
     },
     applyQuality(high) {
-      hq = high;
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, high ? 1.5 : 1.15));
-      renderer.shadowMap.enabled = high;
-      sun.castShadow = high;
-      if (!indoor) {
-        sun.intensity = high ? 2.2 : 1.7;
-        hemi.intensity = high ? 0.25 : 0.35;
-      }
-      renderer.toneMappingExposure = high ? 0.62 : 0.72;
-      if (bloom) {
-        bloom.strength = high ? (indoor ? 0.34 : 0.32) : 0.0;
-        bloom.threshold = high ? (indoor ? 0.78 : 0.85) : 1.0;
-        bloom.radius = 0.45;
-      }
-      if (n8) (n8 as any).enabled = high;
-      if (fxaa) fxaa.enabled = high;
-      scene.backgroundIntensity = high ? 0.95 : 0.85;
-      scene.environmentIntensity = high ? 1.05 : 0.8;
+      this.applyView({
+        shadows: high,
+        bloom: high,
+        pixelRatio: Math.min(window.devicePixelRatio || 1, high ? 1.25 : 1),
+      });
     },
     resize(w, h) {
       composer?.setSize(w, h);
       bloom?.resolution.set(w, h);
       fxaa?.material.uniforms['resolution'].value.set(1 / Math.max(1, w), 1 / Math.max(1, h));
-      try {
-        (n8 as any)?.setSize?.(w, h);
-      } catch {
-        /* */
-      }
     },
-    render(high) {
-      if (high && composer) composer.render();
+    render() {
+      if (useBloom && composer) composer.render();
       else renderer.render(scene, camera);
     },
     dispose() {

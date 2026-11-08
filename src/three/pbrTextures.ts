@@ -22,7 +22,7 @@ function loadOne(url: string, colorSpace?: THREE.ColorSpace): Promise<THREE.Text
       (t) => {
         if (colorSpace) t.colorSpace = colorSpace;
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.anisotropy = 8;
+        t.anisotropy = 4;
         t.needsUpdate = true;
         resolve(t);
       },
@@ -253,22 +253,24 @@ export function pbrStandard(
   });
 }
 
-export function physicalGlass(color = '#8eb8d0', transmission = 0.85): THREE.MeshPhysicalMaterial {
-  // Cap transmission for SwiftShader/mobile stability; still reads as glass via env reflections
-  const t = Math.min(transmission, 0.72);
+export function physicalGlass(color = '#8eb8d0', transmission = 0): THREE.MeshPhysicalMaterial {
+  void transmission;
+  // transmission > 0 makes three.js re-render the whole opaque scene every frame.
+  // Reflective transparent glass keeps the storefront / canopy read without that pass.
   return new THREE.MeshPhysicalMaterial({
     color,
-    metalness: 0.05,
-    roughness: 0.08,
-    transmission: t,
-    thickness: 0.45,
+    metalness: 0.08,
+    roughness: 0.06,
+    transmission: 0,
+    thickness: 0,
     ior: 1.45,
     transparent: true,
-    opacity: 1,
-    envMapIntensity: 1.25,
+    opacity: 0.42,
+    envMapIntensity: 1.35,
     specularIntensity: 1,
-    clearcoat: 0.2,
-    clearcoatRoughness: 0.2,
+    clearcoat: 0.15,
+    clearcoatRoughness: 0.25,
+    depthWrite: false,
   });
 }
 

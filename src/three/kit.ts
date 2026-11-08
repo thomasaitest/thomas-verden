@@ -148,11 +148,63 @@ export function mergeStatic(group: THREE.Object3D, opts: { cast?: boolean; recei
   return out;
 }
 
+/**
+ * Bake static meshes that look the same (colour / roughness / metal) into one
+ * draw each. Transparent, textured and instanced meshes stay individual.
+ */
+export function coalesceLook(root: THREE.Object3D): void {
+  root.updateMatrixWorld(true);
+  const rootInv = root.matrixWorld.clone().invert();
+  const buckets = new Map<string, { material: THREE.Material; cast: boolean; geos: THREE.BufferGeometry[]; meshes: THREE.Mesh[] }>();
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || (m as THREE.InstancedMesh).isInstancedMesh) return;
+    if (m.userData.noMerge || m.userData.spin) return;
+    const mat = m.material as THREE.MeshStandardMaterial;
+    if (!mat || Array.isArray(m.material) || mat.map || mat.transparent || mat.alphaMap) return;
+    const key = [
+      mat.type,
+      mat.color?.getHexString?.() ?? '',
+      mat.roughness ?? '',
+      mat.metalness ?? '',
+      mat.emissive?.getHexString?.() ?? '',
+      mat.emissiveIntensity ?? 0,
+      mat.side ?? 0,
+      m.castShadow ? 1 : 0,
+    ].join('|');
+    let bucket = buckets.get(key);
+    if (!bucket) {
+      bucket = { material: mat, cast: m.castShadow, geos: [], meshes: [] };
+      buckets.set(key, bucket);
+    }
+    const g = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
+    for (const name of Object.keys(g.attributes)) if (name !== 'position' && name !== 'normal') g.deleteAttribute(name);
+    if (!g.getAttribute('normal')) g.computeVertexNormals();
+    g.applyMatrix4(rootInv.clone().multiply(m.matrixWorld));
+    bucket.geos.push(g);
+    bucket.meshes.push(m);
+  });
+  for (const bucket of buckets.values()) {
+    if (bucket.meshes.length < 2) {
+      for (const g of bucket.geos) g.dispose();
+      continue;
+    }
+    const merged = mergeGeometries(bucket.geos, false);
+    for (const g of bucket.geos) g.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, bucket.material);
+    mesh.castShadow = bucket.cast;
+    mesh.receiveShadow = true;
+    root.add(mesh);
+    for (const old of bucket.meshes) old.parent?.remove(old);
+  }
+}
+
 export function shadowAll(o: THREE.Object3D, cast = true, receive = false): void {
   o.traverse((c) => {
     const m = c as THREE.Mesh;
     if (m.isMesh) {
-      m.castShadow = cast;
+      m.castShadow = cast && !m.userData.noCast;
       m.receiveShadow = receive;
     }
   });

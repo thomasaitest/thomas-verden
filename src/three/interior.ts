@@ -13,15 +13,6 @@ import {
 } from './furniture.ts';
 import { box, G, glowMat, mat, rbox, textTexture } from './kit.ts';
 import { SharedMats, physicalGlass } from './pbrTextures.ts';
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
-
-let rectAreaReady = false;
-function ensureRectArea() {
-  if (rectAreaReady) return;
-  RectAreaLightUniformsLib.init();
-  rectAreaReady = true;
-}
-
 export const WALL_H = 6.2;
 
 export interface Interior {
@@ -333,7 +324,6 @@ export function createInterior(): Interior {
         }
         // LED cove around ceiling — moderne gets curved warm strips that bloom
         {
-          ensureRectArea();
           const coveY = y0 + WALL_H - 0.14;
           // Thin recessed LED strips (not floating gold tubes)
           const coveMat = new THREE.MeshBasicMaterial({
@@ -423,11 +413,7 @@ export function createInterior(): Interior {
             mkStrip(w - inset * 2, ledD, 0, d / 2 - inset);
             mkStrip(ledD, d - inset * 2, -w / 2 + inset, 0);
             mkStrip(ledD, d - inset * 2, w / 2 - inset, 0);
-            const area = new THREE.RectAreaLight('#ffe8d0', 14, w * 0.55, d * 0.4);
-            area.position.set(0, dropY - 0.2, -0.15);
-            area.rotation.x = -Math.PI / 2;
-            fg.add(area);
-            const soft = new THREE.PointLight('#ffe0b0', 1.15, 18, 2);
+            const soft = new THREE.PointLight('#ffe0b0', 1.35, 16, 2);
             soft.position.set(0, dropY - 0.55, 0.2);
             fg.add(soft);
           } else {
@@ -441,11 +427,7 @@ export function createInterior(): Interior {
             mkCove(0.04, d * 0.85, -w / 2 + 0.35, 0);
             mkCove(0.04, d * 0.85, w / 2 - 0.35, 0);
             if (f === 0) {
-              const area = new THREE.RectAreaLight('#ffe8d0', 11, w * 0.7, d * 0.45);
-              area.position.set(0, coveY - 0.05, -d * 0.08);
-              area.rotation.x = -Math.PI / 2;
-              fg.add(area);
-              const soft = new THREE.PointLight('#ffe0b0', 0.85, 22, 2);
+              const soft = new THREE.PointLight('#ffe0b0', 1.05, 18, 2);
               soft.position.set(0, coveY - 0.4, 0);
               fg.add(soft);
             }
@@ -519,13 +501,9 @@ export function createInterior(): Interior {
             holoHalo.rotation.y = Math.PI / 2;
             holoHalo.position.set(hx + 0.05, hy, hz);
             living.add(holoHalo);
-            const holoLight = new THREE.PointLight('#3a7cff', 2.8, 10, 2);
+            const holoLight = new THREE.PointLight('#3a7cff', 1.6, 8, 2);
             holoLight.position.set(hx + 1.4, hy, hz);
             living.add(holoLight);
-            const holoArea = new THREE.RectAreaLight('#4a9cff', 4.5, th * 0.95, tw * 0.9);
-            holoArea.position.set(hx + 0.35, hy, hz);
-            holoArea.lookAt(hx + 2, hy, hz);
-            living.add(holoArea);
             // Shelves flanking along left wall (ahead/behind screen) — not in front of holo
             for (const sz of [-1, 1] as const) {
               const shelf = buildFurniture('bookshelf', '#c4a078');

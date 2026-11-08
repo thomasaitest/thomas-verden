@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, cleanAvatar, DEFAULT_AVATAR, FACES, HAIR_COLORS, HAIR_STYLES, HATS, randomAvatar, SHIRT_PRINTS, SHOES, SKIN } from './avatar.ts';
+import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, avatarEditResult, cleanAvatar, DEFAULT_AVATAR, FACES, HAIR_COLORS, HAIR_STYLES, HATS, randomAvatar, SHIRT_PRINTS, SHOES, SKIN } from './avatar.ts';
 import { seeded } from './rng.ts';
 
 const lists = { HAIR_STYLES, FACES, SHIRT_PRINTS, BOTTOMS, SHOES, HATS, ACCESSORIES };
@@ -30,6 +30,13 @@ describe('avatar options', () => {
     expect(a.hair).toBe('kort');
     expect(a.bottom).toBe('bukse');
     expect(a.shoeStyle).toBe('sko');
+  });
+  it('keeps a saved accessory unless the editor actually changes it', () => {
+    const saved = { ...DEFAULT_AVATAR, accessory: 'vinger' as const };
+    const draft = { ...saved, shirt: '#112233', accessory: 'ingen' as const };
+    expect(avatarEditResult(saved, draft, false).accessory).toBe('vinger');
+    expect(avatarEditResult(saved, draft, false).shirt).toBe('#112233');
+    expect(avatarEditResult(saved, draft, true).accessory).toBe('ingen');
   });
   it('unknown or malicious values fall back to defaults, new ids are accepted', () => {
     const a = cleanAvatar({ hair: 'afro', face: 'sovnig', print: 'lyn', bottom: 'skjort', shoeStyle: 'stovler', hat: 'pirat', accessory: 'sommerfugl', skin: 'red', shirt: '<b>' });

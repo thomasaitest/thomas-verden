@@ -3,6 +3,8 @@
  * Leaf cards: lit MeshStandard (varied darker greens, alphaTest, shadows) so canopies have depth.
  */
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { coalesceLook } from './kit.ts';
 import { loadModel } from './assets.ts';
 
 /** Darker, varied canopy greens — concept depth, not neon paper. */
@@ -27,35 +29,87 @@ function leafKind(kind: number): number {
   return Math.abs(Math.floor(kind)) % LEAF_HEX.length;
 }
 
+const leafMats = new Map<string, THREE.MeshStandardMaterial>();
+const trunkMats = new Map<string, THREE.MeshStandardMaterial>();
+
 function leafStandardFrom(src?: THREE.Material | null, kind = 0): THREE.MeshStandardMaterial {
   const hex = LEAF_HEX[leafKind(kind)]!;
   const srcStd = src as THREE.MeshStandardMaterial | undefined;
   const map = srcStd?.map ?? null;
-  const alphaMap = (srcStd as any)?.alphaMap ?? null;
-  return new THREE.MeshStandardMaterial({
+  const alphaMap = (srcStd?.alphaMap ?? null) as THREE.Texture | null;
+  const key = `${leafKind(kind)}|${map?.uuid ?? ''}|${alphaMap?.uuid ?? ''}`;
+  const hit = leafMats.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshStandardMaterial({
     color: hex,
-    map,
-    alphaMap: alphaMap || undefined,
     roughness: 0.82,
     metalness: 0.02,
     envMapIntensity: 0.35,
     side: THREE.DoubleSide,
-    // Keep leaf cards readable without sky holes; slight soft edge when maps exist
     alphaTest: map || alphaMap ? 0.35 : 0,
     transparent: false,
     depthWrite: true,
-    // Soft fill from sky/hemi — not flat unlit
   });
+  if (map) mat.map = map;
+  if (alphaMap) mat.alphaMap = alphaMap;
+  leafMats.set(key, mat);
+  return mat;
 }
 
 function trunkStandard(src?: THREE.Material | null): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({
+  const map = (src as THREE.MeshStandardMaterial | undefined)?.map ?? null;
+  const key = map?.uuid ?? '';
+  const hit = trunkMats.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshStandardMaterial({
     color: '#5a3d28',
-    map: (src as THREE.MeshStandardMaterial)?.map ?? null,
     roughness: 0.94,
     metalness: 0.02,
     envMapIntensity: 0.2,
   });
+  if (map) mat.map = map;
+  trunkMats.set(key, mat);
+  return mat;
+}
+
+const canopyGeos: THREE.BufferGeometry[] = [];
+function canopyGeometry(kind: number): THREE.BufferGeometry {
+  const k = leafKind(kind);
+  const cached = canopyGeos[k];
+  if (cached) return cached;
+  const parts: THREE.BufferGeometry[] = [];
+  const blobs = [
+    [0, 0, 0, 1.2],
+    [0.42, 0.28, 0.12, 0.82],
+    [-0.38, 0.22, -0.16, 0.78],
+    [0.05, 0.72, -0.08, 0.7],
+  ] as const;
+  for (const [x, y, z, r] of blobs) {
+    const g = new THREE.SphereGeometry(r, 7, 5);
+    g.translate(x, y, z);
+    parts.push(g);
+  }
+  const merged = mergeGeometries(parts, false) ?? parts[0]!;
+  canopyGeos[k] = merged;
+  return merged;
+}
+
+/** Near mesh is the full tree; far mesh is a solid canopy so the horizon stays green. */
+function attachLod(root: THREE.Group, near: THREE.Object3D, kind: number): THREE.Group {
+  near.name = 'tree-near';
+  const far = new THREE.Mesh(canopyGeometry(kind), leafStandardFrom(null, kind));
+  far.name = 'tree-far';
+  far.position.y = 2.55;
+  far.castShadow = false;
+  far.receiveShadow = false;
+  far.visible = false;
+  far.userData.noCast = true;
+  root.add(near, far);
+  root.userData.lodNear = near;
+  root.userData.lodFar = far;
+  root.userData.ezTree = true;
+  root.userData.treeKind = leafKind(kind);
+  return root;
 }
 
 /** Force every mesh on an ez-tree: leaves = lit green cards, trunk = brown PBR. */
@@ -63,8 +117,6 @@ export function hardenEzTree(root: THREE.Object3D, kind = 0) {
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
-    m.castShadow = true;
-    m.receiveShadow = true;
     const mats = Array.isArray(m.material) ? m.material : [m.material];
     const geo = (m.geometry as THREE.BufferGeometry)?.type || '';
     const name = `${m.name || ''}`.toLowerCase();
@@ -87,6 +139,10 @@ export function hardenEzTree(root: THREE.Object3D, kind = 0) {
         replaced.push(leafStandardFrom(std, kind));
       }
     }
+    const casts = replaced.some((mat) => [...trunkMats.values()].includes(mat as THREE.MeshStandardMaterial));
+    m.castShadow = casts;
+    m.receiveShadow = casts;
+    m.userData.noCast = !casts;
     m.material = replaced.length === 1 ? replaced[0]! : replaced;
     const g = m.geometry as THREE.BufferGeometry;
     if (g?.attributes?.color) g.deleteAttribute('color');
@@ -181,33 +237,16 @@ export function buildNaturalTree(kind = 0): THREE.Group {
   if (cached) {
     const model = cached.clone(true);
     model.name = `ez-${path.split('/').pop()}`;
-    model.userData.ezTree = true;
     hardenEzTree(model, ki);
     const s = 0.95 + (ki % 3) * 0.08;
     model.scale.setScalar(s);
     model.rotation.y = ((ki * 47) % 360) * (Math.PI / 180);
-    g.add(model);
-    // Small dark under-fill for volume only — leaf cards carry the look
-    const fillMat = new THREE.MeshStandardMaterial({
-      color: '#1e4a1c',
-      roughness: 0.95,
-      metalness: 0.02,
-      envMapIntensity: 0.15,
-    });
-    const fill = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), fillMat);
-    fill.position.y = 2.85;
-    fill.scale.set(0.85, 0.65, 0.8);
-    fill.castShadow = true;
-    fill.receiveShadow = true;
-    g.add(fill);
-    g.userData.ezTree = true;
-    g.userData.treeKind = ki;
-    return g;
+    const near = new THREE.Group();
+    near.add(model);
+    return attachLod(g, near, ki);
   }
   const proc = proceduralTree(ki);
-  proc.userData.ezTree = false;
-  proc.userData.treeKind = ki;
-  return proc;
+  return attachLod(g, proc, ki);
 }
 
 /** Slim roadside palm — trunk + radial fronds (concept palms). */
@@ -250,6 +289,7 @@ export function buildPalm(kind = 0): THREE.Group {
   crown.castShadow = true;
   g.add(crown);
   g.userData.palm = true;
+  coalesceLook(g);
   return g;
 }
 
@@ -298,25 +338,31 @@ export function buildShrub(kind = 0): THREE.Group {
   return g;
 }
 
-function grassClump(color: string, h: number): THREE.Group {
-  const g = new THREE.Group();
+function grassClump(color: string, h: number): THREE.Mesh {
   const mat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.88,
     metalness: 0.02,
     side: THREE.DoubleSide,
   });
+  const parts: THREE.BufferGeometry[] = [];
+  const q = new THREE.Quaternion();
+  const v = new THREE.Vector3();
+  const m4 = new THREE.Matrix4();
   for (let i = 0; i < 7; i++) {
-    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.035, h * (0.7 + (i % 3) * 0.15), 4), mat);
+    const blade = new THREE.ConeGeometry(0.035, h * (0.7 + (i % 3) * 0.15), 4);
     const a = (i / 7) * Math.PI * 2;
     const r = 0.06 + (i % 3) * 0.03;
-    blade.position.set(Math.cos(a) * r, h * 0.35, Math.sin(a) * r);
-    blade.rotation.z = (i % 2 ? 0.15 : -0.12) + i * 0.04;
-    blade.rotation.x = (i % 3) * 0.08;
-    blade.castShadow = true;
-    g.add(blade);
+    q.setFromEuler(new THREE.Euler((i % 3) * 0.08, 0, (i % 2 ? 0.15 : -0.12) + i * 0.04));
+    v.set(Math.cos(a) * r, h * 0.35, Math.sin(a) * r);
+    blade.applyMatrix4(m4.compose(v, q, v.clone().set(1, 1, 1)));
+    parts.push(blade);
   }
-  return g;
+  const geo = mergeGeometries(parts, false) ?? parts[0]!;
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = false;
+  mesh.userData.noCast = true;
+  return mesh;
 }
 
 function flower(color: string): THREE.Mesh {
@@ -382,6 +428,7 @@ export function buildPlanter(): THREE.Group {
     f.position.set(-0.4 + i * 0.35, 0.62 + (i % 2) * 0.06, i % 2 ? 0.12 : -0.1);
     g.add(f);
   }
+  coalesceLook(g);
   return g;
 }
 

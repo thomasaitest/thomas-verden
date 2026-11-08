@@ -29,7 +29,8 @@ import { animateAvatar, buildAvatar, type AvatarPose, type AvatarRig } from './t
 import { attachGltfAvatar, tickGltfAvatar, AVATAR_PREFETCH } from './three/avatarGltf.ts';
 import { buildGltfCar } from './three/vehicleGltf.ts';
 import { prefetch } from './three/assets.ts';
-import { collideCamera, fadeOccluders } from './three/cameraCollision.ts';
+import { collideCamera } from './three/cameraCollision.ts';
+import { budgetForTier, nextTier } from './three/frameBudget.ts';
 import { createInterior, type Interior } from './three/interior.ts';
 import { preloadFurnitureModels } from './three/furniture.ts';
 import { FLOOR_H, floorOfY, groundHeight, onStairs, roomAt } from './logic/layout.ts';
@@ -91,6 +92,11 @@ export class Game {
   renderer: THREE.WebGLRenderer;
   private lighting: LightingRig | null = null;
   highQuality = false;
+  private preferHigh = false;
+  private budgetTier: 0 | 1 | 2 = 1;
+  private badFrames = 0;
+  private goodFrames = 0;
+  private fog: THREE.FogExp2 | null = null;
   assetsReady: Promise<void> = Promise.resolve();
   weatherLocked: null | "clear" | "cloudy" | "rain" = null;
   private outdoorBgBackup: THREE.Color | THREE.Texture | null = null;
@@ -170,8 +176,8 @@ export class Game {
   mp: MpClient | null = null;
 
   constructor(private host: HTMLElement, ui: HTMLElement) {
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', preserveDrawingBuffer: false, stencil: false });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1));
     host.append(this.renderer.domElement);
     this.thumbs = new Thumbs(this.renderer);
 
@@ -262,7 +268,7 @@ export class Game {
     this.syncPets();
     this.rebuildAvatar();
     if (this.mode === 'house') this.interior.build(activeHouse(this.save));
-    this.lighting?.applyQuality(this.highQuality);
+    this.pushBudget(this.budgetTier);
   }
 
   // ---------- state ----------
@@ -707,7 +713,6 @@ export class Game {
     }
     this.lighting?.setExposure?.(0.58);
     this.lighting?.setIndoor?.(false);
-    if (this.sun) this.sun.intensity = 2.2;
     this.setSky();
     const p = this.town.entrances.home;
     this.player.pos.set(p.x, 0, p.z);
@@ -732,8 +737,15 @@ export class Game {
     if (!this.scene.environment) {
       this.scene.background = new THREE.Color(s.skyTop);
     }
-    // Soft fog only; HDRI days stay crisp
-    this.scene.fog = this.mode === 'town' ? new THREE.FogExp2(s.fog, s.weather === 'rain' ? 0.004 : 0.0018) : null;
+    // Soft fog only; HDRI days stay crisp. Reuse one fog so the hot loop does not allocate.
+    if (this.mode !== 'town') this.scene.fog = null;
+    else {
+      const density = s.weather === 'rain' ? 0.004 : 0.0018;
+      if (!this.fog) this.fog = new THREE.FogExp2(s.fog, density);
+      this.fog.color.set(s.fog);
+      this.fog.density = density;
+      this.scene.fog = this.fog;
+    }
     this.hemi.color.set(s.hemiSky);
     this.hemi.groundColor.set(s.hemiGround);
     const elev = Math.max(0.15, s.sunElevation);
@@ -1097,23 +1109,57 @@ export class Game {
 
 
   private setupPost() {
-    this.lighting?.applyQuality(false);
+    this.pushBudget(1);
   }
 
   toggleQuality() {
-    this.applyQuality(!this.highQuality);
+    this.preferHigh = !this.preferHigh;
+    this.highQuality = this.preferHigh;
+    this.hud.setQualityLabel(this.preferHigh);
+    this.badFrames = 0;
+    this.goodFrames = 0;
+    this.pushBudget(this.preferHigh ? 2 : this.budgetTier);
+  }
+
+  private pushBudget(tier: 0 | 1 | 2) {
+    const ceiling = (this.preferHigh ? 2 : 1) as 0 | 1 | 2;
+    this.budgetTier = Math.max(0, Math.min(ceiling, tier)) as 0 | 1 | 2;
+    const b = budgetForTier(this.budgetTier);
+    this.lighting?.applyView({ shadows: b.shadows, bloom: b.bloom, pixelRatio: b.pixelRatioCap });
+    this.town?.setRenderBudget({ maxLights: b.maxLights, treeLod: b.treeLod });
+    this.resize();
+  }
+
+  private observeFrame(dtMs: number) {
+    if (dtMs > 34) {
+      this.badFrames++;
+      this.goodFrames = 0;
+    } else if (dtMs < 18) {
+      this.goodFrames++;
+      this.badFrames = 0;
+    } else {
+      this.badFrames = 0;
+      this.goodFrames = 0;
+    }
+    const ceiling = (this.preferHigh ? 2 : 1) as 0 | 1 | 2;
+    const next = nextTier(this.budgetTier, this.badFrames, this.goodFrames, ceiling);
+    if (next !== this.budgetTier) {
+      this.badFrames = 0;
+      this.goodFrames = 0;
+      this.pushBudget(next);
+    }
+  }
+
+  /** Town stays out of the interior (and the studio), even if another system shows it. */
+  private syncWorldVisibility() {
+    const studio = this.editingAvatar;
+    if (this.town?.group) this.town.group.visible = !studio && this.mode === 'town';
+    if (this.interior?.group) this.interior.group.visible = !studio && this.mode === 'house';
   }
 
   /** Shots/debug: set outdoor weather clock (seconds elapsed). */
   setWeatherElapsed(sec: number) {
     this.weatherT0 = performance.now() / 1000 - sec;
-  }
-
-  private applyQuality(high: boolean) {
-    this.highQuality = high;
-    this.lighting?.applyQuality(high);
-    this.hud.setQualityLabel(high);
-    this.resize();
   }
 
   // ---------- loop ----------
@@ -1131,10 +1177,12 @@ export class Game {
     this.setSky();
     let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
+      const dtMs = now - last;
+      const dt = Math.min(0.05, dtMs / 1000);
       last = now;
+      if (dtMs < 2000) this.observeFrame(dtMs);
       this.step(dt);
-      this.lighting?.render(this.highQuality) ?? this.renderer.render(this.scene, this.camera);
+      this.lighting?.render() ?? this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -1502,14 +1550,18 @@ export class Game {
           p.pos.z + fz * 1.8 + rz * 0.25,
         );
       }
-      const ignore = new Set<THREE.Object3D>([this.avatarHolder, this.avatarShadow]);
-      if (this.vehicleMesh) ignore.add(this.vehicleMesh);
+      const inside = this.mode === 'town' ? this.town.buildingAt(target.x, target.z) : null;
       const coll = this.mode === 'house'
         ? desired
-        : collideCamera({ target, desired, scene: this.scene, ignore, minDist: this.driving ? 9.0 : 2.0 });
+        : collideCamera({
+            target,
+            desired,
+            blocks: this.town,
+            skip: inside,
+            minDist: this.driving ? 8 : 2.2,
+          });
       this.camera.position.copy(coll);
       this.camera.lookAt(look);
-      if (this.mode !== 'house') fadeOccluders(this.scene, this.camera.position, target, ignore);
     }
     } // end !freezeCam
     if (this.mode === 'house') {
@@ -1526,6 +1578,7 @@ export class Game {
       this.town.update(t, p.pos.x, p.pos.z, this.camera.position.x, this.camera.position.z);
     }
 
+    this.syncWorldVisibility();
     // sun follows the player for crisp shadows nearby
     this.sun.position.set(p.pos.x + 20, 45, p.pos.z + 14);
     this.sun.target.position.set(p.pos.x, 0, p.pos.z);

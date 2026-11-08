@@ -176,13 +176,14 @@ export function buildCar(carId: string): THREE.Group {
     physicalGlass('#0c1520', 0.45),
   );
   const cm = canopy.material as THREE.MeshPhysicalMaterial;
-  cm.color.set('#081018');
-  cm.opacity = 0.48;
-  cm.transmission = 0.42;
+  cm.color.set('#c5deea');
+  cm.opacity = 0.34;
+  cm.transmission = 0;
   cm.transparent = true;
-  cm.roughness = 0.04;
-  cm.metalness = 0.08;
-  cm.envMapIntensity = 1.6;
+  cm.roughness = 0.05;
+  cm.metalness = 0.04;
+  cm.envMapIntensity = 1.45;
+  cm.depthWrite = false;
   canopy.position.set(0, hoverY + 0.55, -0.05);
   canopy.scale.set(bodyW * 0.48, 0.72, 0.85);
   canopy.castShadow = true;

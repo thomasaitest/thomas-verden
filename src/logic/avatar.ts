@@ -210,3 +210,12 @@ export function cleanAvatar(raw: unknown): Avatar {
     accessory: oneOf(ACCESSORIES, a.accessory, d.accessory),
   };
 }
+
+/**
+ * Opening the editor must not wipe a saved accessory. Only an explicit
+ * accessory change replaces it; other edits keep the stored one.
+ */
+export function avatarEditResult(saved: Avatar, draft: Avatar, accessoryTouched: boolean): Avatar {
+  if (accessoryTouched) return draft;
+  return { ...draft, accessory: saved.accessory };
+}
