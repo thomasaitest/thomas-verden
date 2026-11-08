@@ -4,7 +4,7 @@
  * Shared CC0 PBR materials; white albedo ≤ ~0.8; no emissive walls.
  */
 import * as THREE from 'three';
-import { glowMat } from './kit.ts';
+import { coalesceLook, glowMat } from './kit.ts';
 import {
   loadPbr,
   physicalGlass,
@@ -234,11 +234,13 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   mid.position.set(glassX, 0.28 + glassH * 0.5, d / 2 + 0.1);
   g.add(mid);
 
-  const pt = new THREE.PointLight('#ffd7a8', 2.4, 18, 2);
+  const pt = new THREE.PointLight('#ffd7a8', 1.6, 14, 2);
   pt.position.set(glassX, 2.7, d / 2 - wellDepth * 0.5);
+  pt.userData.budgetLight = true;
   g.add(pt);
-  const pt2 = new THREE.PointLight('#ffe8c8', 1.0, 11, 2);
+  const pt2 = new THREE.PointLight('#ffe8c8', 0.7, 8, 2);
   pt2.position.set(glassX, 1.15, d / 2 - 0.35);
+  pt2.userData.budgetLight = true;
   g.add(pt2);
 
   // Eye-level sign on glass eyebrow
@@ -297,13 +299,24 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
   solar.rotation.x = -0.32;
   solar.castShadow = true;
   g.add(solar);
-  for (let ix = -5; ix <= 5; ix++) {
-    for (let iz = -2; iz <= 2; iz++) {
-      const cell = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.55), cellMat);
-      cell.position.set(ix * 1.0, h + 1.34, d * 0.08 + iz * 0.7);
-      cell.rotation.x = -0.38;
-      g.add(cell);
+  {
+    const cols = 11;
+    const rows = 5;
+    const cells = new THREE.InstancedMesh(new THREE.BoxGeometry(0.9, 0.03, 0.55), cellMat, cols * rows);
+    cells.userData.noCast = true;
+    cells.castShadow = false;
+    const dummy = new THREE.Object3D();
+    dummy.rotation.x = -0.38;
+    let n = 0;
+    for (let ix = -5; ix <= 5; ix++) {
+      for (let iz = -2; iz <= 2; iz++) {
+        dummy.position.set(ix * 1.0, h + 1.34, d * 0.08 + iz * 0.7);
+        dummy.updateMatrix();
+        cells.setMatrixAt(n++, dummy.matrix);
+      }
     }
+    cells.instanceMatrix.needsUpdate = true;
+    g.add(cells);
   }
   for (const s of [-1, 1] as const) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.55, 8), metalMat('#8a929c'));
@@ -365,8 +378,9 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     plateB.rotation.y = Math.PI;
     plateB.position.z = hz - 0.12;
     g.add(plateB);
-    const pl = new THREE.PointLight(spec.logoColor, 2.6, 20, 2);
+    const pl = new THREE.PointLight(spec.logoColor, 1.5, 12, 2);
     pl.position.set(glassX, hy, hz + 2.0);
+    pl.userData.budgetLight = true;
     g.add(pl);
   }
 
@@ -390,6 +404,7 @@ export function buildFuturisticShop(spec: ShopSpec): THREE.Group {
     }
   }
 
+  coalesceLook(g);
   return g;
 }
 
@@ -419,20 +434,21 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   floor.receiveShadow = true;
   group.add(floor);
 
-  const waterMat = new THREE.MeshPhysicalMaterial({
-    color: '#6ab8d0',
-    metalness: 0.0,
-    roughness: 0.05,
-    transmission: 0.7,
-    thickness: 0.45,
+  const waterMat = new THREE.MeshStandardMaterial({
+    color: '#7ec8de',
+    metalness: 0.04,
+    roughness: 0.08,
     transparent: true,
-    opacity: 0.95,
-    envMapIntensity: 1.4,
-    ior: 1.33,
+    opacity: 0.78,
+    envMapIntensity: 1.25,
+    emissive: '#145870',
+    emissiveIntensity: 0.35,
+    depthWrite: false,
   });
   const water = new THREE.Mesh(new THREE.CircleGeometry(4.5, 64), waterMat);
   water.rotation.x = -Math.PI / 2;
   water.position.y = 0.5;
+  water.userData.noCast = true;
   group.add(water);
 
   // Mid tier
@@ -450,6 +466,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   const midWater = new THREE.Mesh(new THREE.CircleGeometry(2.0, 48), waterMat.clone());
   midWater.rotation.x = -Math.PI / 2;
   midWater.position.y = 1.66;
+  midWater.userData.noCast = true;
   group.add(midWater);
 
   // Top
@@ -462,6 +479,7 @@ export function buildSleekFountain(): { group: THREE.Group; jets: THREE.Mesh[]; 
   const topWater = new THREE.Mesh(new THREE.CircleGeometry(0.45, 24), waterMat.clone());
   topWater.rotation.x = -Math.PI / 2;
   topWater.position.y = 3.1;
+  topWater.userData.noCast = true;
   group.add(topWater);
 
   const rings: THREE.Mesh[] = [];

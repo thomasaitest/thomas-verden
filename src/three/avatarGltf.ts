@@ -176,7 +176,7 @@ function attachFuturisticGear(root: THREE.Object3D, a: Avatar) {
       color,
       transparent: true,
       opacity,
-      transmission: 0.55,
+      transmission: 0,
       roughness: 0.15,
       metalness: 0.05,
       thickness: 0.2,

@@ -1,5 +1,5 @@
 import { sfx } from '../audio.ts';
-import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, FACES, HAIR_COLORS, HAIR_STYLES, HATS, OUTFIT_PRESETS, randomAvatar, SHOES, SKIN, type Avatar } from '../logic/avatar.ts';
+import { ACCESSORIES, BOTTOMS, CLOTH_COLORS, FACES, HAIR_COLORS, HAIR_STYLES, HATS, OUTFIT_PRESETS, avatarEditResult, randomAvatar, SHOES, SKIN, type Avatar } from '../logic/avatar.ts';
 import { CARS, FLOOR_COLORS, FOODS, FOOD_BY_ID, FURN_BY_ID, FURN_CATS, FURNITURE, HOUSES, PALETTE, PET_SHOP, POTIONS, TOYS, WALL_COLORS, type FurnCat } from '../logic/catalog.ts';
 import { POINTS, ITEM_INFO, newGame, openDoor, useMagnifier, type DoorGame } from '../logic/doors.ts';
 import { activeHouse, addBucks, buyAndHatch, buyCar, buyFood, buyFurniture, buyHouse, buyPetShopItem, buyToy, editHouse, placeFromInventory, renamePet, storeItem, toggleEquip, usePotion } from '../logic/economy.ts';
@@ -585,9 +585,11 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
     (el as HTMLElement).style.visibility = 'hidden';
   });
   // Editor default: no huge backpack — accessory 'ingen' unless user picks one
-  let a: Avatar = { ...game.save.avatar, accessory: 'ingen' };
-  game.commit({ ...game.save, avatar: a }, { avatar: true });
+  const savedAvatar = game.save.avatar;
+  let accessoryTouched = false;
+  let a: Avatar = { ...savedAvatar };
   const set = (patch: Partial<Avatar>) => {
+    if (Object.prototype.hasOwnProperty.call(patch, 'accessory')) accessoryTouched = true;
     a = { ...a, ...patch };
     game.commit({ ...game.save, avatar: a }, { avatar: true });
     render();
@@ -599,7 +601,7 @@ export function openAvatar(game: Game, first = false, onDone?: () => void) {
     document.querySelectorAll('.dock,.hud-top,.joy-base,.jump,.pet-bar,.prompt,.tasks,.speedo').forEach((el) => {
       (el as HTMLElement).style.visibility = '';
     });
-    game.commit({ ...game.save, avatar: a, avatarDone: true });
+    game.commit({ ...game.save, avatar: avatarEditResult(savedAvatar, a, accessoryTouched), avatarDone: true });
     onDone?.();
   };
   const s = sheet(first ? 'Lag din figur!' : 'Avatar-tilpasning', '#3ecbff', finish, 'side avatar-edit');

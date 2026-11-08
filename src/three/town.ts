@@ -75,6 +75,8 @@ export interface Town {
   seatWorld(id: string, u: number): Seat;
   /** Animate; roofs of the shop and the hospital are lifted off while the player is inside. */
   update(t: number, px?: number, pz?: number, camX?: number, camZ?: number): void;
+  /** Adaptive detail: façade light count and the distance where trees become canopies. */
+  setRenderBudget(opts: { maxLights: number; treeLod: number }): void;
   /** Centre and radius of the walk-in building the point is inside (the camera must not be pushed in by its walls). */
   buildingAt(x: number, z: number): { kind: 'shop' | 'vet' | 'cars' | 'pets'; x: number; z: number; r: number } | null;
   /** Which walk-in building the point is inside, if any. */
@@ -770,7 +772,8 @@ export function buildTown(): Town {
       soil.userData.noCast = true;
       group.add(soil);
     }
-    // cyan curb lights flush with sidewalk edge
+    // cyan curb lights flush with sidewalk edge — one mesh per material, not one per stripe
+    const curbGroup = new THREE.Group();
     for (const side of [-2.15, 2.15] as const) {
       for (let z = -24; z <= 56; z += 2.8) {
         const strip = new THREE.Mesh(
@@ -779,7 +782,7 @@ export function buildTown(): Town {
         );
         strip.position.set(side, 0.07, z);
         strip.userData.noCast = true;
-        group.add(strip);
+        curbGroup.add(strip);
       }
     }
     for (const z of [45.5, 50.5] as const) {
@@ -791,9 +794,10 @@ export function buildTown(): Town {
         );
         strip.position.set(x, 0.06, z);
         strip.userData.noCast = true;
-        group.add(strip);
+        curbGroup.add(strip);
       }
     }
+    group.add(mergeStatic(curbGroup));
     // Street trees set back to sidewalk edge, smaller (~0.7), + palms & low shrubs (concept)
     for (const [x, z] of [
       [-8.6, 18], [8.6, 18], [-8.6, 24], [8.6, 24], [-8.6, 30], [8.6, 30],
@@ -873,6 +877,12 @@ export function buildTown(): Town {
   // Ambient plaza people (Quaternius humans + walk) + road hover traffic
   const npcMixers: THREE.AnimationMixer[] = [];
   let npcClock = 0;
+  let maxLights = 3;
+  let treeLod = 36;
+  const treeLods: THREE.Object3D[] = [];
+  const budgetLights: { light: THREE.PointLight; x: number; z: number }[] = [];
+  let npcCrowd: { holder: THREE.Group; mixer: THREE.AnimationMixer | null; kind: 'ring' | 'side'; x: number; z: number; phase: number; radius: number; dir: number }[] = [];
+  let trafficMovers: { mesh: THREE.Group; axis: 'x' | 'z'; fixed: number; min: number; max: number; speed: number; phase: number }[] = [];
   {
     const NPC_PATHS = [
       'characters/m-casual-2.glb',
@@ -891,12 +901,25 @@ export function buildTown(): Town {
       [5.5, 40, Math.PI + 0.1, 12], [-5.1, 12, 0, 13], [5.2, 8, Math.PI, 14],
       [8, 26, -1.4, 15], [-9, 36, 1.5, 16],
     ];
+    const crowd: { holder: THREE.Group; mixer: THREE.AnimationMixer | null; kind: 'ring' | 'side'; x: number; z: number; phase: number; radius: number; dir: number }[] = [];
     for (const [x, z, yaw, seed] of walkers) {
       const holder = new THREE.Group();
+      holder.name = `npc-${seed}`;
       holder.position.set(x, 0, z);
       holder.rotation.y = yaw;
       holder.userData.noFade = true;
       group.add(holder);
+      const ring = Math.hypot(x, z);
+      crowd.push({
+        holder,
+        mixer: null,
+        kind: ring < 20 ? 'ring' : 'side',
+        x,
+        z,
+        phase: seed * 0.7,
+        radius: Math.max(7.6, ring),
+        dir: seed % 2 === 0 ? 1 : -1,
+      });
       const path = NPC_PATHS[seed % NPC_PATHS.length]!;
       void loadModel(path).then((model) => {
         // Quaternius humans are ~1.7–2 m; normalize to ~1.7 m
@@ -914,6 +937,8 @@ export function buildTown(): Town {
           act.play();
           if (/walk/i.test(walk.name)) act.timeScale = 0.85;
           npcMixers.push(mixer);
+          const slot = crowd.find((c) => c.holder === holder);
+          if (slot) slot.mixer = mixer;
         }
       }).catch(() => {
         // fallback capsule if GLB missing
@@ -940,16 +965,29 @@ export function buildTown(): Town {
       { id: 'bil-bla', x: -24.0, z: 5.0, yaw: -Math.PI / 2 },
       { id: 'bil-gul', x: 1.55, z: 42, yaw: 0 },
     ];
+    const movers: { mesh: THREE.Group; axis: 'x' | 'z'; fixed: number; min: number; max: number; speed: number; phase: number }[] = [];
     for (const c of traffic) {
       if (Math.hypot(c.x, c.z) < PLAZA_R + 6) continue; // never on / next-to plaza pavers
       const car = buildCar(c.id);
-      car.position.set(c.x, 0, c.z);
+      car.position.set(c.x, 0.12, c.z);
       car.rotation.y = c.yaw;
       car.name = `traffic-${c.id}-${c.z}`;
       car.userData.noFade = true;
       group.add(car);
       shadowAll(car);
+      const cross = Math.abs(Math.sin(c.yaw)) > 0.7 && Math.abs(Math.cos(c.yaw)) < 0.7;
+      if (cross) {
+        const min = c.x >= 0 ? 22 : -46;
+        const max = c.x >= 0 ? 46 : -22;
+        movers.push({ mesh: car, axis: 'x', fixed: c.z, min, max, speed: 7 + (movers.length % 3), phase: Math.abs(c.z) });
+      } else if (c.z >= 18) {
+        movers.push({ mesh: car, axis: 'z', fixed: c.x, min: 22, max: 70, speed: 8 + (movers.length % 4), phase: c.z });
+      } else {
+        movers.push({ mesh: car, axis: 'z', fixed: c.x, min: -52, max: -20, speed: 8 + (movers.length % 3), phase: Math.abs(c.z) });
+      }
     }
+    trafficMovers = movers;
+    npcCrowd = crowd;
   }
 
   // playground
@@ -1309,6 +1347,18 @@ export function buildTown(): Town {
     return buildingAt(x, z)?.kind ?? null;
   }
 
+  group.updateMatrixWorld(true);
+  const worldPos = new THREE.Vector3();
+  group.traverse((o) => {
+    if (o.userData.lodNear) treeLods.push(o);
+    const light = o as THREE.PointLight;
+    if (light.isPointLight && light.userData.budgetLight) {
+      light.getWorldPosition(worldPos);
+      light.visible = false;
+      budgetLights.push({ light, x: worldPos.x, z: worldPos.z });
+    }
+  });
+
   return {
     group,
     zones,
@@ -1343,10 +1393,67 @@ export function buildTown(): Town {
     insideBuilding,
     buildingAt,
     size: SIZE,
+    setRenderBudget(opts) {
+      maxLights = Math.max(0, Math.min(6, opts.maxLights));
+      treeLod = Math.max(12, opts.treeLod);
+    },
     update(t: number, px?: number, pz?: number, camX?: number, camZ?: number) {
       const dt = npcClock ? Math.min(0.05, Math.max(0, t - npcClock)) : 1 / 60;
       npcClock = t;
-      for (const m of npcMixers) m.update(dt);
+      const vx = camX ?? px ?? 0;
+      const vz = camZ ?? pz ?? 0;
+      const lod2 = treeLod * treeLod;
+      for (const treeRoot of treeLods) {
+        const dx = treeRoot.position.x - vx;
+        const dz = treeRoot.position.z - vz;
+        const far = dx * dx + dz * dz > lod2;
+        const near = treeRoot.userData.lodNear as THREE.Object3D | undefined;
+        const farMesh = treeRoot.userData.lodFar as THREE.Object3D | undefined;
+        if (near && near.visible === far) near.visible = !far;
+        if (farMesh && farMesh.visible !== far) farMesh.visible = far;
+      }
+      if (budgetLights.length) {
+        const ranked = budgetLights
+          .map((l) => ({ l, d: (l.x - vx) * (l.x - vx) + (l.z - vz) * (l.z - vz) }))
+          .sort((a, b) => a.d - b.d);
+        for (let i = 0; i < ranked.length; i++) ranked[i]!.l.light.visible = i < maxLights;
+      }
+      for (const w of npcCrowd) {
+        if (w.kind === 'ring') {
+          const a = Math.atan2(w.x, w.z) + t * 0.16 * w.dir;
+          w.holder.position.set(Math.sin(a) * w.radius, 0, Math.cos(a) * w.radius);
+          w.holder.rotation.y = a + Math.PI;
+        } else {
+          const o = Math.sin(t * 0.55 + w.phase) * 3.4;
+          w.holder.position.set(w.x, 0, w.z + o);
+          w.holder.rotation.y = Math.cos(t * 0.55 + w.phase) >= 0 ? 0 : Math.PI;
+        }
+      }
+      const nearest = npcCrowd
+        .map((w) => ({ w, d: (w.holder.position.x - vx) ** 2 + (w.holder.position.z - vz) ** 2 }))
+        .sort((a, b) => a.d - b.d);
+      nearest.forEach((row, i) => {
+        const show = i < 8 && row.d < 32 * 32;
+        row.w.holder.visible = show;
+        if (row.w.mixer && show) row.w.mixer.update(dt);
+      });
+      for (const c of trafficMovers) {
+        const span = Math.max(0.5, c.max - c.min);
+        const cycle = span * 2;
+        const dist = ((t * c.speed + c.phase) % cycle + cycle) % cycle;
+        const going = dist <= span;
+        const along = going ? c.min + dist : c.max - (dist - span);
+        const nx = c.axis === 'x' ? along : c.fixed;
+        const nz = c.axis === 'z' ? along : c.fixed;
+        const tooClose = px !== undefined && pz !== undefined && Math.hypot(nx - px, nz - pz) < 3.4;
+        if (!tooClose) {
+          c.mesh.position.x = nx;
+          c.mesh.position.z = nz;
+          // Mesh nose is local −Z.
+          c.mesh.rotation.y = c.axis === 'z' ? (going ? Math.PI : 0) : (going ? -Math.PI / 2 : Math.PI / 2);
+        }
+        c.mesh.position.y = 0.16 + Math.sin(t * 2.4 + c.phase) * 0.045;
+      }
       for (const b of walkIns) {
         const inside = px !== undefined && pz !== undefined && insideBuilding(px, pz) === b.kind;
         b.roof.visible = !inside;
